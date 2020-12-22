@@ -37,9 +37,9 @@ public class HttpClient {
         String responseStr = null;
         OkHttpClient client = new OkHttpClient().newBuilder().connectTimeout(60, TimeUnit.SECONDS).writeTimeout(60, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).build();
         RequestBody formBody = new FormBody.Builder()
-                                            .add("client_id", "search-api")
-                                            .add("username", "search")
-                                            .add("password", "search")
+                                            .add("client_id", "objectstore")
+                                            .add("username", "cnc-cm")
+                                            .add("password", "cnc-cm")
                                             .add("grant_type", "password")
                                             .build();
         Request request = 

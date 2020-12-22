@@ -6,6 +6,7 @@ import java.util.Map;
 import com.aafc.bicoe.searchcli.http.HttpClient;
 import com.aafc.bicoe.searchcli.jsonapi.JsonSpecUtils;
 import com.aafc.bicoe.searchcli.jsonapi.model.DinaType;
+import com.aafc.bicoe.searchcli.services.IIndexer;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellComponent;
@@ -27,10 +28,16 @@ public class Index {
     private HttpClient aClient;
     private Map<String, String> supportedDataTypes;
 
-    public Index(@Autowired JsonSpecUtils jsonSpec, @Autowired HttpClient aClient) {
+    private IIndexer indexerService;
+
+    public Index(
+            @Autowired JsonSpecUtils jsonSpec, 
+            @Autowired HttpClient aClient,
+            @Autowired IIndexer indexerService) {
 
         this.jsonSpec = jsonSpec;
         this.aClient = aClient;
+        this.indexerService = indexerService;
 
         supportedDataTypes = new HashMap<>();
 
@@ -38,6 +45,7 @@ public class Index {
 
     @ShellMethod(value = "Index a document", key = "index-doc")
     public String indexDocument(
+            @ShellOption(defaultValue = "false", value = { "--dryrun" }) boolean dryRun,
             @ShellOption(help = "Supported types:metadata, organization, person", value = { "-t" }) String objectType,
             @ShellOption(help = "Unique object identifier", value = { "-i"}) String objectId) {
 
@@ -45,7 +53,11 @@ public class Index {
         //
         try {
 
+            log.info("******  Dry run is set to {}", dryRun);
+
             String rawPayload = null;
+            DinaType dinaType = DinaType.valueOf(objectType.toUpperCase());
+
             switch (DinaType.valueOf(objectType.toUpperCase())) {
 
                 case METADATA:
@@ -61,7 +73,13 @@ public class Index {
                 break;
             }
 
-            return jsonSpec.createPublishableObject(rawPayload, supportedDataTypes);
+            String aDocument = jsonSpec.createPublishableObject(rawPayload, supportedDataTypes);
+
+            if (!dryRun) {
+                indexerService.indexDocument(dinaType, rawPayload);
+            }
+            
+            return aDocument;
 
         } catch (IllegalArgumentException argEx) {
             log.error("Please provide valid arguments");
