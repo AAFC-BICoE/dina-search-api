@@ -1,5 +1,6 @@
 package com.aafc.bicoe.searchcli.commands;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 public class Index {
 
     public static final String PERSON_INCLUDED_RELATIONSHIPS_STRING = "organizations";
-    public static final String METADATA_INCLUDED_RELATIONSHIPS_STRING = "managedAttributeMap,derivatives,acMetadataCreator,acDerivedFrom,dcCreator"; // TODO: Problem with managedAttribute
+    public static final String METADATA_INCLUDED_RELATIONSHIPS_STRING = "managedAttributeMap,derivatives,acMetadataCreator,acDerivedFrom,dcCreator"; // TODO:
+                                                                                                                                                     // Problem
+                                                                                                                                                     // with
+                                                                                                                                                     // managedAttribute
 
     private JsonSpecUtils jsonSpec;
     private HttpClient aClient;
@@ -30,10 +34,7 @@ public class Index {
 
     private IIndexer indexerService;
 
-    public Index(
-            @Autowired JsonSpecUtils jsonSpec, 
-            @Autowired HttpClient aClient,
-            @Autowired IIndexer indexerService) {
+    public Index(@Autowired JsonSpecUtils jsonSpec, @Autowired HttpClient aClient, @Autowired IIndexer indexerService) {
 
         this.jsonSpec = jsonSpec;
         this.aClient = aClient;
@@ -44,10 +45,9 @@ public class Index {
     }
 
     @ShellMethod(value = "Index a document", key = "index-doc")
-    public String indexDocument(
-            @ShellOption(defaultValue = "false", value = { "--dryrun" }) boolean dryRun,
+    public String indexDocument(@ShellOption(defaultValue = "false", value = { "--dryrun" }) boolean dryRun,
             @ShellOption(help = "Supported types:metadata, organization, person", value = { "-t" }) String objectType,
-            @ShellOption(help = "Unique object identifier", value = { "-i"}) String objectId) {
+            @ShellOption(help = "Unique object identifier", value = { "-i" }) String objectId) throws IOException {
 
         // Based on the type call the proper method...
         //
@@ -61,29 +61,32 @@ public class Index {
             switch (DinaType.valueOf(objectType.toUpperCase())) {
 
                 case METADATA:
-                    rawPayload = aClient.getMetadata(objectId, METADATA_INCLUDED_RELATIONSHIPS_STRING);                
-                break;
+                    rawPayload = aClient.getMetadata(objectId, METADATA_INCLUDED_RELATIONSHIPS_STRING);
+                    break;
 
                 case ORGANIZATION:
                     rawPayload = aClient.getOrganization(objectId, null);
-                break;
+                    break;
 
                 case PERSON:
                     rawPayload = aClient.getPerson(objectId, PERSON_INCLUDED_RELATIONSHIPS_STRING);
-                break;
+                    break;
             }
 
             String aDocument = jsonSpec.createPublishableObject(rawPayload, supportedDataTypes);
 
             if (!dryRun) {
-                indexerService.indexDocument(dinaType, rawPayload);
+                indexerService.indexDocument(dinaType, aDocument);
             }
-            
+
             return aDocument;
 
         } catch (IllegalArgumentException argEx) {
             log.error("Please provide valid arguments");
             throw argEx;
+        } catch (IOException ioEx) {
+            log.error("Please verified connectivity with elasticsearch");
+            throw ioEx;
         }
     }
 }

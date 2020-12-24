@@ -26,7 +26,7 @@ public class CliQuit implements Quit.Command {
     private IIndexer indexerService;
 
 
-    @ShellMethod(value = "Exit/Quit the cli", key = "quit")
+    @ShellMethod(value = "Exit/Quit the cli", key = {"quit", "exit"})
     public void quit() {
 
         // Need to release resorces...

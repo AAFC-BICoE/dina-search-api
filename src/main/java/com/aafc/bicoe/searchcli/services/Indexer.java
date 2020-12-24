@@ -28,7 +28,7 @@ public class Indexer implements IIndexer {
     }
 
     @Override
-    public void indexDocument(DinaType dinaType, String rawPayload) {
+    public void indexDocument(DinaType dinaType, String rawPayload) throws IOException {
         
         // Create index request
         IndexRequest indexRequest = this.createIndexRequest(dinaType);
@@ -43,15 +43,15 @@ public class Indexer implements IIndexer {
             
             Result operationResult = indexResponse.getResult();
             
-            if (operationResult == Result.CREATED || operationResult == Result.UPDATED) {
-                
+            if (operationResult == Result.CREATED || operationResult == Result.UPDATED) {                
                 log.info("Document created in {} with id:{} and version:{}", indexResponse.getIndex(),indexResponse.getVersion(),indexResponse.getId());
             } else {
                 log.error("Issue with the index operation, result:{}", operationResult);
             }
 
         } catch (IOException ioEx) {
-            log.error("Connectivity issue with the elasticsearch server: {}", ioEx.getCause());
+            log.error("Connectivity issue with the elasticsearch server: {}", ioEx.getMessage());
+            throw ioEx;
         }
     }
 
