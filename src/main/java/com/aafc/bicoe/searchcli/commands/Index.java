@@ -41,6 +41,9 @@ public class Index {
         this.indexerService = indexerService;
 
         supportedDataTypes = new HashMap<>();
+        supportedDataTypes.put("person", "Person");
+        supportedDataTypes.put("metadata", "Metadata");
+        supportedDataTypes.put("managed-attribute-map", "ManagedAttributeMap");
 
     }
 
