@@ -1,16 +1,10 @@
 package com.aafc.bicoe.searchcli.commands;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.aafc.bicoe.searchcli.http.HttpClient;
-import com.aafc.bicoe.searchcli.jsonapi.JsonSpecUtils;
 import com.aafc.bicoe.searchcli.services.IIndexer;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
 import org.springframework.shell.standard.commands.Quit;
 import org.springframework.stereotype.Component;
 
