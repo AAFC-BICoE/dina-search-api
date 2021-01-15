@@ -1,7 +1,12 @@
 package com.aafc.bicoe.searchcli.services;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import com.aafc.bicoe.searchcli.jsonapi.JsonSpecUtils;
+import com.google.gson.JsonElement;
 
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -21,11 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class SearchService implements ISearchService {
 
+    private JsonSpecUtils jsonSpec;
     private RestHighLevelClient esClient;
 
-    @Autowired
-    public SearchService(RestHighLevelClient esClient) {
+    public SearchService(@Autowired RestHighLevelClient esClient, @Autowired JsonSpecUtils jsonSpec) {
         this.esClient = esClient;
+        this.jsonSpec = jsonSpec;
     }
 
     public SearchResponse autoComplete(String prefixString, String indexName, String field) {
@@ -64,30 +70,22 @@ public class SearchService implements ISearchService {
         SearchRequest searchRequest = new SearchRequest(indexName);
 
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(multiMatchQueryBuilder);
+        searchSourceBuilder.fetchSource(true);
+        //String[] includeFields = new String[] {field + ".autocomplete", "innerObject.*"};
+        //String[] excludeFields = new String[] {"test"};
+        //searchSourceBuilder.fetchSource(includeFields, excludeFields);
 
+        searchSourceBuilder.query(multiMatchQueryBuilder);
         searchRequest.source(searchSourceBuilder);
 
-        SearchResponse response;
+        SearchResponse searchResponse = null;
         try {
-            response = esClient.search(searchRequest, RequestOptions.DEFAULT);
-
-            for (SearchHit hit: response.getHits()) {
-                    Map<String, Object> map = hit.getSourceAsMap();
-                    for (Map.Entry<String, Object> entry : map.entrySet()) {
-                        String jsonPath = entry.getKey();
-                        Object entryValue = entry.getValue();
-                        log.info("Key:{} : value:{}", jsonPath, entryValue);
-                    }
-
-            }
-            
-            return response;
+            searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
         } catch (IOException ex) {
-             log.error("Error in autocomplete search", ex);
-             throw new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Error in ES search");
+             log.error("Error in autocomplete search {}", ex.getMessage());
         }      
 
+        return searchResponse;
     }
 
 }
