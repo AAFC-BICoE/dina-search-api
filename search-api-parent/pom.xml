@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>ca.gc.aafc</groupId>
+  <artifactId>search-api-parent</artifactId>
+  <version>0.1</version>
+
+  <packaging>pom</packaging>
+
+  <name>search-api-parent Maven Multi Project</name>
+  <url>https://github.com/AAFC-BICoE/search-api</url>
+
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.4.1</version>
+  </parent>
+
+  <modules>
+    <module>search-cli</module>
+    <module>search-ws</module>
+  </modules>
+
+  <properties>
+    <!-- Compile properties -->
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.version>11</java.version>
+    
+    <crnk.version>3.2.20200419165537</crnk.version>
+
+    <!-- Build plugin properties -->
+    <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
+    <checkstyle.version>8.39</checkstyle.version>
+    <spotbugs.version>4.2.0</spotbugs.version>
+    <maven-spotbugs.version>4.2.0</maven-spotbugs.version>
+    <asciidoctor-maven-plugin.version>2.1.0</asciidoctor-maven-plugin.version>
+    <asciidoctorj.diagram.version>2.0.5</asciidoctorj.diagram.version>
+    <dependency.check.version>6.0.4</dependency.check.version>
+
+    <!-- Common sub-module dependency properties -->
+    <javax.inject.version>1</javax.inject.version>
+    <keycloak-starter.version>11.0.2</keycloak-starter.version>
+    <bcprov-jdk15on.version>1.68</bcprov-jdk15on.version>
+    <guava.version>30.0-jre</guava.version>
+
+  </properties>
+
+  <repositories>
+    <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>jcenter central</id>
+      <name>bintray</name>
+      <url>https://jcenter.bintray.com</url>
+    </repository>
+  </repositories>
+
+  <!-- Common sub module dependencies -->
+  <dependencies>
+    <!-- Spring -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-spring-boot-starter</artifactId>
+      <version>${keycloak-starter.version}</version>
+    </dependency>
+
+    <!-- only required until keycloak uses 1.68 -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15on</artifactId>
+      <version>${bcprov-jdk15on.version}</version>
+    </dependency>
+
+    <!-- Java standard extensions -->
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <version>${javax.inject.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.persistence</groupId>
+      <artifactId>javax.persistence-api</artifactId>
+    </dependency>
+    <!-- crnk -->
+    <dependency>
+      <groupId>io.crnk</groupId>
+      <artifactId>crnk-setup-spring-boot2</artifactId>
+      <version>${crnk.version}</version>
+    </dependency>
+    <!--Util -->
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+      <version>${spotbugs.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- TEST Scope -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${maven-checkstyle-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${checkstyle.version}</version>
+          </dependency>
+        </dependencies>
+
+        <configuration>
+          <configLocation>dina-search-api/src/main/resources/checkstyle.xml</configLocation>
+          <failOnViolation>true</failOnViolation>
+          <logViolationsToConsole>true</logViolationsToConsole>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>${maven-spotbugs.version}</version>
+        <dependencies>
+          <!-- SpotBug itself can be ahead of the Maven plugin -->
+          <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs</artifactId>
+            <version>${spotbugs.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+      <plugin>
+        <groupId>org.asciidoctor</groupId>
+        <artifactId>asciidoctor-maven-plugin</artifactId>
+        <version>${asciidoctor-maven-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.asciidoctor</groupId>
+            <artifactId>asciidoctorj-diagram</artifactId>
+            <version>${asciidoctorj.diagram.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <sourceDirectory>${basedir}/docs</sourceDirectory>
+          <requires>
+            <require>asciidoctor-diagram</require>
+          </requires>
+        </configuration>
+        <executions>
+          <execution>
+            <id>output-html</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>process-asciidoc</goal>
+            </goals>
+            <configuration>
+              <backend>html5</backend>
+              <sourceDocumentName>index.adoc</sourceDocumentName>
+              <attributes>
+                <toc>left</toc>
+              </attributes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>${dependency.check.version}</version>
+        <configuration>
+          <format>xml</format>
+          <failBuildOnCVSS>8</failBuildOnCVSS>
+          <suppressionFiles>
+            <suppressionFile>owasp-suppression.xml</suppressionFile>
+            <!-- Required due to bug in plugin https://github.com/jeremylong/DependencyCheck/issues/1827 -->
+          </suppressionFiles>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${maven-checkstyle-plugin.version}</version>
+        <configuration>
+          <configLocation>checkstyle.xml</configLocation>
+          <failOnViolation>false</failOnViolation>
+          <logViolationsToConsole>false</logViolationsToConsole>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
+        <version>${spotbugs-maven-plugin.version}</version>
+      </plugin>
+    </plugins>
+  </reporting>
+
+  <distributionManagement>
+    <repository>
+      <id>bintray-aafc-bice-BICoE</id>
+      <name>aafc-bice-BICoE</name>
+      <url>https://api.bintray.com/maven/aafc-bice/BICoE/dina-search-api-parent/;publish=1;</url>
+    </repository>
+  </distributionManagement>
+
+
+</project>
