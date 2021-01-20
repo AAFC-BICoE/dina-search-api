@@ -1,8 +1,0 @@
-curl --silent --request POST 'http://localhost:9200/_reindex?pretty' --header 'Content-Type: application/json' --data-raw '{
- "source": {
-   "index": "metadata"
- },
- "dest": {
-   "index": "autocomplete"
- }
-}' | grep "total\|created\|failures"
