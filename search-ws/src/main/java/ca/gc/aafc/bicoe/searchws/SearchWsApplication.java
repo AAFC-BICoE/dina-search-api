@@ -1,15 +1,17 @@
-package ca.gc.aafc.bicoe.searchcli;
+package ca.gc.aafc.bicoe.searchws;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+// CHECKSTYLE:OFF HideUtilityClassConstructor (Configuration class can not have
+// invisible constructor, ignore the check style error for this case)
 @SpringBootApplication
 @EnableAutoConfiguration
-public class SearchcliApplication {
+public class SearchWsApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(SearchcliApplication.class, args);
+		SpringApplication.run(SearchWsApplication.class, args);
 	}
 
 }
