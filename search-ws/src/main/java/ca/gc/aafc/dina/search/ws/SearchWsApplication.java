@@ -1,4 +1,4 @@
-package ca.gc.aafc.bicoe.searchws;
+package ca.gc.aafc.dina.search.ws;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

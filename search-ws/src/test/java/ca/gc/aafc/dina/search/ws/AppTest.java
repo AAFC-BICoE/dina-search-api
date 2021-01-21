@@ -1,12 +1,14 @@
-package ca.gc.aafc.bicoe.searchcli;
+package ca.gc.aafc.dina.search.ws;
 
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit test for simple App.
  */
 public class AppTest {
+
   /**
    * Rigorous Test :-)
    */

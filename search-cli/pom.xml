@@ -9,10 +9,7 @@
   </parent>
 
   <artifactId>search-cli</artifactId>
-  <version>0.1</version>
-
   <name>search-cli</name>
-  <url>https://github.com/AAFC-BICoE/search-cli</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

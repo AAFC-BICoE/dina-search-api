@@ -1,4 +1,4 @@
-package ca.gc.aafc.bicoe.searchcli;
+package ca.gc.aafc.dina.search.cli;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
