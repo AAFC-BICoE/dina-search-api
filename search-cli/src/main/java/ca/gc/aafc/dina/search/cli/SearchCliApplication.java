@@ -10,8 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @EnableAutoConfiguration
 public class SearchCliApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(SearchCliApplication.class, args);
-	}
-
+  public static void main(String[] args) {
+    SpringApplication.run(SearchCliApplication.class, args);
+  }
 }
