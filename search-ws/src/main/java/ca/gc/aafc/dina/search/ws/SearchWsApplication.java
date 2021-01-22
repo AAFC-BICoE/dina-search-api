@@ -10,8 +10,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @EnableAutoConfiguration
 public class SearchWsApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(SearchWsApplication.class, args);
-	}
+  public static void main(String[] args) {
+    SpringApplication.run(SearchWsApplication.class, args);
+  }
 
 }

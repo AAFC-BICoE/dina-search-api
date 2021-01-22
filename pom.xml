@@ -52,7 +52,7 @@
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
+      <artifactId>spring-boot-starter</artifactId>
     </dependency>
 
     <!--Util -->
@@ -142,9 +142,6 @@
         <configuration>
           <format>xml</format>
           <failBuildOnCVSS>8</failBuildOnCVSS>
-          <suppressionFiles>
-            <suppressionFile>owasp-suppression.xml</suppressionFile>
-          </suppressionFiles>
         </configuration>
       </plugin>
     </plugins>
