@@ -15,17 +15,15 @@ public class ShowEndpointConfig {
 
   public ShowEndpointConfig(@Autowired ServiceEndpointProperties svcEndpointProps) {
     this.svcEndpointProps = svcEndpointProps;
-  } 
+  }
 
   @ShellMethod(value = "Show service endpoint configuration", key = "show-endpoints")
   public String showEndpointConfig() {
 
     StringBuilder aBuilder = new StringBuilder();
-
+    aBuilder.append(System.lineSeparator());
     aBuilder.append("****** Endpoints Configuration ******"  + System.lineSeparator());
-    aBuilder.append("Organization=" + this.svcEndpointProps.getOrganizationEndpoint() + System.lineSeparator());
-    aBuilder.append("Person=" + this.svcEndpointProps.getPersonEndpoint() + System.lineSeparator());
-    aBuilder.append("Metadata=" + this.svcEndpointProps.getMetadataEndpoint() + System.lineSeparator());  
+    svcEndpointProps.getEndpoints().entrySet().stream().forEach(e-> aBuilder.append(e.getKey() + "=" + e.getValue() + System.lineSeparator()));
     aBuilder.append("*************************************"  + System.lineSeparator());
 
     return aBuilder.toString();
