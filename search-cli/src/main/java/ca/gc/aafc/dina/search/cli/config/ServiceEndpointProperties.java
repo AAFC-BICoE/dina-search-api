@@ -15,4 +15,5 @@ import org.springframework.stereotype.Component;
 @Getter
 public class ServiceEndpointProperties {
   private final Map<String, String> endpoints;
+  private final Map<String, String> authentication;
 }
