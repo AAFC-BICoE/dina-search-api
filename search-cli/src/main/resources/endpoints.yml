@@ -1,6 +1,6 @@
 # Default service endpoints
 #
 endpoints:
-    metadata: http://localhost:8081/api/v1/metadata
-    organization: http://localhost:8082/api/v1/organization
-    person: http://localhost:8082/api/v1/person
+  metadata: http://localhost:8081/api/v1/metadata
+  organization: http://localhost:8082/api/v1/organization
+  person: http://localhost:8082/api/v1/person
