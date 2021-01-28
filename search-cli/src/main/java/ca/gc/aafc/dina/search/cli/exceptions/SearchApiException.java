@@ -1,6 +1,6 @@
 package ca.gc.aafc.dina.search.cli.exceptions;
 
-public class SearchApiException extends RuntimeException {
+public class SearchApiException extends Exception {
 
   private static final long serialVersionUID = 987750562339932511L;
 
