@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,19 +11,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import ca.gc.aafc.dina.search.cli.commands.ShowEndpointConfig;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Unit test for show endpoint cli command.
  */
-@Slf4j
 @SpringBootTest(properties = { "spring.shell.interactive.enabled=false" })
 public class ShowEndpointConfigTest {
 
   @Autowired
-  ShowEndpointConfig showEndpointConfig;
+  private ShowEndpointConfig showEndpointConfig;
   
-  StringBuilder expectedEndpoints;
+  private StringBuilder expectedEndpoints;
 
   @BeforeEach
   void setup() {

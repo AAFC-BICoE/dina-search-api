@@ -1,0 +1,4 @@
+keycloak:
+  client_id: objectstore
+  username: cnc-cm
+  password: cnc-cm

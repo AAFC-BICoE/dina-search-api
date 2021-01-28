@@ -14,6 +14,12 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <spring.shell.version>2.0.0.RELEASE</spring.shell.version>
+    <okhttp.version>4.9.0</okhttp.version>
+    <java-jwt.version>3.11.0</java-jwt.version>
+    <jackson-databind.version>2.12.1</jackson-databind.version>
+    <jackson-core.version>2.12.1</jackson-core.version>
+    <jackson-annotations.version>2.12.1</jackson-annotations.version>
+    
   </properties>
 
   <dependencies>
@@ -30,17 +36,27 @@
     <dependency>
 			<groupId>com.squareup.okhttp3</groupId>
 			<artifactId>okhttp</artifactId>
-			<version>4.9.0</version>
+			<version>${okhttp.version}</version>
 		</dependency>
     <dependency>
 			<groupId>com.auth0</groupId>
 			<artifactId>java-jwt</artifactId>
-			<version>3.11.0</version>
+			<version>${java-jwt.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <version>2.8.6</version>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson-databind.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${jackson-core.version}</version>
+    </dependency> 
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>${jackson-annotations.version}</version>
     </dependency>
   </dependencies>
   <build>

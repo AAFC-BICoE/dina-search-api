@@ -1,6 +1,6 @@
 package ca.gc.aafc.dina.search.cli.http;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.stereotype.Component;
 import lombok.Data;
 
@@ -8,28 +8,28 @@ import lombok.Data;
 @Data
 public class KeyCloakAuthentication {
 
-    @SerializedName("access_token")
+    @JsonProperty("access_token")
     private String accessToken;
 
-    @SerializedName("expires_in")
+    @JsonProperty("expires_in")
     private int expiresIn;
 
-    @SerializedName("refresh_expires_in")
+    @JsonProperty("refresh_expires_in")
     private int refreshExpiresIn;
 
-    @SerializedName("refresh_token")
+    @JsonProperty("refresh_token")
     private String refreshToken;
 
-    @SerializedName("token_type")
+    @JsonProperty("token_type")
     private String tokenType;
 
-    @SerializedName("id_token")
+    @JsonProperty("id_token")
     private String idToken;
 
-    @SerializedName("not_before_policy")
+    @JsonProperty("not_before_policy")
     private int notBeforePolicy;
 
-    @SerializedName("session_state")
+    @JsonProperty("session_state")
     private String sessionState;
 
     private String scope;
