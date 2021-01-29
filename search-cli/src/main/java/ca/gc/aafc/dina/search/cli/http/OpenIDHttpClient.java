@@ -34,11 +34,10 @@ public class OpenIDHttpClient {
 
   private ObjectMapper mapper;
   private KeyCloakAuthentication keyCloakAuth;
-  private final YAMLConfigProperties yamlConfigProps;
+  private YAMLConfigProperties yamlConfigProps;
   private OkHttpClient clientInstance;
 
-  public OpenIDHttpClient(@Autowired KeyCloakAuthentication keyCloakAuth, YAMLConfigProperties yamlConfigProps) {
-    this.keyCloakAuth = keyCloakAuth;
+  public OpenIDHttpClient(@Autowired YAMLConfigProperties yamlConfigProps) {
     this.yamlConfigProps = yamlConfigProps;
     this.clientInstance = new OkHttpClient().newBuilder().connectTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).build();
