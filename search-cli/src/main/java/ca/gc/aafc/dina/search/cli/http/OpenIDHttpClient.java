@@ -88,7 +88,7 @@ public class OpenIDHttpClient {
       if (response.isSuccessful() && response.body() != null) {
         ResponseBody bodyContent = response.body();
         if (bodyContent != null) {
-          keyCloakAuth = mapper.readValue(response.body().string(), KeyCloakAuthentication.class);
+          keyCloakAuth = mapper.readValue(bodyContent.string(), KeyCloakAuthentication.class);
           return;
         }
 
