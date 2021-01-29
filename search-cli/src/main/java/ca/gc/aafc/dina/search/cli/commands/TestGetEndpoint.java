@@ -24,15 +24,22 @@ public class TestGetEndpoint {
   }
 
   @ShellMethod(value = "Test Get Endpoint", key = "test-get-endpoint")
-  public void testGetEndpoint(@ShellOption(value = { "-t", "--type" }) String type) {
+  public String testGetEndpoint(@ShellOption(value = { "-t", "--type" }) String type) {
 
+    String msg = null;
     if (!svcEndpointProps.getEndpoints().containsKey(type)) {
-      log.error("Unsupported endpoint type");
+      msg = "Unsupported endpoint type:" + type;
+      log.error(msg);
+      return msg;
     }
+
     try {
-      log.info(aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type)));
+      msg = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type));
     } catch (SearchApiException sapiEx) {
-      log.error("Error during operation execution, error:{}", sapiEx.getMessage());
+      msg = "Error during operation execution, error:" + sapiEx.getMessage();
+      log.error(msg);
     }
+
+    return msg;
   }
 }

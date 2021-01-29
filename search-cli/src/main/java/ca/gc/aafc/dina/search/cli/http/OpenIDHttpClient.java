@@ -56,6 +56,7 @@ public class OpenIDHttpClient {
                                             .add(PASSWORD, yamlConfigProps.getKeycloak().get(PASSWORD))
                                             .add(GRANT_TYPE, PASSWORD)
                                             .build();
+                                            
         Request request = buildAuthenticationRequest(formBody);
         try {
             Response response = clientInstance.newCall(request).execute();
