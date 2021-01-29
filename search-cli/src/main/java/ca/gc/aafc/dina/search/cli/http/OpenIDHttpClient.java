@@ -14,11 +14,11 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -32,29 +32,32 @@ public class OpenIDHttpClient {
   private static final String PASSWORD = "password";
   private static final String CLIENT_ID = "client_id";
 
-  private ObjectMapper mapper;
-  private KeyCloakAuthentication keyCloakAuth;
-  private YAMLConfigProperties yamlConfigProps;
-  private OkHttpClient clientInstance;
+  private final ObjectMapper mapper;
+  private final YAMLConfigProperties yamlConfigProps;
+  private final OkHttpClient clientInstance;
 
-  public OpenIDHttpClient(@Autowired YAMLConfigProperties yamlConfigProps) {
+  private KeyCloakAuthentication keyCloakAuth;
+
+  public OpenIDHttpClient(YAMLConfigProperties yamlConfigProps) {
     this.yamlConfigProps = yamlConfigProps;
     this.clientInstance = new OkHttpClient().newBuilder().connectTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).build();
     this.mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
-  public void getToken() throws SearchApiException {
+  private void getToken() throws SearchApiException {
 
-    RequestBody formBody = new FormBody.Builder().add(CLIENT_ID, yamlConfigProps.getKeycloak().get(CLIENT_ID))
+    RequestBody formBody = new FormBody.Builder()
+        .add(CLIENT_ID, yamlConfigProps.getKeycloak().get(CLIENT_ID))
         .add(USERNAME, yamlConfigProps.getKeycloak().get(USERNAME))
-        .add(PASSWORD, yamlConfigProps.getKeycloak().get(PASSWORD)).add(GRANT_TYPE, PASSWORD).build();
+        .add(PASSWORD, yamlConfigProps.getKeycloak().get(PASSWORD))
+        .add(GRANT_TYPE, PASSWORD)
+        .build();
 
     Request request = buildAuthenticationRequest(formBody);
     try {
-
       Response response = clientInstance.newCall(request).execute();
-      if (response.isSuccessful() && response.body() != null && mapper != null) {
+      if (response.isSuccessful()) {
         ResponseBody bodyContent = response.body();
         if (bodyContent != null) {
           keyCloakAuth = mapper.readValue(bodyContent.string(), KeyCloakAuthentication.class);
@@ -71,16 +74,18 @@ public class OpenIDHttpClient {
     }
   }
 
-  public void refreshToken() throws SearchApiException {
+  private void refreshToken() throws SearchApiException {
 
-    RequestBody formBody = new FormBody.Builder().add(CLIENT_ID, yamlConfigProps.getKeycloak().get(CLIENT_ID))
-        .add(REFRESH_TOKEN, keyCloakAuth.getRefreshToken()).add(GRANT_TYPE, REFRESH_TOKEN).build();
+    RequestBody formBody = new FormBody.Builder()
+        .add(CLIENT_ID, yamlConfigProps.getKeycloak().get(CLIENT_ID))
+        .add(REFRESH_TOKEN, keyCloakAuth.getRefreshToken())
+        .add(GRANT_TYPE, REFRESH_TOKEN).build();
 
     Request request = buildAuthenticationRequest(formBody);
 
     try {
       Response response = clientInstance.newCall(request).execute();
-      if (response.isSuccessful() && response.body() != null && mapper != null) {
+      if (response.isSuccessful() && response.body() != null) {
         ResponseBody bodyContent = response.body();
         if (bodyContent != null) {
           keyCloakAuth = mapper.readValue(response.body().string(), KeyCloakAuthentication.class);
@@ -108,7 +113,7 @@ public class OpenIDHttpClient {
       evaluateLoginRequired();
 
       Response response = processGetRequest(route);
-      if (response.isSuccessful() && response.body() != null) {
+      if (response.isSuccessful()) {
         ResponseBody bodyContent = response.body();
         if (bodyContent != null) {
           return bodyContent.string();
@@ -125,7 +130,7 @@ public class OpenIDHttpClient {
 
   private HttpUrl validateArgumentAndCreateRoute(String targetUrl, String objectId, String includeQueryParams)
       throws SearchApiException {
-    String pathParam = objectId == null ? "" : objectId;
+    String pathParam = Objects.toString(objectId, "");
     Builder urlBuilder = null;
 
     if (targetUrl != null) {
@@ -169,14 +174,19 @@ public class OpenIDHttpClient {
   }
 
   private Request buildAuthenticatedGetRequest(HttpUrl route) {
-    return new Request.Builder().url(route).header("Authorization", "Bearer " + keyCloakAuth.getAccessToken())
-        .header("crnk-compact", "true").get().addHeader("Connection", "Keep-Alive")
-        .addHeader("Accept-Encoding", "application/json").build();
+    return new Request.Builder().url(route)
+        .header("Authorization", "Bearer " + keyCloakAuth.getAccessToken())
+        .header("crnk-compact", "true").get()
+        .addHeader("Connection", "Keep-Alive")
+        .addHeader("Accept-Encoding", "application/json")
+        .build();
   }
 
   private Request buildAuthenticationRequest(RequestBody formBody) {
     return new Request.Builder().url(yamlConfigProps.getKeycloak().get(OPENID_AUTH_SERVER)).post(formBody)
-        .addHeader("Content-Type", "application/x-www-form-urlencoded").addHeader("Connection", "Keep-Alive")
-        .addHeader("Accept-Encoding", "application/json").build();
+        .addHeader("Content-Type", "application/x-www-form-urlencoded")
+        .addHeader("Connection", "Keep-Alive")
+        .addHeader("Accept-Encoding", "application/json")
+        .build();
   }
 }

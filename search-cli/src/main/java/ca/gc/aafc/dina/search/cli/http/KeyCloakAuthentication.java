@@ -1,10 +1,8 @@
 package ca.gc.aafc.dina.search.cli.http;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.springframework.stereotype.Component;
 import lombok.Data;
 
-@Component
 @Data
 public class KeyCloakAuthentication {
 
