@@ -45,6 +45,13 @@ public class OpenIDHttpClient {
     this.mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
+  /**
+   * getToken() performs a login against the configured keycloak endpoint.
+   * The method populate keyCloakAuthentication data member with the content of the jwt
+   * returned by the authentication server.
+   * 
+   * @throws SearchApiException in case of communication errors.
+   */
   private void getToken() throws SearchApiException {
 
     RequestBody formBody = new FormBody.Builder()
@@ -74,6 +81,14 @@ public class OpenIDHttpClient {
     }
   }
 
+  /**
+   * As per its name the method will refresh the authentication token through a request 
+   * to the configured keyCloakAutneitcation server. The keyCloakAuthentication data member
+   * is updated with the newly provided jwt token.
+   * 
+   * @throws SearchApiException in case of communication errors.
+   * 
+   */
   private void refreshToken() throws SearchApiException {
 
     RequestBody formBody = new FormBody.Builder()
@@ -103,6 +118,17 @@ public class OpenIDHttpClient {
     return getDataFromUrl(targetUrl, null, null);
   }
 
+  /**
+   * Perform an HTTP GET operation on the provided targetUrl
+   * 
+   * @param targetUrl the target url endpoint
+   * @param objectId  the object identifier to be retrieved. 
+   *                  If not defined the targetUrl will not be appended with the objectId
+   * @param includeQueryParams Used to force the inclusion of specific JSON API types.
+   * @return The content of the returned body.
+   * 
+   * @throws SearchApiException in case of communication errors.
+   */
   private String getDataFromUrl(String targetUrl, @Nullable String objectId, String includeQueryParams)
       throws SearchApiException {
 
@@ -128,6 +154,16 @@ public class OpenIDHttpClient {
     }
   }
 
+  /**
+   * Validate provided arguments and returns a route object to be used by the caller.
+   * 
+   * @param targetUrl
+   * @param objectId
+   * @param includeQueryParams
+   * @return route object to be usee by the calling method.
+   * 
+   * @throws SearchApiException in case of a validation error.
+   */
   private HttpUrl validateArgumentAndCreateRoute(String targetUrl, String objectId, String includeQueryParams)
       throws SearchApiException {
     String pathParam = Objects.toString(objectId, "");
@@ -151,6 +187,15 @@ public class OpenIDHttpClient {
     return urlBuilder.build();
   }
 
+  /**
+   * Process a HTTP GET request using the provided route. If the method returns a HTTP STATUS of 401, the method
+   * attempt to perform a refresh of the authentication token that may have expired.
+   * 
+   * @param route
+   * @return response from the HTTP GET operation.
+   * @throws IOException
+   * @throws SearchApiException
+   */
   private Response processGetRequest(HttpUrl route) throws IOException, SearchApiException {
     Response response = executeGetRequest(clientInstance, route);
     if (response.code() == 401 && keyCloakAuth != null && keyCloakAuth.getRefreshToken() != null) {
@@ -173,6 +218,13 @@ public class OpenIDHttpClient {
     return client.newCall(request).execute();
   }
 
+  /**
+   * Build a request to be used by the caller to perform 
+   * an authenticated HTTP GET against the specified route.
+   * 
+   * @param route
+   * @return a newly created request.
+   */
   private Request buildAuthenticatedGetRequest(HttpUrl route) {
     return new Request.Builder().url(route)
         .header("Authorization", "Bearer " + keyCloakAuth.getAccessToken())
@@ -182,6 +234,13 @@ public class OpenIDHttpClient {
         .build();
   }
 
+  /**
+   * Build a request to perform a 'login' (HTTP POST) on a keycloak authentication
+   * service endpoint.
+   *  
+   * @param formBody
+   * @return a newly cretd request.
+   */
   private Request buildAuthenticationRequest(RequestBody formBody) {
     return new Request.Builder().url(yamlConfigProps.getKeycloak().get(OPENID_AUTH_SERVER)).post(formBody)
         .addHeader("Content-Type", "application/x-www-form-urlencoded")
