@@ -1,19 +1,9 @@
 package ca.gc.aafc.dina.search.cli.http;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.Nullable;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Service;
-
 import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
@@ -22,10 +12,14 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
-@Scope("singleton")
 public class OpenIDHttpClient {
     
     private static final String OPENID_AUTH_SERVER = "openid_auth_server";
@@ -35,16 +29,19 @@ public class OpenIDHttpClient {
     private static final String PASSWORD = "password";
     private static final String CLIENT_ID = "client_id";
 
-    private ObjectMapper mapper;
-    private KeyCloakAuthentication keyCloakAuth;
+    private final ObjectMapper mapper;
     private final YAMLConfigProperties yamlConfigProps;
-    private OkHttpClient clientInstance;
+    private final OkHttpClient clientInstance;
 
-    public OpenIDHttpClient(@Autowired KeyCloakAuthentication keyCloakAuth, YAMLConfigProperties yamlConfigProps) {
-      this.keyCloakAuth = keyCloakAuth;
+    private  KeyCloakAuthentication keyCloakAuth;
+
+    public OpenIDHttpClient(YAMLConfigProperties yamlConfigProps) {
       this.yamlConfigProps = yamlConfigProps;
-      this.clientInstance = new OkHttpClient().newBuilder().connectTimeout(60, TimeUnit.SECONDS)
-          .writeTimeout(60, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).build();
+      this.clientInstance = new OkHttpClient().newBuilder()
+          .connectTimeout(60, TimeUnit.SECONDS)
+          .writeTimeout(60, TimeUnit.SECONDS)
+          .readTimeout(60, TimeUnit.SECONDS)
+          .build();
       this.mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
@@ -108,7 +105,7 @@ public class OpenIDHttpClient {
       
       try {
 
-        if (keyCloakAuth == null || keyCloakAuth.getAccessToken() == null) {
+        if (keyCloakAuth == null) {
           // Login was never done, proceed with it
           getToken();
         }
