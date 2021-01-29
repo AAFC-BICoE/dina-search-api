@@ -1,19 +1,9 @@
 package ca.gc.aafc.dina.search.cli.http;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.Nullable;
-
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Service;
-
 import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
@@ -23,9 +13,15 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Nullable;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
 @Slf4j
 @Service
-@Scope("singleton")
 public class OpenIDHttpClient {
 
   private static final String OPENID_AUTH_SERVER = "openid_auth_server";
