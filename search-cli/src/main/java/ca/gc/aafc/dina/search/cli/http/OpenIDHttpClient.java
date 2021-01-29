@@ -12,6 +12,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -52,13 +53,19 @@ public class OpenIDHttpClient {
 
     Request request = buildAuthenticationRequest(formBody);
     try {
+
       Response response = clientInstance.newCall(request).execute();
-      if (response.isSuccessful()) {
-        keyCloakAuth = mapper.readValue(response.body().string(), KeyCloakAuthentication.class);
-      } else {
-        log.error("Authentication rejected reason:{}", response.code());
-        throw new SearchApiException("Authentication rejected");
+      if (response.isSuccessful() && response.body() != null && mapper != null) {
+        ResponseBody bodyContent = response.body();
+        if (bodyContent != null) {
+          keyCloakAuth = mapper.readValue(bodyContent.string(), KeyCloakAuthentication.class);
+          return;
+        }
       }
+
+      log.error("Authentication rejected reason:{}", response.code());
+      throw new SearchApiException("Authentication rejected");
+
     } catch (IOException ioEx) {
       log.error("Error during authentication token registration error:" + ioEx.getMessage());
       throw new SearchApiException("Authentication rejected");
@@ -74,8 +81,14 @@ public class OpenIDHttpClient {
 
     try {
       Response response = clientInstance.newCall(request).execute();
-      if (response.isSuccessful()) {
-        keyCloakAuth = mapper.readValue(response.body().string(), KeyCloakAuthentication.class);
+      if (response.isSuccessful() && response.body() != null && mapper != null) {
+        ResponseBody bodyContent = response.body();
+        if (bodyContent != null) {
+          keyCloakAuth = mapper.readValue(response.body().string(), KeyCloakAuthentication.class);
+          return;
+        }
+
+        throw new SearchApiException("Error during authentication token refresh invalid body content");
       }
     } catch (IOException ioEx) {
       throw new SearchApiException("Error during authentication token refresh error:" + ioEx.getMessage());
@@ -89,36 +102,65 @@ public class OpenIDHttpClient {
   private String getDataFromUrl(String targetUrl, @Nullable String objectId, String includeQueryParams)
       throws SearchApiException {
 
-    String pathParam = objectId == null ? "" : objectId;
-    Builder urlBuilder = HttpUrl.parse(targetUrl).newBuilder();
-
-    if (includeQueryParams != null) {
-      urlBuilder.addQueryParameter("include", includeQueryParams);
-    }
-    urlBuilder.addPathSegment(pathParam);
-    HttpUrl route = urlBuilder.build();
+    HttpUrl route = validateArgumentAndCreateRoute(targetUrl, objectId, includeQueryParams);
 
     try {
 
-      if (keyCloakAuth == null || keyCloakAuth.getAccessToken() == null) {
-        // Login was never done, proceed with it
-        getToken();
-      }
+      evaluateLoginRequired();
 
-      Response response = executeGetRequest(clientInstance, route);
-      if (response.code() == 401 && keyCloakAuth != null && !keyCloakAuth.getRefreshToken().isEmpty()) {
-        // request has been denied because of an expired authentication token
-        refreshToken();
-        response = executeGetRequest(clientInstance, route);
-      }
-
-      if (response.isSuccessful()) {
-        return response.body().string();
+      Response response = processGetRequest(route);
+      if (response.isSuccessful() && response.body() != null) {
+        ResponseBody bodyContent = response.body();
+        if (bodyContent != null) {
+          return bodyContent.string();
+        } else {
+          throw new SearchApiException("Error during retrieval from " + route.uri());
+        }
       } else {
         throw new SearchApiException("Error during retrieval from " + route.uri());
       }
     } catch (IOException ioEx) {
       throw new SearchApiException("Exception during retrieval from " + route.uri() + " error:" + ioEx.getMessage());
+    }
+  }
+
+  private HttpUrl validateArgumentAndCreateRoute(String targetUrl, String objectId, String includeQueryParams)
+      throws SearchApiException {
+    String pathParam = objectId == null ? "" : objectId;
+    Builder urlBuilder = null;
+
+    if (targetUrl != null) {
+      HttpUrl parseResult = HttpUrl.parse(targetUrl);
+      if (parseResult != null) {
+        urlBuilder = parseResult.newBuilder();
+      } else {
+        throw new SearchApiException("Invalid Argument targetUrl can not be null");
+      }
+    } else {
+      throw new SearchApiException("Invalid Argument targetUrl can not be null");
+    }
+
+    if (includeQueryParams != null) {
+      urlBuilder.addQueryParameter("include", includeQueryParams);
+    }
+    urlBuilder.addPathSegment(pathParam);
+    return urlBuilder.build();
+  }
+
+  private Response processGetRequest(HttpUrl route) throws IOException, SearchApiException {
+    Response response = executeGetRequest(clientInstance, route);
+    if (response.code() == 401 && keyCloakAuth != null && keyCloakAuth.getRefreshToken() != null) {
+      // request has been denied because of an expired authentication token
+      refreshToken();
+      response = executeGetRequest(clientInstance, route);
+    }
+    return response;
+  }
+
+  private void evaluateLoginRequired() throws SearchApiException {
+    if (keyCloakAuth == null || keyCloakAuth.getAccessToken() == null) {
+      // Login was never done, proceed with it
+      getToken();
     }
   }
 
