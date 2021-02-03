@@ -3,8 +3,6 @@ package ca.gc.aafc.dina.search.cli.http;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.net.NoRouteToHostException;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +26,6 @@ public class OpenIDHttpClientTest {
   public void getDataFromUrlWithNullEndpointDescriptor() {
 
     assertNotNull(openIdClient);
-
     Assertions.assertThrows(
       SearchApiException.class, () -> {
         openIdClient.getDataFromUrl(serviceEndpointProperties.getEndpoints().get("Unknow Type"));

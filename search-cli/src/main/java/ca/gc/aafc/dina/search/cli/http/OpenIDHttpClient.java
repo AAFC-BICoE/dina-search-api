@@ -9,12 +9,12 @@ import javax.annotation.Nullable;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
-import lombok.extern.slf4j.Slf4j;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
 import okhttp3.HttpUrl.Builder;
@@ -24,7 +24,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
-@Slf4j
+@Log4j2
 @Service
 public class OpenIDHttpClient {
 
@@ -56,7 +56,7 @@ public class OpenIDHttpClient {
   /**
    * Perform an HTTP GET operation on the provided targetUrl
    * 
-   * @param targetUrl the target url endpoint
+   * @param endpointDescriptor the target url endpoint
    * @param objectId  the object identifier to be retrieved. 
    *                  If not defined the targetUrl will not be appended with the objectId
    * 
@@ -85,7 +85,7 @@ public class OpenIDHttpClient {
         throw new SearchApiException("Error during retrieval from " + route.uri() + " status code:" + response.code());
       }
     } catch (IOException ioEx) {
-      throw new SearchApiException("Exception during retrieval from " + route.uri() + " error:" + ioEx.getMessage());
+      throw new SearchApiException("Exception during retrieval from " + route.uri(), ioEx);
     }
   }
 
@@ -120,7 +120,6 @@ public class OpenIDHttpClient {
       throw new SearchApiException("Authentication rejected");
 
     } catch (IOException ioEx) {
-      log.error("Error during authentication token registration error:" + ioEx.getMessage());
       throw new SearchApiException("Authentication rejected", ioEx);
     }
   }
@@ -154,7 +153,7 @@ public class OpenIDHttpClient {
         throw new SearchApiException("Error during authentication token refresh invalid body content");
       }
     } catch (IOException ioEx) {
-      throw new SearchApiException("Error during authentication token refresh error:" + ioEx.getMessage());
+      throw new SearchApiException("Error during authentication token refresh", ioEx);
     }
   }
 

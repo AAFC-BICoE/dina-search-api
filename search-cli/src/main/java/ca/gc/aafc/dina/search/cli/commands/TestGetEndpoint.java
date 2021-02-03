@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
+import lombok.extern.log4j.Log4j2;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
@@ -8,14 +9,13 @@ import org.springframework.stereotype.Component;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
+@Log4j2
 @Component
 @ShellComponent
 public class TestGetEndpoint {
 
-  private OpenIDHttpClient aClient;
+  private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
 
   public TestGetEndpoint(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps) {
@@ -36,8 +36,7 @@ public class TestGetEndpoint {
     try {
       msg = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type));
     } catch (SearchApiException sapiEx) {
-      msg = "Error during operation execution, error:" + sapiEx.getMessage();
-      log.error(msg);
+      log.error("Error during operation execution", sapiEx);
     }
 
     return msg;

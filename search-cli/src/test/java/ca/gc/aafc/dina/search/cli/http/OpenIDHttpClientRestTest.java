@@ -35,12 +35,12 @@ import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
 @ContextConfiguration(
   classes = { 
     OpenIDHttpClient.class, YAMLConfigProperties.class, ServiceEndpointProperties.class})
-@ActiveProfiles("test")
 public class OpenIDHttpClientRestTest {
 
   private static final String FAKE_RESPONSE_FAKE_RESPONSE = "{fakeResponse: 'fakeResponse'}";
+  private static final ObjectMapper OM = new ObjectMapper();
+
   private ClientAndServer client;
-  private ObjectMapper objectMapper;
 
   @Autowired
   private OpenIDHttpClient openIdClient;
@@ -48,12 +48,10 @@ public class OpenIDHttpClientRestTest {
   @Autowired
   private ServiceEndpointProperties serviceEndpointProperties;
 
-
   @BeforeEach
-  public void beforeEachLifecyleMethod(ClientAndServer client) {
-      this.client = client;
-      objectMapper = new ObjectMapper();
-  } 
+  public void beforeEachLifecycleMethod(ClientAndServer client) {
+    this.client = client;
+  }
 
   @DisplayName("Test Valid Registration with Authentication Token")
   @Test
@@ -93,7 +91,7 @@ public class OpenIDHttpClientRestTest {
             .withHeaders(
                 new Header("Content-Type", "application/json; charset=utf-8"),
                 new Header("Cache-Control", "public, max-age=86400"))
-            .withBody(objectMapper.writeValueAsString(fakeKeyCloakPayload))
+            .withBody(OM.writeValueAsString(fakeKeyCloakPayload))
             .withDelay(TimeUnit.SECONDS, 1));
 
     // Expectation for Person Get Request

@@ -18,13 +18,10 @@
     <java-jwt.version>3.11.0</java-jwt.version>
     <jackson-databind.version>2.12.1</jackson-databind.version>
     <jackson-core.version>2.12.1</jackson-core.version>
-    <jackson-annotations.version>2.12.1</jackson-annotations.version>    
-    <testcontainers-keycloak.version>1.4.1</testcontainers-keycloak.version>
-    <testcontainers.version>1.15.1</testcontainers.version>
+    <jackson-annotations.version>2.12.1</jackson-annotations.version>
     <mockserver-netty.version>5.11.2</mockserver-netty.version>
     <mockserver-client-java.version>5.11.2</mockserver-client-java.version>
     <mockserver-junit-jupiter.version>5.11.2</mockserver-junit-jupiter.version>
-    <spring-webmvc.version>5.3.3</spring-webmvc.version>
   </properties>
 
   <dependencies>
@@ -86,7 +83,6 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-webmvc</artifactId>
-      <version>${spring-webmvc.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
