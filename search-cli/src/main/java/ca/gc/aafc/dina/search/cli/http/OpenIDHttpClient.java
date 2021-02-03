@@ -1,10 +1,19 @@
 package ca.gc.aafc.dina.search.cli.http;
 
+import java.io.IOException;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nullable;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.stereotype.Service;
+
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
@@ -14,13 +23,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-
-import org.springframework.stereotype.Service;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -46,74 +48,6 @@ public class OpenIDHttpClient {
     this.mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
-  /**
-   * getToken() performs a login against the configured keycloak endpoint.
-   * The method populate keyCloakAuthentication data member with the content of the jwt
-   * returned by the authentication server.
-   * 
-   * @throws SearchApiException in case of communication errors.
-   */
-  private void getToken() throws SearchApiException {
-
-    RequestBody formBody = new FormBody.Builder()
-        .add(CLIENT_ID, yamlConfigProps.getKeycloak().get(CLIENT_ID))
-        .add(USERNAME, yamlConfigProps.getKeycloak().get(USERNAME))
-        .add(PASSWORD, yamlConfigProps.getKeycloak().get(PASSWORD))
-        .add(GRANT_TYPE, PASSWORD)
-        .build();
-
-    Request request = buildAuthenticationRequest(formBody);
-    try {
-      Response response = clientInstance.newCall(request).execute();
-      if (response.isSuccessful()) {
-        ResponseBody bodyContent = response.body();
-        if (bodyContent != null) {
-          keyCloakAuth = mapper.readValue(bodyContent.string(), KeyCloakAuthentication.class);
-          return;
-        }
-      }
-
-      log.error("Authentication rejected reason:{}", response.code());
-      throw new SearchApiException("Authentication rejected");
-
-    } catch (IOException ioEx) {
-      log.error("Error during authentication token registration error:" + ioEx.getMessage());
-      throw new SearchApiException("Authentication rejected");
-    }
-  }
-
-  /**
-   * As per its name the method will refresh the authentication token through a request 
-   * to the configured keyCloakAutneitcation server. The keyCloakAuthentication data member
-   * is updated with the newly provided jwt token.
-   * 
-   * @throws SearchApiException in case of communication errors.
-   * 
-   */
-  private void refreshToken() throws SearchApiException {
-
-    RequestBody formBody = new FormBody.Builder()
-        .add(CLIENT_ID, yamlConfigProps.getKeycloak().get(CLIENT_ID))
-        .add(REFRESH_TOKEN, keyCloakAuth.getRefreshToken())
-        .add(GRANT_TYPE, REFRESH_TOKEN).build();
-
-    Request request = buildAuthenticationRequest(formBody);
-
-    try {
-      Response response = clientInstance.newCall(request).execute();
-      if (response.isSuccessful() && response.body() != null) {
-        ResponseBody bodyContent = response.body();
-        if (bodyContent != null) {
-          keyCloakAuth = mapper.readValue(bodyContent.string(), KeyCloakAuthentication.class);
-          return;
-        }
-
-        throw new SearchApiException("Error during authentication token refresh invalid body content");
-      }
-    } catch (IOException ioEx) {
-      throw new SearchApiException("Error during authentication token refresh error:" + ioEx.getMessage());
-    }
-  }
 
   public String getDataFromUrl(EndpointDescriptor endpointDescriptor) throws SearchApiException {
     return getDataFromUrl(endpointDescriptor, null);
@@ -154,6 +88,76 @@ public class OpenIDHttpClient {
       throw new SearchApiException("Exception during retrieval from " + route.uri() + " error:" + ioEx.getMessage());
     }
   }
+
+  /**
+   * getToken() performs a login against the configured keycloak endpoint.
+   * The method populate keyCloakAuthentication data member with the content of the jwt
+   * returned by the authentication server.
+   * 
+   * @throws SearchApiException in case of communication errors.
+   */
+  private void getToken() throws SearchApiException {
+
+    RequestBody formBody = new FormBody.Builder()
+        .add(CLIENT_ID, yamlConfigProps.getKeycloak().get(CLIENT_ID))
+        .add(USERNAME, yamlConfigProps.getKeycloak().get(USERNAME))
+        .add(PASSWORD, yamlConfigProps.getKeycloak().get(PASSWORD))
+        .add(GRANT_TYPE, PASSWORD)
+        .build();
+
+    Request request = buildAuthenticationRequest(formBody);
+    try {
+      Response response = clientInstance.newCall(request).execute();
+      if (response.isSuccessful()) {
+        ResponseBody bodyContent = response.body();
+        if (bodyContent != null) {
+          keyCloakAuth = mapper.readValue(bodyContent.string(), KeyCloakAuthentication.class);
+          return;
+        }
+      }
+
+      log.error("Authentication rejected reason:{}", response.code());
+      throw new SearchApiException("Authentication rejected");
+
+    } catch (IOException ioEx) {
+      log.error("Error during authentication token registration error:" + ioEx.getMessage());
+      throw new SearchApiException("Authentication rejected", ioEx);
+    }
+  }
+
+  /**
+   * As per its name the method will refresh the authentication token through a request 
+   * to the configured keyCloakAutneitcation server. The keyCloakAuthentication data member
+   * is updated with the newly provided jwt token.
+   * 
+   * @throws SearchApiException in case of communication errors.
+   * 
+   */
+  private void refreshToken() throws SearchApiException {
+
+    RequestBody formBody = new FormBody.Builder()
+        .add(CLIENT_ID, yamlConfigProps.getKeycloak().get(CLIENT_ID))
+        .add(REFRESH_TOKEN, keyCloakAuth.getRefreshToken())
+        .add(GRANT_TYPE, REFRESH_TOKEN).build();
+
+    Request request = buildAuthenticationRequest(formBody);
+
+    try {
+      Response response = clientInstance.newCall(request).execute();
+      if (response.isSuccessful() && response.body() != null) {
+        ResponseBody bodyContent = response.body();
+        if (bodyContent != null) {
+          keyCloakAuth = mapper.readValue(bodyContent.string(), KeyCloakAuthentication.class);
+          return;
+        }
+
+        throw new SearchApiException("Error during authentication token refresh invalid body content");
+      }
+    } catch (IOException ioEx) {
+      throw new SearchApiException("Error during authentication token refresh error:" + ioEx.getMessage());
+    }
+  }
+
 
   /**
    * Validate provided arguments and returns a route object to be used by the caller.

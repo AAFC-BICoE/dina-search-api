@@ -5,9 +5,7 @@ endpoints:
     targetUrl: http://localhost:8081/api/v1/metadata
     relationships:
       - managedAttributeMap
-      - derivatives
       - acMetadataCreator
-      - acDerivedFrom
       - dcCreator
   organization: 
     targetUrl: http://localhost:8082/api/v1/organization
