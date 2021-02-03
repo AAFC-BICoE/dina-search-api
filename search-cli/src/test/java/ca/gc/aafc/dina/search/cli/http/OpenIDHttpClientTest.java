@@ -53,9 +53,6 @@ public class OpenIDHttpClientTest {
     //
     String expectedMessage = "Authentication rejected";
     assertEquals(expectedMessage, exception.getMessage());
-
-    // Validate that the cause is an IOException NoRouteToHostException
-    assertEquals(NoRouteToHostException.class, exception.getCause().getClass());
     
   }
 
