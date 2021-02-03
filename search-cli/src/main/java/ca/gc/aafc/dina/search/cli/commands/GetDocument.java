@@ -13,18 +13,20 @@ import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
 @Log4j2
 @Component
 @ShellComponent
-public class TestGetEndpoint {
+public class GetDocument {
 
   private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
 
-  public TestGetEndpoint(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps) {
+  public GetDocument(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps) {
     this.aClient = aClient;
     this.svcEndpointProps = svcEndpointProps;
   }
 
-  @ShellMethod(value = "Test Get Endpoint", key = "test-get-endpoint")
-  public String testGetEndpoint(@ShellOption(value = { "-t", "--type" }) String type) {
+  @ShellMethod(value = "Get Document from a specified endpoint", key = "get-document")
+  public String getDocument(
+                  @ShellOption(help = "Document type", value = { "-t", "--type" }) String type,
+                  @ShellOption(help = "Unique object identifier", value = { "-i", "--documentId" }) String documentId) {
 
     String msg = null;
     if (!svcEndpointProps.getEndpoints().containsKey(type)) {
@@ -34,7 +36,7 @@ public class TestGetEndpoint {
     }
 
     try {
-      msg = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type));
+      msg = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type), documentId);
     } catch (SearchApiException sapiEx) {
       log.error("Error during operation execution", sapiEx);
     }

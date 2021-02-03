@@ -19,7 +19,9 @@
     <jackson-databind.version>2.12.1</jackson-databind.version>
     <jackson-core.version>2.12.1</jackson-core.version>
     <jackson-annotations.version>2.12.1</jackson-annotations.version>
-    
+    <mockserver-netty.version>5.11.2</mockserver-netty.version>
+    <mockserver-client-java.version>5.11.2</mockserver-client-java.version>
+    <mockserver-junit-jupiter.version>5.11.2</mockserver-junit-jupiter.version>
   </properties>
 
   <dependencies>
@@ -57,6 +59,31 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
       <version>${jackson-annotations.version}</version>
+    </dependency>
+
+    <!-- TEST Scope-->
+    <dependency>
+      <groupId>org.mock-server</groupId>
+      <artifactId>mockserver-junit-jupiter</artifactId>
+      <version>${mockserver-junit-jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mock-server</groupId>
+      <artifactId>mockserver-netty</artifactId>
+      <version>${mockserver-netty.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mock-server</groupId>
+      <artifactId>mockserver-client-java</artifactId>
+      <version>${mockserver-client-java.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>

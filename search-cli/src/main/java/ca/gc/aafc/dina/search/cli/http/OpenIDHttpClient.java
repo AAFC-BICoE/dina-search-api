@@ -1,10 +1,20 @@
 package ca.gc.aafc.dina.search.cli.http;
 
-import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
-import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
+
+import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Service;
+
+import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
 import okhttp3.HttpUrl.Builder;
@@ -14,14 +24,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 
-import org.springframework.stereotype.Service;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-
-@Slf4j
+@Log4j2
 @Service
 public class OpenIDHttpClient {
 
@@ -43,6 +46,47 @@ public class OpenIDHttpClient {
     this.clientInstance = new OkHttpClient().newBuilder().connectTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).build();
     this.mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  }
+
+
+  public String getDataFromUrl(EndpointDescriptor endpointDescriptor) throws SearchApiException {
+    return getDataFromUrl(endpointDescriptor, null);
+  }
+
+  /**
+   * Perform an HTTP GET operation on the provided targetUrl
+   * 
+   * @param endpointDescriptor the target url endpoint
+   * @param objectId  the object identifier to be retrieved. 
+   *                  If not defined the targetUrl will not be appended with the objectId
+   * 
+   * @return The content of the returned body.
+   * 
+   * @throws SearchApiException in case of communication errors.
+   */
+  public String getDataFromUrl(EndpointDescriptor endpointDescriptor, @Nullable String objectId)
+      throws SearchApiException {
+
+    HttpUrl route = validateArgumentAndCreateRoute(endpointDescriptor, objectId);
+
+    try {
+
+      evaluateLoginRequired();
+
+      Response response = processGetRequest(route);
+      if (response.isSuccessful()) {
+        ResponseBody bodyContent = response.body();
+        if (bodyContent != null) {
+          return bodyContent.string();
+        } else {
+          throw new SearchApiException("Error during retrieval from " + route.uri());
+        }
+      } else {
+        throw new SearchApiException("Error during retrieval from " + route.uri() + " status code:" + response.code());
+      }
+    } catch (IOException ioEx) {
+      throw new SearchApiException("Exception during retrieval from " + route.uri(), ioEx);
+    }
   }
 
   /**
@@ -76,8 +120,7 @@ public class OpenIDHttpClient {
       throw new SearchApiException("Authentication rejected");
 
     } catch (IOException ioEx) {
-      log.error("Error during authentication token registration error:" + ioEx.getMessage());
-      throw new SearchApiException("Authentication rejected");
+      throw new SearchApiException("Authentication rejected", ioEx);
     }
   }
 
@@ -110,49 +153,10 @@ public class OpenIDHttpClient {
         throw new SearchApiException("Error during authentication token refresh invalid body content");
       }
     } catch (IOException ioEx) {
-      throw new SearchApiException("Error during authentication token refresh error:" + ioEx.getMessage());
+      throw new SearchApiException("Error during authentication token refresh", ioEx);
     }
   }
 
-  public String getDataFromUrl(String targetUrl) throws SearchApiException {
-    return getDataFromUrl(targetUrl, null, null);
-  }
-
-  /**
-   * Perform an HTTP GET operation on the provided targetUrl
-   * 
-   * @param targetUrl the target url endpoint
-   * @param objectId  the object identifier to be retrieved. 
-   *                  If not defined the targetUrl will not be appended with the objectId
-   * @param includeQueryParams Used to force the inclusion of specific JSON API types.
-   * @return The content of the returned body.
-   * 
-   * @throws SearchApiException in case of communication errors.
-   */
-  private String getDataFromUrl(String targetUrl, @Nullable String objectId, String includeQueryParams)
-      throws SearchApiException {
-
-    HttpUrl route = validateArgumentAndCreateRoute(targetUrl, objectId, includeQueryParams);
-
-    try {
-
-      evaluateLoginRequired();
-
-      Response response = processGetRequest(route);
-      if (response.isSuccessful()) {
-        ResponseBody bodyContent = response.body();
-        if (bodyContent != null) {
-          return bodyContent.string();
-        } else {
-          throw new SearchApiException("Error during retrieval from " + route.uri());
-        }
-      } else {
-        throw new SearchApiException("Error during retrieval from " + route.uri());
-      }
-    } catch (IOException ioEx) {
-      throw new SearchApiException("Exception during retrieval from " + route.uri() + " error:" + ioEx.getMessage());
-    }
-  }
 
   /**
    * Validate provided arguments and returns a route object to be used by the caller.
@@ -164,24 +168,27 @@ public class OpenIDHttpClient {
    * 
    * @throws SearchApiException in case of a validation error.
    */
-  private HttpUrl validateArgumentAndCreateRoute(String targetUrl, String objectId, String includeQueryParams)
+  private HttpUrl validateArgumentAndCreateRoute(EndpointDescriptor endpointDescriptor, String objectId)
       throws SearchApiException {
     String pathParam = Objects.toString(objectId, "");
     Builder urlBuilder = null;
 
-    if (targetUrl != null) {
-      HttpUrl parseResult = HttpUrl.parse(targetUrl);
+    if (endpointDescriptor != null && endpointDescriptor.getTargetUrl() != null) {
+      HttpUrl parseResult = HttpUrl.parse(endpointDescriptor.getTargetUrl());
       if (parseResult != null) {
         urlBuilder = parseResult.newBuilder();
       } else {
-        throw new SearchApiException("Invalid Argument targetUrl can not be null");
+        throw new SearchApiException("Invalid endpoint descriptor, can not be null");
       }
     } else {
-      throw new SearchApiException("Invalid Argument targetUrl can not be null");
+      throw new SearchApiException("Invalid endpoint descriptor, can not be null");
     }
 
-    if (includeQueryParams != null) {
-      urlBuilder.addQueryParameter("include", includeQueryParams);
+    /*
+     * Add document include clause defined in the endpoints.yml file.
+     */
+    if (endpointDescriptor.getRelationships() != null && !endpointDescriptor.getRelationships().isEmpty()) {
+      urlBuilder.addQueryParameter("include", String.join(",", endpointDescriptor.getRelationships()));
     }
     urlBuilder.addPathSegment(pathParam);
     return urlBuilder.build();

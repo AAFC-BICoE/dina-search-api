@@ -1,0 +1,5 @@
+keycloak:
+  openid_auth_server: http://localhost:1080/auth/realms/dina/protocol/openid-connect/token
+  client_id: objectstore
+  username: cnc-cm
+  password: cnc-cm
