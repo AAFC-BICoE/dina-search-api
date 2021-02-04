@@ -53,32 +53,17 @@ public class JsonSpecUtils {
     this.svcEndpointProps = svcEndpointProps;
   }
 
-  public JsonNode getPayloadObjectAsJsonElement(String jsonRawPayload, String jsonPath) {
-
-    ReadContext documentCtx = JsonPath.using(JACKSON_JSON_NODE_CONFIGURATION).parse(jsonRawPayload);
-
-    JsonNode jsonNode = null;
-    try {
-      jsonNode = documentCtx.read(jsonPath);
-    } catch (PathNotFoundException pPathNotFoundEx) {
-      // Element not present...
-      log.error("Element {} not found,", jsonPath, pPathNotFoundEx);
-    }
-    return jsonNode;
-
-  }
-
   public String createPublishableObject(String rawPayload)
       throws SearchApiException {
 
-    JsonNode dataObject = getPayloadObjectAsJsonElement(rawPayload, JSON_PATH_DATA);
+    JsonNode dataObject = getPayloadObjectAsJsonNode(rawPayload, JSON_PATH_DATA);
 
-    JsonNode includedArray = getPayloadObjectAsJsonElement(rawPayload, JSON_PATH_INCLUDED);
+    JsonNode includedArray = getPayloadObjectAsJsonNode(rawPayload, JSON_PATH_INCLUDED);
     if (includedArray != null) {
       processIncluded(includedArray);
     }
 
-    JsonNode metaObject = getPayloadObjectAsJsonElement(rawPayload, JSON_PATH_META);
+    JsonNode metaObject = getPayloadObjectAsJsonNode(rawPayload, JSON_PATH_META);
     if (metaObject != null) {
       processMeta(metaObject);
     }
@@ -98,6 +83,21 @@ public class JsonSpecUtils {
     return newData.toString();
 
   }
+
+  private JsonNode getPayloadObjectAsJsonNode(String jsonRawPayload, String jsonPath) {
+
+    ReadContext documentCtx = JsonPath.using(JACKSON_JSON_NODE_CONFIGURATION).parse(jsonRawPayload);
+
+    JsonNode jsonNode = null;
+    try {
+      jsonNode = documentCtx.read(jsonPath);
+    } catch (PathNotFoundException pPathNotFoundEx) {
+      // Element not present...
+      log.error("Element {} not found,", jsonPath, pPathNotFoundEx);
+    }
+    return jsonNode;
+  }
+
 
   /**
    * Processing of the included section of a DINA compiant json api object.
@@ -139,7 +139,7 @@ public class JsonSpecUtils {
 
         // Take the data.attributes section to be embedded....
         //
-        JsonNode dataObject = getPayloadObjectAsJsonElement(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
+        JsonNode dataObject = getPayloadObjectAsJsonNode(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
 
         // At this stage we have the type, id and attributes for the object
         //
