@@ -1,0 +1,84 @@
+{
+  "data": {
+    "id": "68fe6a3d-062b-4208-8eea-cb067761e37c",
+    "type": "metadata",
+    "attributes": {
+      "createdBy": "cnc-cm",
+      "createdOn": "2021-02-01T19:36:40.098452Z",
+      "bucket": "cnc",
+      "fileIdentifier": "a39a7774-6ccd-43e7-8537-9d691b7e4729",
+      "fileExtension": ".png",
+      "dcFormat": "image/png",
+      "dcType": "IMAGE",
+      "acCaption": "DNA Classification",
+      "acDigitizationDate": "2020-11-18T03:31:13Z",
+      "xmpMetadataDate": "2021-02-04T15:36:20.346791Z",
+      "xmpRightsWebStatement": "https://open.canada.ca/en/open-government-licence-canada",
+      "dcRights": "Copyright Government of Canada",
+      "xmpRightsOwner": "Government of Canada",
+      "xmpRightsUsageTerms": "Government of Canada Usage Term",
+      "originalFilename": "dna-classification.png",
+      "acHashFunction": "SHA-1",
+      "acHashValue": "833ad81a7de881dc4fc36948400413132287ba46",
+      "createdDate": "2021-02-01T19:36:40.098452Z",
+      "publiclyReleasable": false,
+      "group": "cnc"
+    },
+    "relationships": {
+      "managedAttributeMap": {
+        "data": {
+          "id": "metadata/68fe6a3d-062b-4208-8eea-cb067761e37c/managed-attribute-map",
+          "type": "managed-attribute-map"
+        }
+      },
+      "acMetadataCreator": {
+        "data": {
+          "id": "cf9936ce-cb59-42c3-831a-e5e1952b94df",
+          "type": "person"
+        }
+      },
+      "dcCreator": {
+        "data": {
+          "id": "77529673-72bf-4fdc-88e2-df3b59b9c3a0",
+          "type": "person"
+        }
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "metadata/68fe6a3d-062b-4208-8eea-cb067761e37c/managed-attribute-map",
+      "type": "managed-attribute-map",
+      "attributes": {
+        "values": {
+          "8c816ebe-e2b9-45e7-b955-3ff555de276e": {
+            "name": "Weight",
+            "value": "100"
+          },
+          "4a208aad-f7c3-454b-b134-1a425f10e6aa": {
+            "name": "Size",
+            "value": "165"
+          }
+        }
+      }
+    },
+    {
+      "id": "77529673-72bf-4fdc-88e2-df3b59b9c3a0",
+      "type": "person"
+    },
+    {
+      "id": "cf9936ce-cb59-42c3-831a-e5e1952b94df",
+      "type": "person"
+    }
+  ],
+  "meta": {
+    "totalResourceCount": 1,
+    "external": [
+      {
+        "type": "person",
+        "href": "Agent/api/v1/person"
+      }
+    ],
+    "moduleVersion": "0.14"
+  }
+}

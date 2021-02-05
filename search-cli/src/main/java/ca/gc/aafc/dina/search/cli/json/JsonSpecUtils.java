@@ -92,8 +92,8 @@ public class JsonSpecUtils {
     try {
       jsonNode = documentCtx.read(jsonPath);
     } catch (PathNotFoundException pPathNotFoundEx) {
-      // Element not present...
-      log.error("Element {} not found,", jsonPath, pPathNotFoundEx);
+      // This is not really an error, but an indication that the eleemnt is not present.
+      log.warn("Element {} not found,", jsonPath, pPathNotFoundEx);
     }
     return jsonNode;
   }
