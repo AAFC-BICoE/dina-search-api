@@ -17,6 +17,21 @@ import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
 import lombok.extern.log4j.Log4j2;
 
+/**
+ * This class handle merging DINA API document with external document references embedded in the 
+ * passed document. Extrernal references are defined within the meta section of the orginal document.
+ * 
+ * In this current version of the code, assemble is supported for the following document types:
+ *  - Metadata
+ *  - Organization
+ *  - Person
+ * 
+ * The assembling process is taking advantage of the included section defined in any JSON SPEC
+ * compliant document.
+ * 
+ * For more information see {@link #assembleDocument(String) assembleDocument} method.
+ * 
+ */
 @Log4j2
 @Component
 public class IndexableDocumentHandler {
@@ -49,7 +64,17 @@ public class IndexableDocumentHandler {
   }
 
   /**
-   *
+   * This methods assemble or insert externally referenced document within the "included" section
+   * of the passed DINA Document.
+   * 
+   * Any document defined in the "included" with a missing attributes section will be processed for
+   * assembling/insertion. If the document type is matching a type supported for assembling, a call 
+   * to the service supporting that document will be done to get its attributes. If successfully retrieved
+   * the attributes will then be inserted into the document.
+   * 
+   * Once all the included section is done, some cleanup is done on the "meta" section.
+   * 
+   * 
    * @param rawPayload
    * @return document as json string
    * @throws SearchApiException
