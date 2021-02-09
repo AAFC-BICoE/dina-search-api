@@ -19,7 +19,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Component
-public class JsonSpecUtils {
+public class IndexableDocumentHandler {
 
   public static final Configuration JACKSON_JSON_NODE_CONFIGURATION = 
       Configuration.builder()
@@ -40,30 +40,31 @@ public class JsonSpecUtils {
 
   private static final ObjectMapper OM = new ObjectMapper();
 
+  private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
 
-  private OpenIDHttpClient aClient;
-
-  public enum PayloadObjectType {
-    DATA, INCLUDED, META
-  }
-
-  public JsonSpecUtils(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps) {
+  public IndexableDocumentHandler(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps) {
     this.aClient = aClient;
     this.svcEndpointProps = svcEndpointProps;
   }
 
-  public String createPublishableObject(String rawPayload)
+  /**
+   *
+   * @param rawPayload
+   * @return document as json string
+   * @throws SearchApiException
+   */
+  public String assembleDocument(String rawPayload)
       throws SearchApiException {
 
-    JsonNode dataObject = getPayloadObjectAsJsonNode(rawPayload, JSON_PATH_DATA);
+    JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA);
 
-    JsonNode includedArray = getPayloadObjectAsJsonNode(rawPayload, JSON_PATH_INCLUDED);
+    JsonNode includedArray = parseJsonRaw(rawPayload, JSON_PATH_INCLUDED);
     if (includedArray != null) {
       processIncluded(includedArray);
     }
 
-    JsonNode metaObject = getPayloadObjectAsJsonNode(rawPayload, JSON_PATH_META);
+    JsonNode metaObject = parseJsonRaw(rawPayload, JSON_PATH_META);
     if (metaObject != null) {
       processMeta(metaObject);
     }
@@ -81,10 +82,15 @@ public class JsonSpecUtils {
     }
 
     return newData.toString();
-
   }
 
-  private JsonNode getPayloadObjectAsJsonNode(String jsonRawPayload, String jsonPath) {
+  /**
+   * Parse json raw string into a {@link JsonNode} from the supplied jsonPath.
+   * @param jsonRawPayload
+   * @param jsonPath
+   * @return
+   */
+  private JsonNode parseJsonRaw(String jsonRawPayload, String jsonPath) {
 
     ReadContext documentCtx = JsonPath.using(JACKSON_JSON_NODE_CONFIGURATION).parse(jsonRawPayload);
 
@@ -92,7 +98,7 @@ public class JsonSpecUtils {
     try {
       jsonNode = documentCtx.read(jsonPath);
     } catch (PathNotFoundException pPathNotFoundEx) {
-      // This is not really an error, but an indication that the eleemnt is not present.
+      // This is not really an error, but an indication that the element is not present.
       log.warn("Element {} not found,", jsonPath, pPathNotFoundEx);
     }
     return jsonNode;
@@ -100,7 +106,7 @@ public class JsonSpecUtils {
 
 
   /**
-   * Processing of the included section of a DINA compiant json api object.
+   * Processing of the included section of a DINA compliant json api object.
    * 
    * In this current implementation we are resolving entries that are missing
    * their attributes property.
@@ -139,7 +145,7 @@ public class JsonSpecUtils {
 
         // Take the data.attributes section to be embedded....
         //
-        JsonNode dataObject = getPayloadObjectAsJsonNode(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
+        JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
 
         // At this stage we have the type, id and attributes for the object
         //

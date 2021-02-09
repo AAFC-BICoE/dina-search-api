@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
-import ca.gc.aafc.dina.search.cli.json.JsonSpecUtils;
+import ca.gc.aafc.dina.search.cli.json.IndexableDocumentHandler;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -18,14 +18,14 @@ public class GetDocument {
 
   private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
-  private JsonSpecUtils jsonSpecUtils;
+  private final IndexableDocumentHandler indexableDocumentHandler;
 
   public GetDocument(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
-              JsonSpecUtils jsonSpecUtils) {
+              IndexableDocumentHandler indexableDocumentHandler) {
 
     this.aClient = aClient;
     this.svcEndpointProps = svcEndpointProps;
-    this.jsonSpecUtils = jsonSpecUtils;
+    this.indexableDocumentHandler = indexableDocumentHandler;
   }
 
   @ShellMethod(value = "Get Document from a specified endpoint", key = "get-document")
@@ -45,7 +45,7 @@ public class GetDocument {
       msg = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type), documentId);
 
       if (merge) {
-        msg = jsonSpecUtils.createPublishableObject(msg);
+        msg = indexableDocumentHandler.assembleDocument(msg);
       }
     } catch (SearchApiException sapiEx) {
       log.error("Error during operation execution", sapiEx);
