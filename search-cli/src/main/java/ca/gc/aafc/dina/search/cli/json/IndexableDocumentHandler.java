@@ -26,7 +26,7 @@ import lombok.extern.log4j.Log4j2;
  *  - Organization
  *  - Person
  * 
- * The assembling process is taking advantage of the included section defined in any JSON SPEC
+ * The assembling process is taking advantage of the included section defined in any JSON API
  * compliant document.
  * 
  * For more information see {@link #assembleDocument(String) assembleDocument} method.
