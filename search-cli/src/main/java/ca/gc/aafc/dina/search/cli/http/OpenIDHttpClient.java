@@ -170,6 +170,13 @@ public class OpenIDHttpClient {
    */
   private HttpUrl validateArgumentAndCreateRoute(EndpointDescriptor endpointDescriptor, String objectId)
       throws SearchApiException {
+
+                    // // Special case for managed-attribute-map, we will drop the 'metadata' prefix
+                    // //
+                    // String urlEntry = curObjectId.startsWith("managed-attribute-map")
+                    //         ? curObjectId.substring(curObjectId.lastIndexOf("metadata/"))
+                    //         : curObjectId;
+
     String pathParam = Objects.toString(objectId, "");
     Builder urlBuilder = null;
 
