@@ -3,3 +3,9 @@ keycloak:
   client_id: objectstore
   username: cnc-cm
   password: cnc-cm
+elasticsearch:
+  server_address: localhost
+  protocol: http
+  port_1: 9200
+  port_2: 9201
+  indexName: dina_document_index
