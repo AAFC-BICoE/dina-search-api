@@ -3,9 +3,9 @@ version: "3.7"
 services:
 
   # Elasticsearch Docker Images: https://www.docker.elastic.co/
-  elasticsearch:
+  elasticsearch-dina:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
-    container_name: elasticsearch
+    container_name: elasticsearch-dina
     environment:
       - xpack.security.enabled=false
       - discovery.type=single-node
@@ -24,13 +24,21 @@ services:
       - 9200:9200
       - 9300:9300
 
-  search-cli:
-    #image: aafcbicoe/dina-search-cli:0.1
-    build: ${BASE_PATH_TO_DINA_SEARCH_CLI:-.}
-    networks:
-      default:
-    depends_on:
-      - elasticsearch
+  elastic-configurator:
+      image:  ubuntu2004curl
+      command: /code/scripts/wait-for-elasticsearch.sh http://localhost:9200 echo Yves
+      volumes:
+        - .:/code
+      links:
+          - elasticsearch-dina:elasticsearch-dina
+
+  # search-cli:
+  #   image: my-search-cli:latest
+  #   # aafcbicoe/dina-search-cli:0.1
+  #   stdin_open: true
+  #   tty: true
+  #   networks:
+  #     default:
 
 volumes:
   elasticsearch-data:
