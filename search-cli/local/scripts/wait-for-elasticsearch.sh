@@ -8,6 +8,7 @@ host="$1"
 shift
 cmd="$@"
 
+echo $host
 
 until $(curl --output /dev/null --silent --head --fail "$host"); do
     printf '.'
@@ -16,6 +17,8 @@ done
 
 # First wait for ES to start...
 response=$(curl $host)
+
+echo $response
 
 until [ "$response" = "200" ]; do
     response=$(curl --write-out %{http_code} --silent --output /dev/null "$host")

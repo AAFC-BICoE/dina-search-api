@@ -7,5 +7,3 @@ echo "Deleting index $INDEX"
 
 # Delete Index
 curl -X DELETE "$HOST/$INDEX/?pretty"
-
-echo "Done"

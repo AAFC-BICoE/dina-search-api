@@ -1,4 +1,17 @@
-FROM ubuntu:20.04
+FROM alpine:3.12
 
-RUN apt-get update
-RUN apt-get install -y curl
+RUN apk --no-cache add bash curl
+
+RUN adduser --disabled-password --shell=/bin/bash user
+
+USER root
+RUN mkdir /work
+WORKDIR /work
+
+COPY *.json /work/
+COPY *.sh /work/
+RUN chmod +x /work/*.sh
+
+USER user
+
+ENTRYPOINT ["bash","/work/init.sh"]
