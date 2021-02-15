@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#
+# The script is testing the presence of the index name. If the index does not
+# exist the index is created with the passed index json configuration otherwise
+# the script simply exit.
+#
 HOST="$1"           # Host name in the url format
 INDEX="$2"          # ES index name
 SETTINGS_FILE="$3"  # JSON file path name containing the settings for the index

@@ -2,13 +2,25 @@
 
 # Code from: https://github.com/elastic/elasticsearch-py/issues/778
 
+#
+# The script is evaluating the health of the elasticsearch cluster before
+# proceeding with the execution of the passed command to be executed. In our
+# scenario the command to be executed is the create_index.sh script.
+#
+# The health status is set to yellow in our configuration becaue we have no
+# redundancy in our deployment (only one node). The status will have to be adjusted
+# if the cluster is a multi-node one.
+#
+# Once the health status is equal to 'yellow' the script will invoke the
+# create_index to perform the initial index creation (if necessary).
+#
 set -e
 
 host="$1"
-shift
-cmd="$@"
+cmd="$1 $2 $3 $4"     # "$@"
 
 echo $host
+echo $cmd
 
 until $(curl --output /dev/null --silent --head --fail "$host"); do
     printf '.'

@@ -1,7 +1,10 @@
 #! /bin/bash
 
 # Wait for elasticsearch to be up and running...
-./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL $HEALTH_CMD
-
-# Create the default index, if not already created...
-./create-index.sh $CREATE_INDEX_HOST $INDEX_NAME $INDEX_SETTINGS_FILE
+# - Passing:
+#     Elastic search server endpoint
+#     Script create_index that will evaluate if the index creation is needed or not
+#     Index name to be created
+#     Initial configuration for the index
+# 
+./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL $INDEX_NAME $INDEX_SETTINGS_FILE
