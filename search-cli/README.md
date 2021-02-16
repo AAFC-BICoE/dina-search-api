@@ -23,6 +23,8 @@ To be fully functional search-cli depends on the following services to be up and
 * Obejctstore API
 * Agent API
 
+
+
 For testing purpose a [Docker Compose](https://docs.docker.com/compose/) example file is available in the `local` folder.
 
 Create a new docker-compose.yml file and .env file from the example file in the local directory:
@@ -99,6 +101,12 @@ OPTIONS
 Cleanup:
 ```
 docker-compose down
+```
+
+**Note:** Upon exit of the search-cli the container will be terminated as expected. If you want to run again the search-cli you will have to perform a docker-compose run specifically for the search-cli application:
+
+```
+docker-compose run search-cli
 ```
 
 ## Testing
