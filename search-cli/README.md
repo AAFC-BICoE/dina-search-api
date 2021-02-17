@@ -5,9 +5,6 @@ AAFC DINA search-cli implementation.
 The search cli is an application providing DINA document retrieval, transformation and indexing into a DINA managed elasticsearch cluster. 
 In this current release the search cli offers document retrieval from the object-store-api or agent-api, resolve externally referenced document and push the assembled/merged document into a dina elasticsearch index.
 
-The cli offers the following commands:
-
-
 
 ## Required
 
@@ -20,7 +17,7 @@ The cli offers the following commands:
 ### Dependencies
 To be fully functional search-cli depends on the following services to be up and running:
 * Keycloak
-* Obejctstore API
+* Objectstore API
 * Agent API
 
 
@@ -41,6 +38,7 @@ docker-compose up
 ```
 
 Once the services have started you can access the cli by invoking the following docker command in a new terminal window:
+
 ```
 docker attach local_search_cli_1
 ```
@@ -104,6 +102,7 @@ docker-compose down
 ```
 
 **Note:** Upon exit of the search-cli the container will be terminated as expected. If you want to run again the search-cli you will have to perform a docker-compose run specifically for the search-cli application:
+
 
 ```
 docker-compose run search-cli
