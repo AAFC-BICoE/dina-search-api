@@ -5,7 +5,6 @@ services:
   # Elasticsearch Docker Images: https://www.docker.elastic.co/
   elasticsearch-dina:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
-    container_name: elasticsearch-dina
     environment:
       - xpack.security.enabled=false
       - discovery.type=single-node
@@ -25,18 +24,15 @@ services:
       - 9300:9300
 
   elastic-configurator:
-      image:  dina-wait-for-elasticsearch-container # Needs to be updated with proper image name
-      environment:
-        ELASTIC_SERVER_URL: $ELASTIC_SERVER_URL 
-        INDEX_CREATE_CMD: $INDEX_CREATE_CMD
-        INDEX_NAME: $INDEX_NAME 
-        INDEX_SETTINGS_FILE: $INDEX_SETTINGS_FILE
-      links:
-          - elasticsearch-dina:elasticsearch-dina
+    image: aafcbicoe/dina-es-init-container:dev # Should match the name used locally to build the image
+    environment:
+      ELASTIC_SERVER_URL: $ELASTIC_SERVER_URL
+      INDEX_CREATE_CMD: $INDEX_CREATE_CMD
+      INDEX_NAME: $INDEX_NAME
+      INDEX_SETTINGS_FILE: $INDEX_SETTINGS_FILE
 
   search-cli:
-    image: my-search-cli:latest # Needs to be updated with search-cli proper image name
-    # aafcbicoe/dina-search-cli:0.1
+    image: aafcbicoe/dina-search-cli:dev # Should match the name used locally to build the image
     stdin_open: true
     tty: true
     networks:

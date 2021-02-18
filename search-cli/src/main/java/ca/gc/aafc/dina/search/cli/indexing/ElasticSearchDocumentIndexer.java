@@ -18,7 +18,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service
-public class Indexer implements IIndexer {
+public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
   private static final String SERVER_ADDRESS = "server_address";
   private static final String PROTOCOL = "protocol";
@@ -28,9 +28,9 @@ public class Indexer implements IIndexer {
 
   private final YAMLConfigProperties yamlConfigProps;
 
-  private RestHighLevelClient client;
+  private final RestHighLevelClient client;
 
-  public Indexer(YAMLConfigProperties yamlConfigProps) {
+  public ElasticSearchDocumentIndexer(YAMLConfigProperties yamlConfigProps) {
     this.yamlConfigProps = yamlConfigProps;
 
     client = new RestHighLevelClient(RestClient.builder(

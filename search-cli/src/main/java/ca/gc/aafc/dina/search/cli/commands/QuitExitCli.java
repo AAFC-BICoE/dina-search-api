@@ -9,18 +9,18 @@ import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.commands.Quit;
 import org.springframework.stereotype.Component;
 
-import ca.gc.aafc.dina.search.cli.indexing.Indexer;
+import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
 
 @Component
 @ShellComponent
 public class QuitExitCli implements Quit.Command {
 
-  private final Indexer indexer;
+  private final ElasticSearchDocumentIndexer indexer;
   
   @Autowired
   private ApplicationContext appContext;
 
-  public QuitExitCli(Indexer indexer) {
+  public QuitExitCli(ElasticSearchDocumentIndexer indexer) {
     this.indexer = indexer;
   }
 

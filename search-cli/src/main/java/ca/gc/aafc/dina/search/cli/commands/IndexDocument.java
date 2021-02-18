@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
-import ca.gc.aafc.dina.search.cli.indexing.Indexer;
+import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
 import ca.gc.aafc.dina.search.cli.json.IndexableDocumentHandler;
 import lombok.extern.log4j.Log4j2;
 
@@ -20,11 +20,11 @@ public class IndexDocument {
   private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
   private final IndexableDocumentHandler indexableDocumentHandler;
-  private final Indexer indexer;
+  private final ElasticSearchDocumentIndexer indexer;
 
   public IndexDocument(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
               IndexableDocumentHandler indexableDocumentHandler,
-              Indexer indexer) {
+              ElasticSearchDocumentIndexer indexer) {
 
     this.aClient = aClient;
     this.svcEndpointProps = svcEndpointProps;
