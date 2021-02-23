@@ -30,6 +30,8 @@ services:
       INDEX_CREATE_CMD: $INDEX_CREATE_CMD
       INDEX_NAME: $INDEX_NAME
       INDEX_SETTINGS_FILE: $INDEX_SETTINGS_FILE
+    volumes:
+      - ./elastic-configurator-settings:/usr/share/elastic-configurator/settings
 
   search-cli:
     image: aafcbicoe/dina-search-cli:dev # Should match the name used locally to build the image
@@ -40,4 +42,6 @@ services:
 
 volumes:
   elasticsearch-data:
+    driver: local
+  elastic-configurator-settings:
     driver: local      

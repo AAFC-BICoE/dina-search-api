@@ -8,7 +8,6 @@ USER root
 RUN mkdir /work
 WORKDIR /work
 
-COPY *.json /work/
 COPY *.sh /work/
 RUN chmod +x /work/*.sh
 

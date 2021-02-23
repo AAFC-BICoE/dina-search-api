@@ -16,8 +16,8 @@
 #
 set -e
 
-host="$1"
-cmd="$1 $2 $3 $4"     # "$@"
+host="$2"
+cmd="$1 $2 $3 $4"
 
 echo $host
 echo $cmd
