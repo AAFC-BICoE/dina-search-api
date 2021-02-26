@@ -13,11 +13,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <okhttp.version>4.9.0</okhttp.version>
-    <java-jwt.version>3.11.0</java-jwt.version>
-    <jackson-databind.version>2.12.1</jackson-databind.version>
-    <jackson-core.version>2.12.1</jackson-core.version>
-    <jackson-annotations.version>2.12.1</jackson-annotations.version>
+
     <elasticsearch.version>7.10.1</elasticsearch.version>
     <elasticsearch-rest-high-level-client.version>7.10.1</elasticsearch-rest-high-level-client.version>
     <elasticsearch-rest-client.version>7.10.1</elasticsearch-rest-client.version>
@@ -35,27 +31,7 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-client</artifactId>
 		</dependency>       
-    <!-- <dependency>
-			<groupId>com.auth0</groupId>
-			<artifactId>java-jwt</artifactId>
-			<version>${java-jwt.version}</version>
-    </dependency> -->
 
-    <!-- <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jackson-databind.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>${jackson-core.version}</version>
-    </dependency> 
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-      <version>${jackson-annotations.version}</version>
-    </dependency> -->
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch</artifactId>

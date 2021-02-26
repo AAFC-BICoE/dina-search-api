@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -36,9 +37,11 @@ public class SearchService implements ISearchService {
 
   private static final ObjectMapper OM = new ObjectMapper();
 
-  private RestHighLevelClient esClient;
-  private RestTemplate restTemplate;
-  private String baseUrlTemplate;
+  private final RestHighLevelClient esClient;
+  private final RestTemplate restTemplate;
+  private final String baseUrlTemplate;
+
+  private final HttpHeaders JSON_HEADERS = buildJsonHeaders();
 
   public SearchService(
                   @Autowired RestTemplateBuilder builder, 
@@ -57,6 +60,14 @@ public class SearchService implements ISearchService {
       "/@Index_Token@" +
       "/_search";
 
+  }
+
+  private static HttpHeaders buildJsonHeaders() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    return headers;
   }
 
   @Override
@@ -100,21 +111,10 @@ public class SearchService implements ISearchService {
     JsonNode jsonNode;
     try {
       jsonNode = OM.readTree(query);
-
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.APPLICATION_JSON);
-
-      List<MediaType> acceptableMediaTypes = new ArrayList<>();
-      acceptableMediaTypes.add(MediaType.APPLICATION_JSON);
-      headers.setAccept(acceptableMediaTypes);
-      headers.setContentType(MediaType.APPLICATION_JSON);
-
-      HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), headers);
-
-      ResponseEntity<String> searchResponse = null;
-
       URI uri = new URI(baseUrlTemplate.replace("@Index_Token@", indexName));
-      searchResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, String.class);
+
+      HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), JSON_HEADERS);
+      ResponseEntity<String> searchResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, String.class);
 
       return searchResponse.getBody();
 
