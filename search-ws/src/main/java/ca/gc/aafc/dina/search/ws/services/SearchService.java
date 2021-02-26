@@ -47,11 +47,14 @@ public class SearchService implements ISearchService {
     this.restTemplate = builder.build();
     this.esClient = esClient;
 
+    // Create a single line template that will be used as part of the search for documents
+    // within a specific index.
+    //
     baseUrlTemplate =
       yamlConfigProperties.getElasticsearch().get("protocol") +
       "://" + yamlConfigProperties.getElasticsearch().get("host") +
       ":" + yamlConfigProperties.getElasticsearch().get("port") +
-      "@Index_Token@" +
+      "/@Index_Token@" +
       "/_search";
 
   }

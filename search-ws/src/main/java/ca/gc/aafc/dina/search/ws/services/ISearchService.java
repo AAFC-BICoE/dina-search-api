@@ -1,7 +1,6 @@
 package ca.gc.aafc.dina.search.ws.services;
 
 import org.elasticsearch.action.search.SearchResponse;
-
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 
 public interface ISearchService {

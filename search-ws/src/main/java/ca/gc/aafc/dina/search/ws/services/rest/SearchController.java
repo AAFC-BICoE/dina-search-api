@@ -17,33 +17,33 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @RestController
-@RequestMapping("/search")
+@RequestMapping(value = "/search", produces = "application/json")
 public class SearchController {
-
+  
   private ISearchService searchService;
-
-  @Autowired
-  public SearchController(ISearchService searchService) {
+  
+  public SearchController(@Autowired ISearchService searchService) {
     this.searchService = searchService;
   }
 
-  @GetMapping("/auto-complete")
+  @GetMapping(path = "/auto-complete")
   public ResponseEntity<SearchResponse> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
       @RequestParam String field) {
 
     log.info("prefix={}, indexName={}, field={}", prefix, indexName, field);
 
-    searchService.autoComplete(prefix, indexName, field);
-
     return new ResponseEntity<>(searchService.autoComplete(prefix, indexName, field), HttpStatus.ACCEPTED);
   }
 
-  @PostMapping(path = "/text", consumes = "application/json", produces = "application/json")
-  public ResponseEntity<String> query(@RequestBody String query, @RequestParam String indexName)
-      throws SearchApiException {
+  @PostMapping(path = "/text", consumes = "application/json")
+  public ResponseEntity<String> query(@RequestBody String query, @RequestParam String indexName) {
 
     log.info("indexName={}, query={}", indexName, query);
 
-    return new ResponseEntity<>(searchService.search(indexName, query), HttpStatus.ACCEPTED);
+    try {
+      return new ResponseEntity<>(searchService.search(indexName, query), HttpStatus.ACCEPTED);
+    } catch (SearchApiException e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
   }
 }
