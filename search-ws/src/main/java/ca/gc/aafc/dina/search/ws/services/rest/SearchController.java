@@ -31,7 +31,6 @@ public class SearchController {
       @RequestParam String field) {
 
     log.info("prefix={}, indexName={}, field={}", prefix, indexName, field);
-
     return new ResponseEntity<>(searchService.autoComplete(prefix, indexName, field), HttpStatus.ACCEPTED);
   }
 

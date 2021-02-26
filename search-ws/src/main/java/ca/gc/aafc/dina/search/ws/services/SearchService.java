@@ -62,17 +62,8 @@ public class SearchService implements ISearchService {
   @Override
   public SearchResponse autoComplete(String prefixString, String indexName, String field) {
 
-    /*
-     * 
-     * { "size": 5, "query": { "multi_match": { "query": "gend", "type":
-     * "bool_prefix", "fields": [ "included.attributes.displayName.autocomplete",
-     * "included.attributes.displayName.autocomplete._2gram",
-     * "included.attributes.displayName.autocomplete._3gram" ] } }
-     * 
-     * }
-     */
-
-    // Based on the POC naming convention, we will create the expcted fields:
+    // Based on our naming convention, we will create the expected fields to search for:
+    //
     // field + .autocomplete
     // field + .autocomplete._2gram
     // field + .autocomplete._3gram
@@ -97,19 +88,12 @@ public class SearchService implements ISearchService {
     try {
       searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
     } catch (IOException ex) {
-      log.error("Error in autocomplete search {}", ex.getMessage());
+      log.error("Error in autocomplete search {}", ex);
     }
 
     return searchResponse;
   }
 
-  /**
-   * Performs a text query based search
-   * 
-   * @throws SearchApiException
-   * 
-   * @throws URISyntaxException
-   */
   @Override
   public String search(String indexName, String query) throws SearchApiException {
 
