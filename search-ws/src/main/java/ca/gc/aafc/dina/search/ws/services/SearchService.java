@@ -3,9 +3,7 @@ package ca.gc.aafc.dina.search.ws.services;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -36,13 +34,12 @@ import lombok.extern.log4j.Log4j2;
 public class SearchService implements ISearchService {
 
   private static final ObjectMapper OM = new ObjectMapper();
+  private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
 
   private final RestHighLevelClient esClient;
   private final RestTemplate restTemplate;
   private final String baseUrlTemplate;
-
-  private final HttpHeaders JSON_HEADERS = buildJsonHeaders();
-
+  
   public SearchService(
                   @Autowired RestTemplateBuilder builder, 
                   @Autowired RestHighLevelClient esClient,
