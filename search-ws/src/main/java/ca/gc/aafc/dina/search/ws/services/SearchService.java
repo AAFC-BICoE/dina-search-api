@@ -2,8 +2,9 @@ package ca.gc.aafc.dina.search.ws.services;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,6 +25,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriBuilder;
 
 import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
@@ -38,7 +41,7 @@ public class SearchService implements ISearchService {
 
   private final RestHighLevelClient esClient;
   private final RestTemplate restTemplate;
-  private final String baseUrlTemplate;
+  private UriBuilder searchUriBuilder;
   
   public SearchService(
                   @Autowired RestTemplateBuilder builder, 
@@ -50,12 +53,14 @@ public class SearchService implements ISearchService {
     // Create a single line template that will be used as part of the search for documents
     // within a specific index.
     //
-    baseUrlTemplate =
-      yamlConfigProperties.getElasticsearch().get("protocol") +
-      "://" + yamlConfigProperties.getElasticsearch().get("host") +
-      ":" + yamlConfigProperties.getElasticsearch().get("port") +
-      "/@Index_Token@" +
-      "/_search";
+    DefaultUriBuilderFactory uriBuilderFactory = new DefaultUriBuilderFactory();
+
+    searchUriBuilder = 
+      uriBuilderFactory.builder()
+        .scheme(yamlConfigProperties.getElasticsearch().get("protocol"))
+        .host(yamlConfigProperties.getElasticsearch().get("host"))
+        .port(yamlConfigProperties.getElasticsearch().get("port"))
+        .path("{indexName}/_search");
 
   }
 
@@ -108,14 +113,16 @@ public class SearchService implements ISearchService {
     JsonNode jsonNode;
     try {
       jsonNode = OM.readTree(query);
-      URI uri = new URI(baseUrlTemplate.replace("@Index_Token@", indexName));
+      Map<String, String> variables = new HashMap<>();
+      variables.put("indexName", indexName);
+      URI uri = searchUriBuilder.build(variables);
 
       HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), JSON_HEADERS);
       ResponseEntity<String> searchResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, String.class);
 
       return searchResponse.getBody();
 
-    } catch (JsonProcessingException | URISyntaxException e) {
+    } catch (JsonProcessingException e) {
       throw new SearchApiException("Error during search processing", e);
     }
   }
