@@ -3,7 +3,6 @@ package ca.gc.aafc.dina.search.ws.services;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -41,7 +40,7 @@ public class SearchService implements ISearchService {
 
   private final RestHighLevelClient esClient;
   private final RestTemplate restTemplate;
-  private UriBuilder searchUriBuilder;
+  private final UriBuilder searchUriBuilder;
   
   public SearchService(
                   @Autowired RestTemplateBuilder builder, 
@@ -50,13 +49,10 @@ public class SearchService implements ISearchService {
     this.restTemplate = builder.build();
     this.esClient = esClient;
 
-    // Create a single line template that will be used as part of the search for documents
+    // Create a URIBuilder that will be used as part of the search for documents
     // within a specific index.
-    //
-    DefaultUriBuilderFactory uriBuilderFactory = new DefaultUriBuilderFactory();
-
-    searchUriBuilder = 
-      uriBuilderFactory.builder()
+    searchUriBuilder =
+        new DefaultUriBuilderFactory().builder()
         .scheme(yamlConfigProperties.getElasticsearch().get("protocol"))
         .host(yamlConfigProperties.getElasticsearch().get("host"))
         .port(yamlConfigProperties.getElasticsearch().get("port"))
@@ -101,7 +97,7 @@ public class SearchService implements ISearchService {
     try {
       searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
     } catch (IOException ex) {
-      log.error("Error in autocomplete search {}", ex);
+      log.error("Error in autocomplete search", ex);
     }
 
     return searchResponse;
@@ -113,9 +109,7 @@ public class SearchService implements ISearchService {
     JsonNode jsonNode;
     try {
       jsonNode = OM.readTree(query);
-      Map<String, String> variables = new HashMap<>();
-      variables.put("indexName", indexName);
-      URI uri = searchUriBuilder.build(variables);
+      URI uri = searchUriBuilder.build(Map.of("indexName", indexName));
 
       HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), JSON_HEADERS);
       ResponseEntity<String> searchResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, String.class);
