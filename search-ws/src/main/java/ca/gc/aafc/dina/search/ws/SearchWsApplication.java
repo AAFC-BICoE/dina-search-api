@@ -13,5 +13,4 @@ public class SearchWsApplication {
   public static void main(String[] args) {
     SpringApplication.run(SearchWsApplication.class, args);
   }
-
 }
