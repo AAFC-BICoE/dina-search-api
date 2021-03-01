@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd">
+    <suppress>
+        <notes>The bug is present only in Spring Framework 5.0.5.RELEASE but creates false positive with other versions</notes>
+        <cve>CVE-2018-1258</cve>
+    </suppress>
+</suppressions>

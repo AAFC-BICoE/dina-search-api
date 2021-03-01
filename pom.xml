@@ -14,7 +14,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.4.1</version>
+    <version>2.4.3</version>
   </parent>
 
   <modules>
@@ -130,6 +130,9 @@
         <configuration>
           <format>xml</format>
           <failBuildOnCVSS>8</failBuildOnCVSS>
+          <suppressionFiles>
+            <suppressionFile>owasp-suppression.xml</suppressionFile>
+          </suppressionFiles>
         </configuration>
       </plugin>
     </plugins>
