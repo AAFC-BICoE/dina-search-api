@@ -13,8 +13,11 @@ Search module for AAFC-DINA provides search capability by leveraging a DINA mana
 
 ## Notes
 
-Document retrieval is currently limited to the followig services:
+Document retrieval is currently limited to the following services:
 
 - Agent API
+  - Organization
+  - Person
 - ObjectStore API
+  - Metadata
 
