@@ -1,8 +1,8 @@
 # dina-search-api
-Search module for AAFC-DINA
+Search module for AAFC-DINA provides search capability by leveraging a DINA managed elasticsearch cluster. The search-ws application provides a thin layer of abstraction on top of the cluster while the search-cli provides documents extraction, transformation from DINA services and indexing within the elasticsearch cluster. 
 
-- [search-cli](https://github.com/AAFC-BICoE/dina-search-api/blob/21626_send_Merged_Document_To_ElasticSearch/search-cli/README.md): Search Command Line Interface for document ingest into elasticsearch
-- search-ws:  Search REST API providing DINA based search endpoints
+- [search-cli](./search-cli/README.md): Search Command Line Interface for document ingest into elasticsearch
+- [search-ws](./search-ws/../README.md):  Search REST API providing DINA based search endpoints
 
 
 ## Required
@@ -10,11 +10,11 @@ Search module for AAFC-DINA
 * Java 11
 * Maven 3.6
 
-## Documentation
 
-*To be defined*
+## Notes
 
-## Artifacts
+Document retrieval is currently limited to the followig services:
 
-*To be defined*
+- Agent API
+- ObjectStore API
 
