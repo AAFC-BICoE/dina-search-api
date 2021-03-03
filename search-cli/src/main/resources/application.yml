@@ -1,3 +1,4 @@
+spring.shell.command.history.enabled: false
 keycloak:
   openid_auth_server: http://keycloak.local:8080/auth/realms/dina/protocol/openid-connect/token
   client_id: objectstore

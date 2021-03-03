@@ -1,6 +1,6 @@
 server:
   port: 8085
 elasticsearch:
-  host: localhost
+  host: elasticsearch-dina
   port: 9200
   protocol: http

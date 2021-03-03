@@ -37,8 +37,11 @@ services:
     image: aafcbicoe/dina-search-cli:dev # Should match the name used locally to build the image
     stdin_open: true
     tty: true
-    networks:
-      default:
+
+  search-ws:
+    image: aafcbicoe/dina-search-ws:dev # Should match the name used locally to build the image
+    ports:
+      - 8085:8085
 
 volumes:
   elasticsearch-data:
