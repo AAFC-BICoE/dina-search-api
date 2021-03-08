@@ -54,9 +54,9 @@ public class IndexDocument {
       log.info("Assemble document id:{}", documentId);
       msg = indexableDocumentHandler.assembleDocument(msg);
 
-      // Step #3: Index the document into elasticsearch
+      // Step #3: Index the document into elasticsearch      
       log.info("Sending document id:{} to indexer", documentId);
-      indexer.indexDocument(msg);
+      indexer.indexDocument(msg, svcEndpointProps.getEndpoints().get(type).getIndexName());
 
     } catch (SearchApiException sapiEx) {
       log.error("Error during operation execution", sapiEx);

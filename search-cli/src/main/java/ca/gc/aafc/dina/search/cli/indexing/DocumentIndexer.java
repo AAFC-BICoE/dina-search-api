@@ -13,6 +13,15 @@ public interface DocumentIndexer {
    */
   void indexDocument(String rawPayload) throws SearchApiException;
 
+    /**
+   * Method takes a raw json payload and push the document into the index provided.
+   * 
+   * @param rawPayload
+   * @param indexName Elasticsearch index to use for the document.
+   * @throws SearchApiException
+   */
+  void indexDocument(String rawPayload, String indexName) throws SearchApiException;
+
   /**
    * Release resources created by the elasticsearch client
    */
