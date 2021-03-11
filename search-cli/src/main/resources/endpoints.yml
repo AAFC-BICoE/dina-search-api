@@ -3,7 +3,6 @@
 endpoints:
   metadata: 
     targetUrl: http://localhost:8081/api/v1/metadata
-    indexName: dina_document_index
     relationships:
       - managedAttributeMap
       - acMetadataCreator
@@ -18,4 +17,3 @@ endpoints:
       - organizations
   managed-attribute-map:
     targetUrl: http://localhost:8081/api/v1
-    indexName: dina_document_index

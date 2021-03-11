@@ -54,10 +54,17 @@ public class IndexDocument {
       log.info("Assemble document id:{}", documentId);
       msg = indexableDocumentHandler.assembleDocument(msg);
 
-      // Step #3: Index the document into elasticsearch      
-      log.info("Sending document id:{} to indexer", documentId);
-      indexer.indexDocument(msg, svcEndpointProps.getEndpoints().get(type).getIndexName());
+      // Step #3: index the document into the default DINA Document indexx
+      log.info("Sending document id:{} to default indexer", documentId);
+      indexer.indexDocument(msg);
 
+      // Step #4: Index the document into elasticsearch   
+      if (svcEndpointProps.getEndpoints().get(type).getIndexName() != null && 
+        !svcEndpointProps.getEndpoints().get(type).getIndexName().isEmpty()) {   
+        log.info("Sending document id:{} to specific index {}", documentId, svcEndpointProps.getEndpoints().get(type).getIndexName());
+        indexer.indexDocument(msg, svcEndpointProps.getEndpoints().get(type).getIndexName());
+      }
+    
     } catch (SearchApiException sapiEx) {
       log.error("Error during operation execution", sapiEx);
     }
