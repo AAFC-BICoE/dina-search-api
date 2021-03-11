@@ -183,7 +183,7 @@ public class IndexableDocumentHandler {
             ((ObjectNode) curObject).set("attributes", dataObject);
           }
         } catch (SearchApiException apiEx) {
-          log.error("@@@@ Error during processing of included section");
+          log.error("Error during processing of included section");
         } 
       }
     }
