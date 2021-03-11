@@ -166,19 +166,25 @@ public class IndexableDocumentHandler {
         String curObjectId = curObject.get("id").asText();
         String rawPayload = null;
 
-        rawPayload = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type), curObjectId);
+        // Best effort processing for assembling of include section
+        try {
+          
+          rawPayload = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type), curObjectId);
 
-        // Take the data.attributes section to be embedded....
-        //
-        JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
+          // Take the data.attributes section to be embedded....
+          //
+          JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
 
-        // At this stage we have the type, id and attributes for the object
-        //
-        // First pass, we can embed the object right away...
-        //
-        if (curObject.isObject()) {
-          ((ObjectNode) curObject).set("attributes", dataObject);
-        }
+          // At this stage we have the type, id and attributes for the object
+          //
+          // First pass, we can embed the object right away...
+          //
+          if (curObject.isObject()) {
+            ((ObjectNode) curObject).set("attributes", dataObject);
+          }
+        } catch (SearchApiException apiEx) {
+          log.error("@@@@ Error during processing of included section");
+        } 
       }
     }
   }
