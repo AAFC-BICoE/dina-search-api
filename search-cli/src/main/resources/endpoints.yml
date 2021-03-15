@@ -9,10 +9,11 @@ endpoints:
       - dcCreator
   organization: 
     targetUrl: http://localhost:8082/api/v1/organization
+    indexName: dina_agent_index
   person: 
     targetUrl: http://localhost:8082/api/v1/person
+    indexName: dina_agent_index
     relationships:
       - organizations
   managed-attribute-map:
     targetUrl: http://localhost:8081/api/v1
-

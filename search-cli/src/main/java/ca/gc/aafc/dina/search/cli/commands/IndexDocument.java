@@ -1,5 +1,7 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
+import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
@@ -48,16 +50,23 @@ public class IndexDocument {
 
       // Step #1: get the document
       log.info("Retrieve document id:{}", documentId);
-      msg = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type), documentId);
+      EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
+      msg = aClient.getDataFromUrl(endpointDescriptor, documentId);
 
       // Step #2: Assemble the document
       log.info("Assemble document id:{}", documentId);
       msg = indexableDocumentHandler.assembleDocument(msg);
 
-      // Step #3: Index the document into elasticsearch
-      log.info("Sending document id:{} to indexer", documentId);
+      // Step #3: index the document into the default DINA Document index
+      log.info("Sending document id:{} to default indexer", documentId);
       indexer.indexDocument(msg);
 
+      // Step #4: Index the document into elasticsearch
+      if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
+        log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
+        indexer.indexDocument(msg, endpointDescriptor.getIndexName());
+      }
+    
     } catch (SearchApiException sapiEx) {
       log.error("Error during operation execution", sapiEx);
     }

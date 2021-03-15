@@ -44,8 +44,17 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
   @Override
   public void indexDocument(String rawPayload) throws SearchApiException {
+    indexDocument(rawPayload, yamlConfigProps.getElasticsearch().get(INDEX_NAME));
+  }
 
-    IndexRequest indexRequest = new IndexRequest(yamlConfigProps.getElasticsearch().get(INDEX_NAME));
+  @Override
+  public void indexDocument(String rawPayload, String indexName) throws SearchApiException {
+
+    if (rawPayload == null || indexName == null) {
+      throw new SearchApiException("Invalid arguments, values can not be null");
+    }
+
+    IndexRequest indexRequest = new IndexRequest(indexName);
 
     // Initialize source document
     indexRequest.source(rawPayload, XContentType.JSON);

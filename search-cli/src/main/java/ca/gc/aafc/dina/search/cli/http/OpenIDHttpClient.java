@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
 import okhttp3.HttpUrl.Builder;
@@ -81,6 +82,8 @@ public class OpenIDHttpClient {
         } else {
           throw new SearchApiException("Error during retrieval from " + route.uri());
         }
+      } else if (response.code() == 404) {
+        throw new SearchApiNotFoundException("Error during retrieval from " + route.uri() + " status code:" + response.code());
       } else {
         throw new SearchApiException("Error during retrieval from " + route.uri() + " status code:" + response.code());
       }
