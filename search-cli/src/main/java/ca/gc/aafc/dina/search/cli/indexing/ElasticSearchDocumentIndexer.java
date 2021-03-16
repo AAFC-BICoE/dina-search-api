@@ -43,19 +43,22 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   }
 
   @Override
-  public void indexDocument(String rawPayload) throws SearchApiException {
-    indexDocument(rawPayload, yamlConfigProps.getElasticsearch().get(INDEX_NAME));
+  public void indexDocument(String documentId, String rawPayload) throws SearchApiException {
+    indexDocument(documentId, rawPayload, yamlConfigProps.getElasticsearch().get(INDEX_NAME));
   }
 
   @Override
-  public void indexDocument(String rawPayload, String indexName) throws SearchApiException {
+  public void indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException {
 
-    if (rawPayload == null || indexName == null) {
+    if (documentId == null || rawPayload == null || indexName == null) {
       throw new SearchApiException("Invalid arguments, values can not be null");
     }
 
     IndexRequest indexRequest = new IndexRequest(indexName);
 
+    // Set index document id to the passed documentId
+    indexRequest.id(documentId);
+   
     // Initialize source document
     indexRequest.source(rawPayload, XContentType.JSON);
 
@@ -66,8 +69,8 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
       Result operationResult = indexResponse.getResult();
 
       if (operationResult == Result.CREATED || operationResult == Result.UPDATED) {
-        log.info("Document created in {} with id:{} and version:{}", indexResponse.getIndex(),
-            indexResponse.getVersion(), indexResponse.getId());
+        log.info("Document {} in {} with id:{} and version:{}", operationResult.name(), indexResponse.getIndex(),
+            indexResponse.getId(), indexResponse.getVersion());
       } else {
         log.error("Issue with the index operation, result:{}", operationResult);
       }

@@ -59,12 +59,12 @@ public class IndexDocument {
 
       // Step #3: index the document into the default DINA Document index
       log.info("Sending document id:{} to default indexer", documentId);
-      indexer.indexDocument(msg);
+      indexer.indexDocument(documentId, msg);
 
       // Step #4: Index the document into elasticsearch
       if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
         log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
-        indexer.indexDocument(msg, endpointDescriptor.getIndexName());
+        indexer.indexDocument(documentId, msg, endpointDescriptor.getIndexName());
       }
     
     } catch (SearchApiException sapiEx) {
