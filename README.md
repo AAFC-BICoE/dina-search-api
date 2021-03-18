@@ -1,8 +1,8 @@
-# search-ws
-The search-ws application provides a thin layer of abstraction on top of a DINA managed elasticsearch cluster. The first endpoint offers access to auto complete searches (search_as_you_type) and while the second reads elasticsearch JSON based queries that are forwarded to the cluster API.
+# Search API
 
-## Required
+The Search API brings documents search capabilities through the following projects:
 
-* Java 11
-* Maven 3.6
+- [search-cli](search-cli/README.md) A command line interface providing documents retrieval and indexing with a DINA managed Elasticsearch cluster. 
+- [search-ws](search-ws/README.md) A REST based application providing search capabilities through a thin layer of abstraction built on top of the DINA managed Elasticsearch cluster.
+
 

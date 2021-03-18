@@ -1,10 +1,8 @@
 package ca.gc.aafc.dina.search.ws.services.rest;
 
-import org.elasticsearch.action.search.SearchResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,14 +22,6 @@ public class SearchController {
   
   public SearchController(@Autowired ISearchService searchService) {
     this.searchService = searchService;
-  }
-
-  @GetMapping(path = "/auto-complete")
-  public ResponseEntity<SearchResponse> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
-      @RequestParam String field) {
-
-    log.info("prefix={}, indexName={}, field={}", prefix, indexName, field);
-    return new ResponseEntity<>(searchService.autoComplete(prefix, indexName, field), HttpStatus.ACCEPTED);
   }
 
   @PostMapping(path = "/text", consumes = "application/json")
