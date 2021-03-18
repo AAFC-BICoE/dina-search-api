@@ -30,3 +30,15 @@ jobs:
         run: mvn org.owasp:dependency-check-maven:check
         if: ${{ github.ref == 'refs/heads/dev' }}
 
+      - name: Extract Version
+        run: |
+          mvn help:evaluate -Dexpression=project.version -q -DforceStdout > version.txt
+      - name: Store artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-artifacts
+          path: |
+            version.txt
+            search-ws/target/search-ws-*.jar
+            search-ws/Dockerfile
+
