@@ -36,10 +36,11 @@ public interface ISearchService {
    * 
    * @param textToMatch Text to match
    * @param indexName Index for the documents
-   * @param field target field for the auto complete search.
+   * @param autoCompleteField target field for the auto complete search.
+   * @param additionalField additional or alternate field to evaluate in addition to the autoCompleteField.
    * @return
    */
-  SearchResponse autoComplete(String textToMatch, String indexName, String field);
+  SearchResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField);
 
   /**
    * Search will take the provided json text query and forward it to the configured
