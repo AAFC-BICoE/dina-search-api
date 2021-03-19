@@ -28,10 +28,10 @@ public class SearchController {
 
   @GetMapping(path = "/auto-complete")
   public ResponseEntity<SearchResponse> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
-      @RequestParam String autoCompletefield, @RequestParam String additionalField) {
+      @RequestParam String autoCompleteField, @RequestParam String additionalField) {
 
     log.info("prefix={}, indexName={}, autoCompleteField={}, additionalField={}", prefix, indexName, autoCompletefield, additionalField);
-    return new ResponseEntity<>(searchService.autoComplete(prefix, indexName, autoCompletefield, additionalField), HttpStatus.ACCEPTED);
+    return new ResponseEntity<>(searchService.autoComplete(prefix, indexName, autoCompleteField, additionalField), HttpStatus.ACCEPTED);
   }
     
   @PostMapping(path = "/text", consumes = "application/json")

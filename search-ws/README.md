@@ -2,7 +2,7 @@
 
 AAFC DINA search-ws implementation.
 
-The search-ws application provides a thin layer of abstraction on top of a DINA managed elasticsearch cluster. The only endpoint exposed by the application accept a elasticsearch query JSON payload that is forwarded as-is to the dina managed elasticsearch cluster. The repsonse received from elasticsearch is then replayed back the caller.
+The search-ws application provides a thin layer of abstraction on top of a DINA managed elasticsearch cluster. Two endpoints are currently supported, one for the purpose of auto completion related queries and the other one suitable to handle all queries formatted in an elasticssearch compliant JSON payload. In both case the response received from the elasticsearch cluster is forward back to the caller.
 
 
 ## Required
@@ -35,17 +35,43 @@ docker-compose up
 ```
 
 Once the services have started you can access the search-ws REST API at port 8085 on the localhost.
+<br/>
 
-Endpoint served by search-ws:
+## Endpoint served by search-ws:
+<br/>
 
-```
-http://<target server>:8085/search/text?indexName=<target-index-name>
+### Auto Completion 
 
-target-server = localhost
-target-index-name =  dina-document-index | dina-agent-index
+`
+http://<target-server>:8085/search/auto-complete?prefix=<string>&autocompleteField=<fully qualified field>&additionalField=<fully qualified field>&indexName=<target index name>
+`
 
-``` 
+- `target-server` = localhost
+- `prefix` = string that we are looking matches
+- `autocompleteField` = Fully qualified field that has been mapped as 'search_as_you_type'
+- `additionalField` = Fully qualified field that we want to add as an alternative to the autocomplete field.
+- `target-index-name` =  dina-document-index | dina-agent-index
 
+<br/>
+
+| HTTP Verb | Supported | Content-Type | Produces |
+| --------------- | --------------- | --------------- | --- |
+| GET | Yes | None | application-json |
+| POST | Not | | |
+| PUT | Not |  | |
+| DELETE | Not | | |
+
+<br/>
+### Generic searches based on elasticsearch compliant JSON payload 
+
+`
+http://<target-server>:8085/search/text?indexName=<target-index-name>
+`
+
+- `target-server` = localhost
+- `target-index-name` =  dina-document-index | dina-agent-index
+
+ 
 | HTTP Verb | Supported | Content-Type | Produces |
 | --------------- | --------------- | --------------- | --- |
 | POST | Yes | application-json | application-json |
@@ -61,6 +87,22 @@ target-index-name =  dina-document-index | dina-agent-index
 ### Supported indices
 - dina-document-index (default index)
 - dina-agent-index (agent specific index)
+
+
+### Autocomplete support using auto-complete endpoint
+<br/>
+
+#### Auto complete a value equal to 'Jim' by looking at displayname
+```
+http://localhost:8085/search/auto-complete?prefix=Jim&autocompleteField=data.attributes.displayName&indexName=dina_document_index
+```
+<br/>
+
+#### Auto complete a value equal to 'Jim' by looking at displayname and aliases
+```
+http://localhost:8085/search/auto-complete?prefix=Jim&autocompleteField=data.attributes.displayName&additionalField=data.attributes.aliases&indexName=dina_document_index
+```
+
 
 ### Autocomplete support
 Only `displayName` field has been analyzed to support search-as-you-type capability.
