@@ -2,7 +2,9 @@ package ca.gc.aafc.dina.search.ws.services;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,6 +25,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
@@ -69,17 +72,29 @@ public class SearchService implements ISearchService {
   }
 
   @Override
-  public SearchResponse autoComplete(String prefixString, String indexName, String field) {
-
+  public SearchResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
+    
     // Based on our naming convention, we will create the expected fields to search for:
     //
-    // field + .autocomplete
-    // field + .autocomplete._2gram
-    // field + .autocomplete._3gram
+    // autoCompleteField + .autocomplete
+    // autoCompleteField + .autocomplete._2gram
+    // autoCompleteField + .autocomplete._3gram
     //
-    String[] fields = { field + ".autocomplete", field + ".autocomplete._2gram", field + ".autocomplete._3gram" };
+    // additionalField (if defined)
+    //
+    List<String> fields = new ArrayList<>();
+    fields.add(autoCompleteField + ".autocomplete");
+    fields.add(autoCompleteField + ".autocomplete._2gram");
+    fields.add(autoCompleteField + ".autocomplete._3gram");
 
-    MultiMatchQueryBuilder multiMatchQueryBuilder = new MultiMatchQueryBuilder(prefixString, fields);
+    if (StringUtils.hasText(additionalField)) {
+      fields.add(additionalField);
+    }
+
+    String[] arrayFields = new String[fields.size()];
+    fields.toArray(arrayFields);
+
+    MultiMatchQueryBuilder multiMatchQueryBuilder = new MultiMatchQueryBuilder(textToMatch, arrayFields);
 
     // Boolean Prefix based request...
     //

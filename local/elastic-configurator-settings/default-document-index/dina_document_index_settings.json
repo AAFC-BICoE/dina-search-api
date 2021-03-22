@@ -269,6 +269,15 @@
         "properties": {
           "attributes": {
             "properties": {
+              "aliases": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
               "createdBy": {
                 "type": "text",
                 "fields": {
@@ -284,6 +293,10 @@
               "displayName": {
                 "type": "text",
                 "fields": {
+                  "autocomplete": {
+                    "type": "search_as_you_type",
+                    "max_shingle_size": 3
+                  },
                   "keyword": {
                     "type": "keyword",
                     "ignore_above": 256
@@ -379,9 +392,6 @@
                 "ignore_above": 256
               }
             }
-          },
-          "totalResourceCount": {
-            "type": "long"
           }
         }
       }

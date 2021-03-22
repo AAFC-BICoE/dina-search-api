@@ -194,9 +194,6 @@
                 "ignore_above": 256
               }
             }
-          },
-          "totalResourceCount": {
-            "type": "long"
           }
         }
       }
