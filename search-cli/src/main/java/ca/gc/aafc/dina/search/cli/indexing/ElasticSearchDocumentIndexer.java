@@ -2,10 +2,14 @@ package ca.gc.aafc.dina.search.cli.indexing;
 
 import java.io.IOException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.DocWriteResponse.Result;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.support.replication.ReplicationResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -50,7 +54,8 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   @Override
   public void indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException {
 
-    if (documentId == null || rawPayload == null || indexName == null) {
+    if (!StringUtils.isNotBlank(documentId) || !StringUtils.isNotBlank(rawPayload)
+        || !StringUtils.isNotBlank(indexName)) {
       throw new SearchApiException("Invalid arguments, values can not be null");
     }
 
@@ -58,7 +63,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
     // Set index document id to the passed documentId
     indexRequest.id(documentId);
-   
+
     // Initialize source document
     indexRequest.source(rawPayload, XContentType.JSON);
 
@@ -86,6 +91,40 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
       log.info("Indexer client closed");
     } catch (IOException ioEx) {
       log.error("exception during client closure...");
+    }
+  }
+
+  @Override
+  public void deleteDocument(String documentId) throws SearchApiException {
+    deleteDocument(documentId, yamlConfigProps.getElasticsearch().get(INDEX_NAME));
+  }
+
+  @Override
+  public void deleteDocument(String documentId, String indexName) throws SearchApiException {
+
+    if (!StringUtils.isNotBlank(documentId) || !StringUtils.isNotBlank(indexName)) {
+      throw new SearchApiException("Invalid arguments, can not be null or blank");
+    }
+
+    DeleteRequest deleteRequest = new DeleteRequest(indexName, documentId);
+
+    // Make the call to elastic to perform synchronous deletion
+    try {
+      DeleteResponse deleteResponse = client.delete(deleteRequest, RequestOptions.DEFAULT);
+
+      ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
+      if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
+        log.warn(
+            "Document deletion for documentId:{}, not successful on all shards (total Shards:{}/Successful Shards:{}",
+            documentId, shardInfo.getTotal(), shardInfo.getSuccessful());
+      }
+      if (shardInfo.getFailed() > 0) {
+        for (ReplicationResponse.ShardInfo.Failure failure : shardInfo.getFailures()) {
+          log.warn("Shard info failure reason:{}", failure.reason());
+        }
+      }
+    } catch (IOException ioEx) {
+      throw new SearchApiException("Connectivity issue with the elasticsearch server", ioEx);
     }
   }
 }
