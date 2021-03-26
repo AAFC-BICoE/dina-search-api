@@ -115,10 +115,9 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
       ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
       if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
         log.warn(
-            "Document deletion for documentId:{}, not successful on all shards (total Shards:{}/Successful Shards:{})",
+            "Document deletion for documentId:{}, not successful on all shards (total Shards:{}/Successful Shards:{}",
             documentId, shardInfo.getTotal(), shardInfo.getSuccessful());
       }
-      
       if (shardInfo.getFailed() > 0) {
         for (ReplicationResponse.ShardInfo.Failure failure : shardInfo.getFailures()) {
           log.warn("Shard info failure reason:{}", failure.reason());
