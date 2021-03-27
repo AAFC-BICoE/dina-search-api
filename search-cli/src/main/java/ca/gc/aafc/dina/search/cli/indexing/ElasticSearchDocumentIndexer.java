@@ -43,12 +43,12 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   }
 
   @Override
-  public void indexDocument(String documentId, String rawPayload) throws SearchApiException {
-    indexDocument(documentId, rawPayload, yamlConfigProps.getElasticsearch().get(INDEX_NAME));
+  public OperationStatus indexDocument(String documentId, String rawPayload) throws SearchApiException {
+    return indexDocument(documentId, rawPayload, yamlConfigProps.getElasticsearch().get(INDEX_NAME));
   }
 
   @Override
-  public void indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException {
+  public OperationStatus indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException {
 
     if (documentId == null || rawPayload == null || indexName == null) {
       throw new SearchApiException("Invalid arguments, values can not be null");
@@ -71,12 +71,15 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
       if (operationResult == Result.CREATED || operationResult == Result.UPDATED) {
         log.info("Document {} in {} with id:{} and version:{}", operationResult.name(), indexResponse.getIndex(),
             indexResponse.getId(), indexResponse.getVersion());
+        return OperationStatus.SUCCEEDED;
       } else {
         log.error("Issue with the index operation, result:{}", operationResult);
       }
     } catch (IOException ioEx) {
       throw new SearchApiException("Connectivity issue with the elasticsearch server", ioEx);
     }
+
+    return OperationStatus.FAILED;
   }
 
   @Override
