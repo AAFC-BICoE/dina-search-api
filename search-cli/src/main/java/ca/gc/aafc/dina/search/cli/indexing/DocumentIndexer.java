@@ -13,7 +13,7 @@ public interface DocumentIndexer {
    * 
    * @throws SearchApiException
    */
-  void indexDocument(String documentId, String rawPayload) throws SearchApiException;
+  OperationStatus indexDocument(String documentId, String rawPayload) throws SearchApiException;
 
     /**
    * Method takes a raw json payload and push the document into the index provided.
@@ -24,7 +24,7 @@ public interface DocumentIndexer {
    * @param indexName Elasticsearch index to use for the document.
    * @throws SearchApiException
    */
-  void indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException;
+  OperationStatus indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException;
 
   /**
    * Delete the document identified by the documentId from the default index.
