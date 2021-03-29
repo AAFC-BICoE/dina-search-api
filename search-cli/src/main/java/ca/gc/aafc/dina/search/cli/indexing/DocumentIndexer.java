@@ -27,6 +27,26 @@ public interface DocumentIndexer {
   void indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException;
 
   /**
+   * Delete the document identified by the documentId from the default index.
+   * 
+   * @param documentId Document identifier to be pass to the indexer
+   * 
+   * @throws SearchApiException
+   */
+  void deleteDocument(String documentId) throws SearchApiException;
+
+  /**
+   * Delete the document identified by the documentId from all supported indices.
+   * 
+   * 
+   * @param documentId Document identifier to be pass to the indexer
+   * @param indexName Index containing the document to be deleted
+   * 
+   * @throws SearchApiException
+   */
+  void deleteDocument(String documentId, String indexName) throws SearchApiException;
+  
+  /**
    * Release resources created by the elasticsearch client
    */
   void releaseResources();
