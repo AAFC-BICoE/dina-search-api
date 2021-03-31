@@ -98,12 +98,12 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   }
 
   @Override
-  public void deleteDocument(String documentId) throws SearchApiException {
-    deleteDocument(documentId, yamlConfigProps.getElasticsearch().get(INDEX_NAME));
+  public OperationStatus deleteDocument(String documentId) throws SearchApiException {
+    return deleteDocument(documentId, yamlConfigProps.getElasticsearch().get(INDEX_NAME));
   }
 
   @Override
-  public void deleteDocument(String documentId, String indexName) throws SearchApiException {
+  public OperationStatus deleteDocument(String documentId, String indexName) throws SearchApiException {
 
     if (!StringUtils.isNotBlank(documentId) || !StringUtils.isNotBlank(indexName)) {
       throw new SearchApiException("Invalid arguments, can not be null or blank");
@@ -120,14 +120,20 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
         log.warn(
             "Document deletion for documentId:{}, not successful on all shards (total Shards:{}/Successful Shards:{}",
             documentId, shardInfo.getTotal(), shardInfo.getSuccessful());
+        return OperationStatus.SUCCEEDED;
       }
+
       if (shardInfo.getFailed() > 0) {
         for (ReplicationResponse.ShardInfo.Failure failure : shardInfo.getFailures()) {
           log.warn("Shard info failure reason:{}", failure.reason());
         }
+        return OperationStatus.FAILED;
       }
     } catch (IOException ioEx) {
       throw new SearchApiException("Connectivity issue with the elasticsearch server", ioEx);
     }
+
+    return OperationStatus.FAILED;
+    
   }
 }

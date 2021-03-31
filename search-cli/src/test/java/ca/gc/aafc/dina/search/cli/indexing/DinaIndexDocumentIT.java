@@ -110,6 +110,53 @@ public class DinaIndexDocumentIT {
     }
   }
 
+  @DisplayName("Integration Test index document and delete")
+  @Test
+  public void testIndexAndDeleteDocument() throws Exception { 
+
+    elasticsearchContainer.start();
+
+    assertEquals(9200, elasticsearchContainer.getMappedPort(9200).intValue());
+    assertEquals(9300, elasticsearchContainer.getMappedPort(9300).intValue());
+
+    assertNotNull(documentIndexer);
+    try {
+      OperationStatus result = documentIndexer.indexDocument("123-456-789", "{\"name\": \"initial\"}");
+      assertNotNull(result);
+      assertEquals(OperationStatus.SUCCEEDED, result);
+
+      // Give some time to the update
+      Thread.currentThread().sleep(1000*30);
+
+      // Retrieve the document from elasticsearch
+      //
+      RestHighLevelClient client = new RestHighLevelClient(
+        RestClient.builder(new HttpHost("localhost", 9200)));
+      
+      int foundDocument = search(client, "initial");
+      assertEquals(1, foundDocument);
+
+      // Delete the document
+      //
+      result = documentIndexer.deleteDocument("123-456-789");
+      assertNotNull(result);
+      assertEquals(OperationStatus.SUCCEEDED, result);
+      
+      // Give some time to the update
+      Thread.currentThread().sleep(1000*30);
+      
+      // Retrieve updated document from elasticsearch
+      //
+      foundDocument = search(client, "initial");
+      assertEquals(0, foundDocument);
+
+    } catch (SearchApiException e) {
+      fail();
+    } finally {
+      elasticsearchContainer.stop();
+    }
+  }
+
   private int search(RestHighLevelClient client, String searchValue) throws Exception {
 
     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();

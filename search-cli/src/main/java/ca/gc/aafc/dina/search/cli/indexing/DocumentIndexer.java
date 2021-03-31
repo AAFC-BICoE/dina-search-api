@@ -33,7 +33,7 @@ public interface DocumentIndexer {
    * 
    * @throws SearchApiException
    */
-  void deleteDocument(String documentId) throws SearchApiException;
+  OperationStatus deleteDocument(String documentId) throws SearchApiException;
 
   /**
    * Delete the document identified by the documentId from all supported indices.
@@ -44,7 +44,7 @@ public interface DocumentIndexer {
    * 
    * @throws SearchApiException
    */
-  void deleteDocument(String documentId, String indexName) throws SearchApiException;
+  OperationStatus deleteDocument(String documentId, String indexName) throws SearchApiException;
   
   /**
    * Release resources created by the elasticsearch client
