@@ -50,15 +50,12 @@ public class DinaIndexDocumentIT {
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
-      // Give some time to the update
-      Thread.currentThread().sleep(1000*30);
-
       // Retrieve the document from elasticsearch
       //
       RestHighLevelClient client = new RestHighLevelClient(
         RestClient.builder(new HttpHost("localhost", 9200)));
       
-      int foundDocument = search(client, "initial");
+      int foundDocument = searchAndWait(client, "initial", 1);
       assertEquals(1, foundDocument);
 
     } catch (SearchApiException e) {
@@ -67,6 +64,7 @@ public class DinaIndexDocumentIT {
       elasticsearchContainer.stop();
     }
   }
+
 
   @DisplayName("Integration Test index document and update")
   @Test
@@ -83,27 +81,21 @@ public class DinaIndexDocumentIT {
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
-      // Give some time to the update
-      Thread.currentThread().sleep(1000*30);
-
       // Retrieve the document from elasticsearch
       //
       RestHighLevelClient client = new RestHighLevelClient(
         RestClient.builder(new HttpHost("localhost", 9200)));
       
-      int foundDocument = search(client, "initial");
+      int foundDocument = searchAndWait(client, "initial", 1);
       assertEquals(1, foundDocument);
 
       result = documentIndexer.indexDocument("123-456-789", "{\"name\": \"updated\"}");
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
-      // Give some time to the update
-      Thread.currentThread().sleep(1000*30);
-      
       // Retrieve updated document from elasticsearch
       //
-      foundDocument = search(client, "updated");
+      foundDocument = searchAndWait(client, "updated", 1);
       assertEquals(1, foundDocument);
 
     } catch (SearchApiException e) {
@@ -128,15 +120,12 @@ public class DinaIndexDocumentIT {
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
-      // Give some time to the update
-      Thread.currentThread().sleep(1000*30);
-
       // Retrieve the document from elasticsearch
       //
       RestHighLevelClient client = new RestHighLevelClient(
         RestClient.builder(new HttpHost("localhost", 9200)));
       
-      int foundDocument = search(client, "initial");
+      int foundDocument = searchAndWait(client, "initial", 1);
       assertEquals(1, foundDocument);
 
       // Delete the document
@@ -145,12 +134,9 @@ public class DinaIndexDocumentIT {
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
       
-      // Give some time to the update
-      Thread.currentThread().sleep(1000*30);
-      
-      // Retrieve updated document from elasticsearch
+      // Retrieve deleted document from elasticsearch
       //
-      foundDocument = search(client, "initial");
+      foundDocument = searchAndWait(client, "initial", 0);
       assertEquals(0, foundDocument);
 
     } catch (SearchApiException e) {
@@ -178,4 +164,17 @@ public class DinaIndexDocumentIT {
     return searchHits.length;
 
   }
+
+  private int searchAndWait(RestHighLevelClient client, String searchValue, int foundCondition) throws InterruptedException, Exception {
+
+    int foundDocument = -1;
+    int nCount = 0;
+    while (foundDocument != foundCondition && nCount < 10) {
+      Thread.currentThread().sleep(1000*5);
+      foundDocument = search(client, searchValue);
+      nCount++;
+    }
+    return foundDocument;
+  }
+
 }
