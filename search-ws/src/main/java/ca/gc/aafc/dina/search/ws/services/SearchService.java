@@ -83,7 +83,7 @@ public class SearchService implements ISearchService {
     // additionalField (if defined)
     //
     List<String> fields = new ArrayList<>();
-    fields.add(autoCompleteField + ".autocomplete");
+    fields.add(autoCompleteField);
     fields.add(autoCompleteField + ".autocomplete._2gram");
     fields.add(autoCompleteField + ".autocomplete._3gram");
 

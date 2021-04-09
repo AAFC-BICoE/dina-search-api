@@ -1,0 +1,13 @@
+{
+  "query": {
+    "multi_match": {
+      "query": "Joh",
+      "type": "bool_prefix",
+      "fields": [
+        "data.attributes.displayName",
+        "data.attributes.displayName.autocomplete._2gram",
+        "data.attributes.displayName.autocomplete._3gram"
+        ] 
+    }
+  }
+}
