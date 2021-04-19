@@ -1,0 +1,47 @@
+{
+  "data": {
+    "id": "77529673-72bf-4fdc-88e2-df3b59b9c3a0",
+    "type": "person",
+    "attributes": {
+      "displayName": "Jane Doe",
+      "email": "jane@org1.com",
+      "createdBy": "cnc-cm",
+      "createdOn": "2021-02-01T19:35:40.371569Z"
+    },
+    "relationships": {
+      "organizations": {
+        "data": [
+          {
+            "id": "0476f923-fa15-4aa6-8c78-1e1da7938277",
+            "type": "organization"
+          }
+        ]
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "0476f923-fa15-4aa6-8c78-1e1da7938277",
+      "type": "organization",
+      "attributes": {
+        "aliases": null,
+        "createdBy": "cnc-cm",
+        "createdOn": "2021-02-01T19:34:49.072101Z",
+        "names": [
+          {
+            "languageCode": "EN",
+            "name": "First Organization"
+          },
+          {
+            "languageCode": "FR",
+            "name": "Premiere Organization"
+          }
+        ]
+      }
+    }
+  ],
+  "meta": {
+    "totalResourceCount": 1,
+    "moduleVersion": "0.7"
+  }
+}
