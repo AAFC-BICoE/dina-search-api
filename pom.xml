@@ -14,7 +14,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.4.3</version>
+    <version>2.4.5</version>
   </parent>
 
   <modules>
@@ -31,21 +31,12 @@
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
-    <checkstyle.version>8.39</checkstyle.version>
-    <spotbugs.version>4.2.0</spotbugs.version>
+    <checkstyle.version>8.41.1</checkstyle.version>
+    <spotbugs.version>4.2.3</spotbugs.version>
     <maven-spotbugs.version>4.2.0</maven-spotbugs.version>
-    <dependency.check.version>6.0.4</dependency.check.version>
+    <dependency.check.version>6.1.5</dependency.check.version>
 
   </properties>
-
-    <!-- dina-base-api bintray repository -->
-  <pluginRepositories>
-    <pluginRepository>
-      <id>bintray-aafc-bice</id>
-      <name>bintray</name>
-      <url>https://dl.bintray.com/aafc-bice/BICoE</url>
-    </pluginRepository>
-  </pluginRepositories>
 
   <!-- Common sub module dependencies -->
   <dependencies>
@@ -92,7 +83,7 @@
         <dependencies>
           <!-- Use Checkstyle config from dina-base -->
           <dependency>
-            <groupId>ca.gc.aafc</groupId>
+            <groupId>io.github.aafc-bicoe</groupId>
             <artifactId>dina-base-api</artifactId>
             <version>${dina-base-api.version}</version>
           </dependency>
