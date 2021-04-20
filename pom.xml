@@ -27,7 +27,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>11</java.version>
 
-    <dina-base-api.version>0.47</dina-base-api.version>
+    <elasticsearch.version>7.10.2</elasticsearch.version>
+    <dina-base-api.version>0.51</dina-base-api.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
@@ -36,6 +37,7 @@
     <maven-spotbugs.version>4.2.0</maven-spotbugs.version>
     <dependency.check.version>6.1.5</dependency.check.version>
 
+    <testcontainers.version>1.15.2</testcontainers.version>
   </properties>
 
   <!-- Common sub module dependencies -->
@@ -62,6 +64,24 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
