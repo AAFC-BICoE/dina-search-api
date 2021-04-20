@@ -1,4 +1,4 @@
-package ca.gc.aafc.dina.search.ws.services.rest;
+package ca.gc.aafc.dina.search.ws.controller;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
-import ca.gc.aafc.dina.search.ws.services.ISearchService;
+import ca.gc.aafc.dina.search.ws.services.SearchService;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -20,9 +20,9 @@ import lombok.extern.log4j.Log4j2;
 @RequestMapping(value = "/search", produces = "application/json")
 public class SearchController {
   
-  private ISearchService searchService;
+  private final SearchService searchService;
   
-  public SearchController(@Autowired ISearchService searchService) {
+  public SearchController(@Autowired SearchService searchService) {
     this.searchService = searchService;
   }
 

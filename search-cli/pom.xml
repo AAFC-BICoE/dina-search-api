@@ -20,11 +20,9 @@
     <jackson-core.version>2.12.1</jackson-core.version>
     <jackson-annotations.version>2.12.1</jackson-annotations.version>
     <json-path.version>2.5.0</json-path.version>
-    <elasticsearch.version>7.10.2</elasticsearch.version>
     <mockserver-netty.version>5.11.2</mockserver-netty.version>
     <mockserver-client-java.version>5.11.2</mockserver-client-java.version>
     <mockserver-junit-jupiter.version>5.11.2</mockserver-junit-jupiter.version>
-    <testcontainers.version>1.15.2</testcontainers.version>
   </properties>
 
   <dependencies>
@@ -120,24 +118,6 @@
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-webmvc</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>testcontainers</artifactId>
-      <version>${testcontainers.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>${testcontainers.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>elasticsearch</artifactId>
-      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

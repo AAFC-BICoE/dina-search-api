@@ -30,7 +30,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import ca.gc.aafc.dina.search.ws.services.ISearchService;
+import ca.gc.aafc.dina.search.ws.services.SearchService;
 
 @SpringBootTest()
 public class DinaSearchDocumentIT {
@@ -38,7 +38,7 @@ public class DinaSearchDocumentIT {
   private static final String DINA_AGENT_INDEX = "dina_agent_index";
 
   @Autowired
-  private ISearchService searchService;
+  private SearchService searchService;
 
   @Container
   private static ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
@@ -127,9 +127,8 @@ public class DinaSearchDocumentIT {
       String queryFile = "autocomplete-search.json";
       filename = Path.of(path + "/" + queryFile);
 
-      String queryString = Files.readString(filename);   
-      String indexName = DINA_AGENT_INDEX;
-      String result = searchService.search(indexName, queryString);
+      String queryString = Files.readString(filename);
+      String result = searchService.search(DINA_AGENT_INDEX, queryString);
       
       assertNotNull(result);
       assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
@@ -190,9 +189,8 @@ public class DinaSearchDocumentIT {
       String queryFile = "get-all-search.json";
       filename = Path.of(path + "/" + queryFile);
 
-      String queryString = Files.readString(filename);   
-      String indexName = DINA_AGENT_INDEX;
-      String result = searchService.search(indexName, queryString);
+      String queryString = Files.readString(filename);
+      String result = searchService.search(DINA_AGENT_INDEX, queryString);
       
       assertNotNull(result);
       assertTrue(result.contains("\"total\":{\"value\":2,\"relation\":\"eq\"}"));
@@ -226,7 +224,7 @@ public class DinaSearchDocumentIT {
     int foundDocument = -1;
     int nCount = 0;
     while (foundDocument != foundCondition && nCount < 10) {
-      Thread.currentThread().sleep(1000*5);
+      Thread.sleep(1000);
       foundDocument = search(client, searchValue);
       nCount++;
     }
