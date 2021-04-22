@@ -1,4 +1,4 @@
-package ca.gc.aafc.dina.search.cli.config;
+package ca.gc.aafc.dina.search.common.config;
 
 import java.util.Map;
 
@@ -15,4 +15,5 @@ import lombok.RequiredArgsConstructor;
 public class YAMLConfigProperties {
   private final Map<String, String> keycloak;
   private final Map<String, String> elasticsearch;
+  private final Map<String, String> rabbitmq;
 }

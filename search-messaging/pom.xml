@@ -8,11 +8,12 @@
     <version>0.1</version>
   </parent>
 
-  <artifactId>search-cli</artifactId>
-  <name>search-cli</name>
+  <artifactId>search-messaging</artifactId>
+  <name>search-messaging</name>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <amqp-client.version>5.12.0</amqp-client.version>
     <spring.shell.version>2.0.0.RELEASE</spring.shell.version>
     <okhttp.version>4.9.0</okhttp.version>
     <java-jwt.version>3.11.0</java-jwt.version>
@@ -20,18 +21,23 @@
     <jackson-core.version>2.12.1</jackson-core.version>
     <jackson-annotations.version>2.12.1</jackson-annotations.version>
     <json-path.version>2.5.0</json-path.version>
+    <elasticsearch.version>7.10.2</elasticsearch.version>
     <mockserver-netty.version>5.11.2</mockserver-netty.version>
     <mockserver-client-java.version>5.11.2</mockserver-client-java.version>
     <mockserver-junit-jupiter.version>5.11.2</mockserver-junit-jupiter.version>
-    <search-messaging.version>0.1</search-messaging.version>
+    <testcontainers.version>1.15.2</testcontainers.version>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>ca.gc.aafc</groupId>
-      <artifactId>search-messaging</artifactId>
-      <version>${search-messaging.version}</version>
-    </dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-amqp</artifactId>
+		</dependency>
+    <!-- <dependency>
+      <groupId>com.rabbitmq</groupId>
+      <artifactId>amqp-client</artifactId>
+      <version>${amqp-client.version}</version>
+    </dependency> -->
     <dependency>
       <groupId>org.springframework.shell</groupId>
       <artifactId>spring-shell-starter</artifactId>
@@ -126,8 +132,26 @@
       <artifactId>spring-webmvc</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
-  <build>
+  <!-- <build>
     <plugins>
       <plugin>
         <groupId>org.springframework.boot</groupId>
@@ -142,6 +166,6 @@
         </configuration>
       </plugin>
     </plugins>
-  </build>
+  </build> -->
 
 </project>

@@ -16,8 +16,8 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.springframework.stereotype.Service;
 
-import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.common.config.YAMLConfigProperties;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
