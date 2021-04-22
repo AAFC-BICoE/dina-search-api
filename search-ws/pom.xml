@@ -4,7 +4,7 @@
 
   <parent>
     <artifactId>search-api-parent</artifactId>
-    <groupId>ca.gc.aafc</groupId>
+    <groupId>io.github.aafc-bicoe</groupId>
     <version>0.1</version>
   </parent>
 

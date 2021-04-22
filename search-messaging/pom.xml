@@ -4,7 +4,7 @@
 
   <parent>
     <artifactId>search-api-parent</artifactId>
-    <groupId>ca.gc.aafc</groupId>
+    <groupId>io.github.aafc-bicoe</groupId>
     <version>0.1</version>
   </parent>
 
@@ -33,11 +33,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-amqp</artifactId>
 		</dependency>
-    <!-- <dependency>
-      <groupId>com.rabbitmq</groupId>
-      <artifactId>amqp-client</artifactId>
-      <version>${amqp-client.version}</version>
-    </dependency> -->
     <dependency>
       <groupId>org.springframework.shell</groupId>
       <artifactId>spring-shell-starter</artifactId>

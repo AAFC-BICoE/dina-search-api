@@ -4,7 +4,7 @@
 
   <parent>
     <artifactId>search-api-parent</artifactId>
-    <groupId>ca.gc.aafc</groupId>
+    <groupId>io.github.aafc-bicoe</groupId>
     <version>0.1</version>
   </parent>
 
@@ -28,7 +28,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>ca.gc.aafc</groupId>
+      <groupId>io.github.aafc-bicoe</groupId>
       <artifactId>search-messaging</artifactId>
       <version>${search-messaging.version}</version>
     </dependency>
