@@ -22,13 +22,19 @@ public class SendMQMessage {
   }
 
   @ShellMethod(value = "Send Message through RabbitMQ", key = "send-message")
-  public void testGetEndpoint(@ShellOption(value = { "-m", "--message" }) String message) {
+  public void testGetEndpoint(
+    @ShellOption(help = "dryRun", defaultValue = "false", value = "--druRun") boolean dryRun,
+    @ShellOption(help = "Document type (metadata, person...)", value = { "-t", "--type" }) String type,
+    @ShellOption(help = "Unique object identifier", value = { "-i", "--documentId" }) String documentId,
+    @ShellOption(help = "Document operation (add/update/delete)", value = { "-o", "--operation" }) String operation) {
+
+    DocumentOperationType docOperationType = DocumentOperationType.valueOf(operation.toUpperCase());
 
     DocumentOperationNotification docNotification = 
-      new DocumentOperationNotification(true, 
-            message, 
-            "dina-test-type", 
-            DocumentOperationType.ADD);
+      new DocumentOperationNotification(dryRun, 
+            type, 
+            documentId, 
+            docOperationType);
 
     messageProducer.send(docNotification);
 

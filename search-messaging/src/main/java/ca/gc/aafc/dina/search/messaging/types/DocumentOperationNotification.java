@@ -16,7 +16,7 @@ public class DocumentOperationNotification implements Serializable {
     this.operationType = DocumentOperationType.NOT_DEFINED;
   }
 
-  public DocumentOperationNotification(boolean dryRun, String documentId, String documentType,
+  public DocumentOperationNotification(boolean dryRun, String documentType, String documentId,
       DocumentOperationType operationType) {
     this.dryRun = dryRun;
     this.documentId = documentId;
