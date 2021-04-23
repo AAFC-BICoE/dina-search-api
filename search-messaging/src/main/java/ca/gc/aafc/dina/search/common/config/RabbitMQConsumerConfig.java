@@ -8,6 +8,7 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -16,7 +17,8 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Configuration
-@Profile("dina.search.consumer")
+//@Profile("dina.search.consumer")
+@ConditionalOnProperty(prefix = "messaging", name = "consumer", havingValue = "true")
 public class RabbitMQConsumerConfig {
 
   private static final String MQ_HOST = "host";

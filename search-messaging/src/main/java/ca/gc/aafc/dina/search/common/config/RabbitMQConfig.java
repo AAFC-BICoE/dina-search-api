@@ -11,6 +11,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -18,6 +19,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Configuration
+@ConditionalOnProperty(prefix = "messaging", name = "producer", havingValue = "true")
 public class RabbitMQConfig {
 
   private static final String MQ_HOST = "host";

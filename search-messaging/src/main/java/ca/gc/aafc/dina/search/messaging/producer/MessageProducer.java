@@ -2,12 +2,14 @@ package ca.gc.aafc.dina.search.messaging.producer;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import ca.gc.aafc.dina.search.common.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
 
 @Service
+@ConditionalOnProperty(prefix = "messaging", name = "producer", havingValue = "true")
 public class MessageProducer {
 
   private static final String EXCHANGE = "exchange";

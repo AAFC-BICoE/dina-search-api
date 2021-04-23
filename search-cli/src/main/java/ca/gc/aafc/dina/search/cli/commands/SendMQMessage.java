@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
@@ -11,6 +12,7 @@ import ca.gc.aafc.dina.search.messaging.types.DocumentOperationType;
 
 @Component
 @ShellComponent
+@ConditionalOnProperty(prefix = "messaging", name = "producer", havingValue = "true")
 public class SendMQMessage {
 
   private final MessageProducer messageProducer;
