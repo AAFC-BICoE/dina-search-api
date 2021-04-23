@@ -11,13 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Configuration
-//@Profile("dina.search.consumer")
 @ConditionalOnProperty(prefix = "messaging", name = "consumer", havingValue = "true")
 public class RabbitMQConsumerConfig {
 

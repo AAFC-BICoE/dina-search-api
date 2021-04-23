@@ -5,13 +5,11 @@ import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistrar;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
 
 @Configuration
-//@Profile("dina.search.consumer")
 @ConditionalOnProperty(prefix = "messaging", name = "consumer", havingValue = "true")
 public class RabbitConsumerListenerConfig implements RabbitListenerConfigurer {
 

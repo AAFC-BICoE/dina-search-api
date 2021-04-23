@@ -68,6 +68,7 @@ public class DocumentProcessor implements IMessageProcessor {
       break;
 
       case NOT_DEFINED:
+      default:
         log.warn("Unsupported document operation, documentId:{} of type:{} will not be processed", docOpMessage.getDocumentId(), docOpMessage.getDocumentType());
     }
     
