@@ -29,6 +29,9 @@ public class MessageProducer {
 
   }
 
+  /**
+   * Send a document related operation message to RabbitMQ
+   */
   public void send(DocumentOperationNotification documentOperationNotification) {  
     rabbitTemplate.convertAndSend(mqExchange, mqRoutingkey, documentOperationNotification);
   }
