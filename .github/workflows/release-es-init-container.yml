@@ -27,4 +27,4 @@ jobs:
         with:
           context: es-init-container/.
           push: true
-          tags: aafcbicoe/es-init-container:${{ ${{ github.event.inputs.versionTag }} }}
+          tags: aafcbicoe/es-init-container:${{ github.event.inputs.versionTag }}
