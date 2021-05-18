@@ -11,7 +11,7 @@
 # redundancy in our deployment (only one node). The status will have to be adjusted
 # if the cluster is a multi-node one.
 #
-# Once the health status is equal to 'yellow' the script will invoke the
+# Once the health status is equal to 'yellow' or 'green' the script will invoke the
 # create_index to perform the initial index creation (if necessary).
 #
 set -e
@@ -43,7 +43,7 @@ done
 health="$(curl -fsSL "$host/_cat/health?h=status")"
 health="$(echo "$health" | sed -r 's/^[[:space:]]+|[[:space:]]+$//g')" # trim whitespace (otherwise we'll have "green ")
 
-until [ "$health" = 'yellow' ]; do
+until [ "$health" = 'yellow' ] || [ "$health" = 'green' ]; do
     health="$(curl -fsSL "$host/_cat/health?h=status")"
     health="$(echo "$health" | sed -r 's/^[[:space:]]+|[[:space:]]+$//g')" # trim whitespace (otherwise we'll have "green ")
     >&2 echo "Elastic Search is unavailable - sleeping"
