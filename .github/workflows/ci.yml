@@ -85,7 +85,6 @@ jobs:
           context: search-ws/.
           push: true
           tags: aafcbicoe/dina-search-ws:${{ env.VERSION_TAG }}
-          target: ws-builder
 
       - name: Build dina-search-api Image and Push
         uses: docker/build-push-action@v2
@@ -94,4 +93,3 @@ jobs:
           context: search-api/.
           push: true
           tags: aafcbicoe/dina-search-api:${{ env.VERSION_TAG }}
-          target: api-builder
