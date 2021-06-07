@@ -5,7 +5,7 @@ keycloak:
   username: cnc-cm
   password: cnc-cm
 elasticsearch:
-  server_address: elasticsearch-dina
+  server_address: ${ELASTICSEARCH_URL:elasticsearch-dina}
   protocol: http
   port_1: 9200
   port_2: 9300

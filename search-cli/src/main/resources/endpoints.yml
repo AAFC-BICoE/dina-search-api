@@ -1,19 +1,29 @@
 # Default service endpoints
 #
 endpoints:
+  material-sample: 
+    targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
+    relationships:
+      - collectingEvent
+      - preparationType
+      - parentMaterialSample
+      - materialSampleChildren
+      - attachment
+  preparation-type: 
+    targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/preparation-type}
   metadata: 
-    targetUrl: http://api.dina.local/objectstore/api/v1/metadata
+    targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
     relationships:
       - managedAttributeMap
       - acMetadataCreator
       - dcCreator
   organization: 
-    targetUrl: http://api.dina.local/agent/api/v1/organization
+    targetUrl: ${ORGANIZATION_URL:http://localhost:8082/api/v1/organization}
     indexName: dina_agent_index
   person: 
-    targetUrl: http://api.dina.local/agent/api/v1/person
+    targetUrl: ${PERSON_URL:http://localhost:8082/api/v1/person}
     indexName: dina_agent_index
     relationships:
       - organizations
   managed-attribute-map:
-    targetUrl: http://api.dina.local/api/v1
+    targetUrl: ${MANAGED_ATTRIBUTE_URL:http://localhost:8081/api/v1}

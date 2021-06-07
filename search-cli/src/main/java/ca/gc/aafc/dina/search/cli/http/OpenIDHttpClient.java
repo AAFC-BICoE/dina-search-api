@@ -154,6 +154,9 @@ public class OpenIDHttpClient {
         }
 
         throw new SearchApiException("Error during authentication token refresh invalid body content");
+      } else if (response.code() == 400) {
+        log.warn("Refresh token failure, call getToken() to reinitialize all tokens");
+        getToken();
       }
     } catch (IOException ioEx) {
       throw new SearchApiException("Error during authentication token refresh", ioEx);
