@@ -1,6 +1,16 @@
 # Default service endpoints
 #
 endpoints:
+  material-sample: 
+    targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
+    relationships:
+      - collectingEvent
+      - preparationType
+      - parentMaterialSample
+      - materialSampleChildren
+      - attachment
+  preparation-type: 
+    targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/preparation-type}
   metadata: 
     targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
     relationships:
