@@ -1,10 +1,71 @@
-# search-cli
+# search-messaging
 
-AAFC DINA search-cli implementation.
+AAFC DINA search-messaging implementation.
 
-The search cli is an application providing DINA document retrieval, transformation and indexing into a DINA managed elasticsearch cluster. 
-In this current release the search cli offers document retrieval from the object-store-api or agent-api, resolve externally referenced document and push the assembled/merged document into a dina elasticsearch index.
+The search messaging is a library providing DINA document operations related messaging. The library is meant to be integrated with the Search API application. Messaging producer generate DINA message containing information about the document and the operation performed on that document. Messaging is dispatched/pushed within a queue. DINA messaging consumer(s) process the incoming messages by performing/delegating the processing to the Search CLI document commands. 
 
+Producer and Consumer configuration are controlled by configuration parameters that can be overridden by the application deployer.
+
+```
+application.yml defines the following entries:
+
+rabbitmq:
+  queue: dina.search.queue
+  exchange: dina.search.exchange
+  routingkey: dina.search.routingkey
+  username: guest
+  password: guest
+  host: localhost
+  port: 15672
+
+messaging:
+  consumer: false
+  producer: false
+
+values of true will enable the configuration.
+```
+
+### Search Messaging Producer
+
+Applications integrating with the search-messaging library have to have exactly one producer running running within the cluster.
+
+The producer configuration is responsible for the creation of the RabbitMQ queue and exchanges. As such the application with the producer role must be up and running before any of the consumer(s) is started.
+
+```
+Parameters defined in the application.yml file:
+
+  "host"       --> RabbitMQ Host
+  "username"   --> Broker User name
+  "password"   --> Broker User password
+
+  "routingkey" --> Routing Key name
+  "exchange"   --> Exchange name
+  "queue"      --> Queue name
+```
+
+### Search Messaging Consumer
+
+The consumer as per its name is responsible for message from the configured queue by 
+dispatching messages to a method using the `@RabbitListener` annotation.
+
+The method declaring the `@RabbitListener` forward the message to a class implementing the IMessageProcessor interface.
+
+The IMessageProcessor defines a single method `processMessage` taking as a parameter an argument of type `DocumentOperationNotification`
+
+```
+Parameters defined in the application.yml file:
+
+  "host"       --> RabbitMQ Host
+  "username"   --> Broker User name
+  "password"   --> Broker User password
+
+  "routingkey" --> Routing Key name
+  "exchange"   --> Exchange name
+  "queue"      --> Queue name
+```
+
+used to connect the consumer connection factory ot the broker and also
+bind to the queue using the routingkey and the exchange.
 
 ## Required
 
@@ -14,103 +75,16 @@ In this current release the search cli offers document retrieval from the object
 
 ## To Run
 
+It is a library to be used by applications wanted to produce or consume DINA document messages.
+
 ### Dependencies
-To be fully functional search-cli depends on the following services to be up and running:
-* Keycloak
-* Objectstore API
-* Agent API
 
+A RabbitMQ server must be up and running and accessible within the local network 
 
-
-For testing purpose a [Docker Compose](https://docs.docker.com/compose/) example file is available in the `local` folder.
-
-Create a new docker-compose.yml file and .env file from the example file in the local directory:
-
-```
-cp local/docker-compose.yml.example docker-compose.yml
-cp local/*.env .
-```
-
-Start the app:
-
-```
-docker-compose up
-```
-
-Once the services have started you can access the cli by invoking the following docker command in a new terminal window:
-
-```
-docker attach local_search_cli_1
-```
-The `local_search_cli_1` is the name given to the container running the search-cli application, the  cli prompt should be display in the terminal window.
-
-Typing the `help` command should give you the following output.
-```
-search-cli:>help
-AVAILABLE COMMANDS
-
-Built-In Commands
-        clear: Clear the shell screen.
-        help: Display help about available commands.
-        script: Read and execute commands from a file.
-        stacktrace: Display the full stacktrace of the last error.
-
-Get Document
-        get-document: Get Document from a specified endpoint
-
-Index Document
-        index-document: Index a document into elasticsearch
-
-Quit Exit Cli
-        exit, quit: Exit/Quit the cli
-
-Show Endpoint Config
-        show-endpoints: Show service endpoint configuration
-
-Test Get Endpoint
-        test-get-endpoint: Test Get Endpoint
-```
-
-You can have more contextual help by typing the following: `help <command name>` the following show an example for the `get-document` command:
-
-```
-search-cli:>help get-document 
-
-
-NAME
-	get-document - Get Document from a specified endpoint
-
-SYNOPSYS
-	get-document [-t] string  [-i] string  [--assemble]  
-
-OPTIONS
-	-t or --type  string
-		Document type
-		[Mandatory]
-
-	-i or --documentId  string
-		Unique object identifier
-		[Mandatory]
-
-	--assemble	Assemble a document
-		[Optional, default = false]
-
-```
-Cleanup:
-```
-docker-compose down
-```
-
-**Note:** Upon exit of the search-cli the container will be terminated as expected. If you want to run again the search-cli you will have to perform a docker-compose run specifically for the search-cli application:
-
-
-```
-docker-compose run search-cli
-```
 
 ## Testing
 Run tests using `mvn verify`. Docker is required, so the integration tests can launch an embedded Postgres test container.
 
 ## IDE
 
-`search-cli` requires [Project Lombok](https://projectlombok.org/) to be setup in your IDE.
+`search-messaging` requires [Project Lombok](https://projectlombok.org/) to be setup in your IDE.
