@@ -1,7 +1,7 @@
 package ca.gc.aafc.dina.search.cli.commands.messaging;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
@@ -48,8 +48,8 @@ public class DocumentProcessor implements IMessageProcessor {
 
     // Validate mandatory attributes
     //
-    if (!StringUtils.hasText(docOpMessage.getDocumentId()) 
-      || !StringUtils.hasText(docOpMessage.getDocumentType())
+    if (!StringUtils.isNotBlank(docOpMessage.getDocumentId()) 
+      || !StringUtils.isNotBlank(docOpMessage.getDocumentType())
       || docOpMessage.getOperationType() == null) {
       log.warn("Invalid document operation message received, mandatory attributes missing {} - will not process it",
           docOpMessage);
@@ -109,7 +109,7 @@ public class DocumentProcessor implements IMessageProcessor {
       indexer.indexDocument(documentId, processedMessage);
 
       // Step #4: Index the document into elasticsearch
-      if (StringUtils.hasText(endpointDescriptor.getIndexName())) {
+      if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
         log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
         indexer.indexDocument(documentId, processedMessage, endpointDescriptor.getIndexName());
       }
@@ -140,7 +140,7 @@ public class DocumentProcessor implements IMessageProcessor {
       indexer.deleteDocument(documentId);
 
       // Step #2: Delete the document from elasticsearch
-      if (StringUtils.hasText(endpointDescriptor.getIndexName())) {
+      if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
         log.info("Deleting document id:{} from specific index {}", documentId, endpointDescriptor.getIndexName());
         indexer.deleteDocument(documentId, endpointDescriptor.getIndexName());
       }

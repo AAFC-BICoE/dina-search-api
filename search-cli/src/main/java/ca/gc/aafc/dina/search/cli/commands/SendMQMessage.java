@@ -22,7 +22,7 @@ public class SendMQMessage {
   }
 
   @ShellMethod(value = "Send Message through RabbitMQ", key = "send-message")
-  public void testGetEndpoint(
+  public void sendMessage(
     @ShellOption(help = "dryRun", defaultValue = "false", value = "--druRun") boolean dryRun,
     @ShellOption(help = "Document type (metadata, person...)", value = { "-t", "--type" }) String type,
     @ShellOption(help = "Unique object identifier", value = { "-i", "--documentId" }) String documentId,
