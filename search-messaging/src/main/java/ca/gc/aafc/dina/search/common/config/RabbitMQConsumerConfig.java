@@ -22,16 +22,16 @@ public class RabbitMQConsumerConfig {
   private static final String MQ_HOST = "host";
   private static final String MQ_PASSWORD = "password";
   private static final String MQ_USERNAME = "username";
-  private static final String MQ_ROUTINGKEY = "routingkey";
+  private static final String MQ_ROUTING_KEY = "routingkey";
   private static final String MQ_EXCHANGE = "exchange";
   private static final String MQ_QUEUE = "queue";
 
-  private String consumerQueue;
-  private String consumerExchange;
-  private String consumerRoutingKey;
-  private String consumerUsername;
-  private String consumerPassword;
-  private String consumerHost;
+  private final String consumerQueue;
+  private final String consumerExchange;
+  private final String consumerRoutingKey;
+  private final String consumerUsername;
+  private final String consumerPassword;
+  private final String consumerHost;
   
   @Autowired
   public RabbitMQConsumerConfig(YAMLConfigProperties yamlConfigProps) {
@@ -40,7 +40,7 @@ public class RabbitMQConsumerConfig {
 
     this.consumerQueue = yamlConfigProps.getRabbitmq().get(MQ_QUEUE);
     this.consumerExchange = yamlConfigProps.getRabbitmq().get(MQ_EXCHANGE);
-    this.consumerRoutingKey = yamlConfigProps.getRabbitmq().get(MQ_ROUTINGKEY);
+    this.consumerRoutingKey = yamlConfigProps.getRabbitmq().get(MQ_ROUTING_KEY);
     this.consumerUsername = yamlConfigProps.getRabbitmq().get(MQ_USERNAME);
     this.consumerPassword = yamlConfigProps.getRabbitmq().get(MQ_PASSWORD);
     this.consumerHost = yamlConfigProps.getRabbitmq().get(MQ_HOST);

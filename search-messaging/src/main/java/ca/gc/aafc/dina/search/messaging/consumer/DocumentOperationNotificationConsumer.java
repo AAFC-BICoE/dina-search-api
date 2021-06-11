@@ -12,9 +12,12 @@ import lombok.extern.log4j.Log4j2;
 @Service
 @ConditionalOnProperty(prefix = "messaging", name = "consumer", havingValue = "true")
 public class DocumentOperationNotificationConsumer {
-  
-  @Autowired
-  private IMessageProcessor messageProcessor;
+
+  private final IMessageProcessor messageProcessor;
+
+  public DocumentOperationNotificationConsumer(IMessageProcessor messageProcessor) {
+    this. messageProcessor = messageProcessor;
+  }
 
   @RabbitListener(queues = "dina.search.queue")
   public void receiveMessage(final DocumentOperationNotification docOperationMessage) {

@@ -1,5 +1,8 @@
 package ca.gc.aafc.dina.search.messaging.types;
 
+import lombok.Builder;
+import lombok.Getter;
+
 import java.io.Serializable;
 
 /**
@@ -7,12 +10,13 @@ import java.io.Serializable;
  * RabbitMQ.
  * 
  */
+@Getter
 public class DocumentOperationNotification implements Serializable {
 
-  private boolean dryRun;
-  private String documentId;
-  private String documentType;
-  private DocumentOperationType operationType;
+  private final boolean dryRun;
+  private final String documentType;
+  private final String documentId;
+  private final DocumentOperationType operationType;
 
   public DocumentOperationNotification() {
     this.dryRun = false;
@@ -22,7 +26,7 @@ public class DocumentOperationNotification implements Serializable {
   }
 
   /**
-   * Documnent operation notification.
+   * Document operation notification.
    * 
    * @param dryRun flag denoting if the operation/processing associated with the message should be
    * bypassed.
@@ -30,43 +34,12 @@ public class DocumentOperationNotification implements Serializable {
    * @param documentId The document UUID
    * @param operationType Operation type as defined by the enumerated type.
    */
+  @Builder
   public DocumentOperationNotification(boolean dryRun, String documentType, String documentId,
       DocumentOperationType operationType) {
     this.dryRun = dryRun;
     this.documentId = documentId;
     this.documentType = documentType;
-    this.operationType = operationType;
-  }
-
-  public void setDryRun(boolean dryRun) {
-    this.dryRun = dryRun;
-  }
-
-  public boolean isDryRun() {
-    return dryRun;
-  }
-
-  public String getDocumentId() {
-    return documentId;
-  }
-
-  public void setDocumentId(String documentId) {
-    this.documentId = documentId;
-  }
-
-  public String getDocumentType() {
-    return documentType;
-  }
-
-  public void setDocumentType(String documentType) {
-    this.documentType = documentType;
-  }
-
-  public DocumentOperationType getOperationType() {
-    return operationType;
-  }
-
-  public void setOperationType(DocumentOperationType operationType) {
     this.operationType = operationType;
   }
 
