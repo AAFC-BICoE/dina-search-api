@@ -16,4 +16,6 @@ public class YAMLConfigProperties {
   private final Map<String, String> keycloak;
   private final Map<String, String> elasticsearch;
   private final Map<String, String> rabbitmq;
+  private final Map<String, String> messagingConfiguration;
+
 }

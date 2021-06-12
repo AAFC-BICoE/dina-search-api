@@ -18,11 +18,11 @@ rabbitmq:
   host: localhost
   port: 15672
 
-messaging:
-  consumer: false
-  producer: false
+messaging_configuration:
+  consumer: disabled
+  producer: disabled
 
-values of true will enable the configuration.
+values of enabled will enable the configuration.
 ```
 
 ### Search Messaging Producer

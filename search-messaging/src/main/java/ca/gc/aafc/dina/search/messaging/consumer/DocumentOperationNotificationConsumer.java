@@ -10,7 +10,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service
-@ConditionalOnProperty(prefix = "messaging", name = "consumer", havingValue = "true")
+@ConditionalOnProperty(prefix = "messaging_configuration", name = "consumer", havingValue = "enabled")
 public class DocumentOperationNotificationConsumer {
   
   @Autowired
@@ -24,5 +24,4 @@ public class DocumentOperationNotificationConsumer {
     //
     messageProcessor.processMessage(docOperationMessage);
   }
-
 }

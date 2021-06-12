@@ -60,7 +60,7 @@ public class DocumentProcessor implements IMessageProcessor {
     // Validate if the operation is a dryRun. If it is simply emit a log and returns
     //
     if (docOpMessage.isDryRun()) {
-      log.info("Message processor received document notification with dryRun option set to true, processign will not be done for message:{}", docOpMessage);
+      log.info("Message processor received document notification with dryRun option set to true, processing will not be done for message:{}", docOpMessage);
       return;
     }
 

@@ -11,16 +11,13 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
-import lombok.extern.log4j.Log4j2;
-
-@Log4j2
 @Configuration
-@ConditionalOnProperty(prefix = "messaging", name = "producer", havingValue = "true")
-public class RabbitMQConfig {
+@Conditional(MessagingConfigurationCondition.class)
+public class RabbitMQProducerConfig {
 
   private static final String MQ_HOST = "host";
   private static final String MQ_PASSWORD = "password";
@@ -29,17 +26,15 @@ public class RabbitMQConfig {
   private static final String MQ_EXCHANGE = "exchange";
   private static final String MQ_QUEUE = "queue";
 
-  private String queue;
-  private String exchange;
-  private String routingKey;
-  private String username;
-  private String password;
-  private String host;
+  private final String queue;
+  private final String exchange;
+  private final String routingKey;
+  private final String username;
+  private final String password;
+  private final String host;
   
   @Autowired
-  public RabbitMQConfig(YAMLConfigProperties yamlConfigProps) {
-
-    log.debug("@@@ Initialization of Rabbit MQ Producer Config @@@");
+  public RabbitMQProducerConfig(YAMLConfigProperties yamlConfigProps) {
 
     this.queue = yamlConfigProps.getRabbitmq().get(MQ_QUEUE);
     this.exchange = yamlConfigProps.getRabbitmq().get(MQ_EXCHANGE);
@@ -47,29 +42,30 @@ public class RabbitMQConfig {
     this.username = yamlConfigProps.getRabbitmq().get(MQ_USERNAME);
     this.password = yamlConfigProps.getRabbitmq().get(MQ_PASSWORD);
     this.host = yamlConfigProps.getRabbitmq().get(MQ_HOST);
+
   }
 
   @Bean
-  Queue queue() {
+  protected Queue createQueue() {
     return new Queue(queue, true);
   }
 
-  @Bean
-  Exchange myExchange() {
+  @Bean  
+  protected Exchange createExchange() {
     return ExchangeBuilder.directExchange(exchange).durable(true).build();
   }
-
+  
   @Bean
-  Binding binding() {
+  protected Binding createBinding() {
     return BindingBuilder
-            .bind(queue())
-            .to(myExchange())
+            .bind(createQueue())
+            .to(createExchange())
             .with(routingKey)
             .noargs();
   }
 
   @Bean
-  public ConnectionFactory connectionFactory() {
+  protected ConnectionFactory createConnectionFactory() {
     CachingConnectionFactory cachingConnectionFactory = new CachingConnectionFactory(host);
     cachingConnectionFactory.setUsername(username);
     cachingConnectionFactory.setPassword(password);
@@ -78,14 +74,14 @@ public class RabbitMQConfig {
   }
 
   @Bean
-  public MessageConverter jsonMessageConverter() {
+  protected MessageConverter createMessageConverter() {
     return new Jackson2JsonMessageConverter();
   }
 
   @Bean
   public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
     final RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-    rabbitTemplate.setMessageConverter(jsonMessageConverter());
+    rabbitTemplate.setMessageConverter(createMessageConverter());
     
     return rabbitTemplate;
   }
