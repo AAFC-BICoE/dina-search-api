@@ -15,17 +15,16 @@ public class MessageProducer {
   private static final String EXCHANGE = "exchange";
   private static final String ROUTING_KEY = "routingkey";
 
-  private RabbitTemplate rabbitTemplate;
-
+  private final RabbitTemplate rabbitTemplate;
   private final String mqExchange;
-  private final String mqRoutingkey;
+  private final String mqRoutingKey;
 
   @Autowired
   public MessageProducer(RabbitTemplate rabbitTemplate, YAMLConfigProperties yamlConfigProps) {
     this.rabbitTemplate = rabbitTemplate;
 
     mqExchange = yamlConfigProps.getRabbitmq().get(EXCHANGE);
-    mqRoutingkey = yamlConfigProps.getRabbitmq().get(ROUTING_KEY);
+    mqRoutingKey = yamlConfigProps.getRabbitmq().get(ROUTING_KEY);
 
   }
 
@@ -33,7 +32,7 @@ public class MessageProducer {
    * Send a document related operation message to RabbitMQ
    */
   public void send(DocumentOperationNotification documentOperationNotification) {  
-    rabbitTemplate.convertAndSend(mqExchange, mqRoutingkey, documentOperationNotification);
+    rabbitTemplate.convertAndSend(mqExchange, mqRoutingKey, documentOperationNotification);
   }
 
 }
