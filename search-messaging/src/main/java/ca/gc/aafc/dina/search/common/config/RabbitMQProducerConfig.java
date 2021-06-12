@@ -22,7 +22,7 @@ public class RabbitMQProducerConfig {
   private static final String MQ_HOST = "host";
   private static final String MQ_PASSWORD = "password";
   private static final String MQ_USERNAME = "username";
-  private static final String MQ_ROUTINGKEY = "routingkey";
+  private static final String MQ_ROUTING_KEY = "routingkey";
   private static final String MQ_EXCHANGE = "exchange";
   private static final String MQ_QUEUE = "queue";
 
@@ -38,7 +38,7 @@ public class RabbitMQProducerConfig {
 
     this.queue = yamlConfigProps.getRabbitmq().get(MQ_QUEUE);
     this.exchange = yamlConfigProps.getRabbitmq().get(MQ_EXCHANGE);
-    this.routingKey = yamlConfigProps.getRabbitmq().get(MQ_ROUTINGKEY);
+    this.routingKey = yamlConfigProps.getRabbitmq().get(MQ_ROUTING_KEY);
     this.username = yamlConfigProps.getRabbitmq().get(MQ_USERNAME);
     this.password = yamlConfigProps.getRabbitmq().get(MQ_PASSWORD);
     this.host = yamlConfigProps.getRabbitmq().get(MQ_HOST);

@@ -15,7 +15,7 @@ public class MessageProducer {
   private static final String EXCHANGE = "exchange";
   private static final String ROUTING_KEY = "routingkey";
 
-  private RabbitTemplate rabbitTemplate;
+  private final RabbitTemplate rabbitTemplate;
 
   private final String mqExchange;
   private final String mqRoutingkey;
