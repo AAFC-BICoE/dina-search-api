@@ -23,14 +23,13 @@
     <mockserver-netty.version>5.11.2</mockserver-netty.version>
     <mockserver-client-java.version>5.11.2</mockserver-client-java.version>
     <mockserver-junit-jupiter.version>5.11.2</mockserver-junit-jupiter.version>
-    <search-messaging.version>0.1</search-messaging.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>ca.gc.aafc</groupId>
       <artifactId>search-messaging</artifactId>
-      <version>${search-messaging.version}</version>
+      <version>0.1</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.shell</groupId>

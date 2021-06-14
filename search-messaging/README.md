@@ -18,7 +18,7 @@ rabbitmq:
   host: localhost
   port: 15672
 
-messaging_configuration:
+messaging:
   isConsumer: false
   isProducer: false
 

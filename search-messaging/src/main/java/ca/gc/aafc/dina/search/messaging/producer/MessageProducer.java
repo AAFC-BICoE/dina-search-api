@@ -9,7 +9,7 @@ import ca.gc.aafc.dina.search.common.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
 
 @Service
-@ConditionalOnProperty(prefix = "messaging_configuration", name = "isProducer", havingValue = "true")
+@ConditionalOnProperty(prefix = "messaging", name = "isProducer", havingValue = "true")
 public class MessageProducer {
 
   private static final String EXCHANGE = "exchange";

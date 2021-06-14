@@ -9,7 +9,7 @@ import org.springframework.context.annotation.ComponentScan;
 // invisible constructor, ignore the check style error for this case)
 @SpringBootApplication
 @EnableAutoConfiguration
-@ComponentScan({"ca.gc.aafc.dina.search.cli","ca.gc.aafc.dina.search.common","ca.gc.aafc.dina.search.messaging"})
+@ComponentScan({"ca.gc.aafc.dina.search"})
 public class SearchCliApplication {
   public static void main(String[] args) {
     SpringApplication.run(SearchCliApplication.class, args);

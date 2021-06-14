@@ -9,7 +9,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service
-@ConditionalOnProperty(prefix = "messaging_configuration", name = "isConsumer", havingValue = "true")
+@ConditionalOnProperty(prefix = "messaging", name = "isConsumer", havingValue = "true")
 public class DocumentOperationNotificationConsumer {
   
   private final IMessageProcessor messageProcessor;

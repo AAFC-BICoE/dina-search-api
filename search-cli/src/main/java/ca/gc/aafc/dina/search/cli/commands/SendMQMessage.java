@@ -12,7 +12,7 @@ import ca.gc.aafc.dina.search.messaging.types.DocumentOperationType;
 
 @Component
 @ShellComponent
-@ConditionalOnProperty(prefix = "messaging_configuration", name = "isProducer", havingValue = "true")
+@ConditionalOnProperty(prefix = "messaging", name = "isProducer", havingValue = "true")
 public class SendMQMessage {
 
   private final MessageProducer messageProducer;
