@@ -25,7 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
-import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
+import ca.gc.aafc.dina.search.common.config.YAMLConfigProperties;
 
 @SpringBootTest(properties = { "spring.shell.interactive.enabled=false" })
 @ExtendWith(MockServerExtension.class)

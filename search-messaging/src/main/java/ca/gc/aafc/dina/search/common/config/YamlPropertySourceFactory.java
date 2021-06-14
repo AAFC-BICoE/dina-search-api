@@ -1,4 +1,4 @@
-package ca.gc.aafc.dina.search.cli.config;
+package ca.gc.aafc.dina.search.common.config;
 
 import java.io.IOException;
 

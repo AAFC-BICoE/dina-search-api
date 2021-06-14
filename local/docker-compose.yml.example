@@ -2,6 +2,18 @@ version: "3.7"
 
 services:
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+        - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+        - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+        - dina_rabbitmq_net
+
   # Elasticsearch Docker Images: https://www.docker.elastic.co/
   elasticsearch-dina:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
@@ -60,4 +72,8 @@ volumes:
   elasticsearch-data:
     driver: local
   elastic-configurator-settings:
-    driver: local      
+    driver: local    
+
+networks:
+  dina_rabbitmq_net:
+    driver: bridge  

@@ -13,9 +13,9 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
-import ca.gc.aafc.dina.search.cli.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
+import ca.gc.aafc.dina.search.common.config.YAMLConfigProperties;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
 import okhttp3.HttpUrl.Builder;
@@ -29,6 +29,7 @@ import okhttp3.ResponseBody;
 @Service
 public class OpenIDHttpClient {
 
+  private static final String ERROR_DURING_RETRIEVAL_FROM = "Error during retrieval from ";
   private static final String OPENID_AUTH_SERVER = "openid_auth_server";
   private static final String GRANT_TYPE = "grant_type";
   private static final String REFRESH_TOKEN = "refresh_token";
@@ -80,12 +81,12 @@ public class OpenIDHttpClient {
         if (bodyContent != null) {
           return bodyContent.string();
         } else {
-          throw new SearchApiException("Error during retrieval from " + route.uri());
+          throw new SearchApiException(ERROR_DURING_RETRIEVAL_FROM + route.uri());
         }
       } else if (response.code() == 404) {
-        throw new SearchApiNotFoundException("Error during retrieval from " + route.uri() + " status code:" + response.code());
+        throw new SearchApiNotFoundException(ERROR_DURING_RETRIEVAL_FROM + route.uri() + " status code:" + response.code());
       } else {
-        throw new SearchApiException("Error during retrieval from " + route.uri() + " status code:" + response.code());
+        throw new SearchApiException(ERROR_DURING_RETRIEVAL_FROM + route.uri() + " status code:" + response.code());
       }
     } catch (IOException ioEx) {
       throw new SearchApiException("Exception during retrieval from " + route.uri(), ioEx);

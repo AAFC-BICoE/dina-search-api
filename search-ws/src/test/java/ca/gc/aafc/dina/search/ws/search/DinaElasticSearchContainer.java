@@ -1,7 +1,6 @@
 package ca.gc.aafc.dina.search.ws.search;
 
 import java.io.File;
-import java.nio.file.Path;
 
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
