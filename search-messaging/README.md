@@ -19,8 +19,8 @@ rabbitmq:
   port: 15672
 
 messaging_configuration:
-  consumer: disabled
-  producer: disabled
+  isConsumer: false
+  isProducer: false
 
 values of enabled will enable the configuration.
 ```
