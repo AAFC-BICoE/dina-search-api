@@ -16,8 +16,8 @@ rabbitmq:
   routingkey: dina.search.routingkey
   username: guest
   password: guest
-  host: localhost
+  host: ${RABBITMQ_HOSTNAME:localhost}
   port: 15672
 messaging:
-  isConsumer: false
-  isProducer: false
+  isConsumer: ${IS_MESSAGE_CONSUMER:false}
+  isProducer: ${IS_MESSAGE_PRODUCER:false}
