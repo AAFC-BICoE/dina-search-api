@@ -13,7 +13,6 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <mockserver-junit-jupiter.version>5.11.2</mockserver-junit-jupiter.version>
   </properties>
 
   <dependencies>
