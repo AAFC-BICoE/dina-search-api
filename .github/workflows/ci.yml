@@ -121,7 +121,7 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Publish search-messaging to Maven Central
-        run: mvn -DsignArtifacts=true --batch-mode javadoc:jar deploy -pl search-messaging
+        run: mvn -DsignArtifacts=true --batch-mode javadoc:javadoc javadoc:jar deploy -pl search-messaging
         env:
           MAVEN_USERNAME: aafcbicoe
           MAVEN_CENTRAL_PW: ${{ secrets.MAVEN_CENTRAL_PW }}
