@@ -4,7 +4,7 @@
 
   <parent>
     <artifactId>search-api-parent</artifactId>
-    <groupId>ca.gc.aafc</groupId>
+    <groupId>io.github.aafc-bicoe</groupId>
     <version>0.2</version>
   </parent>
 
@@ -13,7 +13,6 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <mockserver-junit-jupiter.version>5.11.2</mockserver-junit-jupiter.version>
   </properties>
 
   <dependencies>
@@ -47,6 +46,12 @@
 			<artifactId>transport</artifactId>
 			<version>${elasticsearch.version}</version>
 		</dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -64,4 +69,11 @@
       </plugin>
     </plugins>
   </build>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/mit-license</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 </project>

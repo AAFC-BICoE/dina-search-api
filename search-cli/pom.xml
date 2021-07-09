@@ -4,7 +4,7 @@
 
   <parent>
     <artifactId>search-api-parent</artifactId>
-    <groupId>ca.gc.aafc</groupId>
+    <groupId>io.github.aafc-bicoe</groupId>
     <version>0.2</version>
   </parent>
 
@@ -16,18 +16,13 @@
     <spring.shell.version>2.0.0.RELEASE</spring.shell.version>
     <okhttp.version>4.9.0</okhttp.version>
     <java-jwt.version>3.11.0</java-jwt.version>
-    <jackson-databind.version>2.12.1</jackson-databind.version>
-    <jackson-core.version>2.12.1</jackson-core.version>
-    <jackson-annotations.version>2.12.1</jackson-annotations.version>
     <json-path.version>2.5.0</json-path.version>
-    <mockserver-netty.version>5.11.2</mockserver-netty.version>
-    <mockserver-client-java.version>5.11.2</mockserver-client-java.version>
-    <mockserver-junit-jupiter.version>5.11.2</mockserver-junit-jupiter.version>
+    <mockserver.version>5.11.2</mockserver.version>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>ca.gc.aafc</groupId>
+      <groupId>io.github.aafc-bicoe</groupId>
       <artifactId>search-messaging</artifactId>
       <version>0.2</version>
     </dependency>
@@ -54,17 +49,14 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson-databind.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>${jackson-core.version}</version>
     </dependency> 
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>${jackson-annotations.version}</version>
     </dependency>
 		<dependency>
 			<groupId>com.jayway.jsonpath</groupId>
@@ -105,24 +97,30 @@
     <dependency>
       <groupId>org.mock-server</groupId>
       <artifactId>mockserver-junit-jupiter</artifactId>
-      <version>${mockserver-junit-jupiter.version}</version>
+      <version>${mockserver.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mock-server</groupId>
       <artifactId>mockserver-netty</artifactId>
-      <version>${mockserver-netty.version}</version>
+      <version>${mockserver.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mock-server</groupId>
       <artifactId>mockserver-client-java</artifactId>
-      <version>${mockserver-client-java.version}</version>
+      <version>${mockserver.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-webmvc</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>elasticsearch</artifactId>
+      <version>${testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -142,5 +140,11 @@
       </plugin>
     </plugins>
   </build>
-
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/mit-license</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 </project>
