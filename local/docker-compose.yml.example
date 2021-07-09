@@ -65,7 +65,6 @@ services:
     environment:
       messaging.isConsumer: "true"
       messaging.isProducer: "true"
-      rabbitmq.host: rabbitmq-dina
 
   search-ws:
     image: aafcbicoe/dina-search-ws:dev # Should match the name used locally to build the image
