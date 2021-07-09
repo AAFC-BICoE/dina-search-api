@@ -2,49 +2,100 @@ version: "3.7"
 
 services:
 
-  # Elasticsearch Docker Images: https://www.docker.elastic.co/
-  elasticsearch-dina:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
+    # Elasticsearch Docker Images: https://www.docker.elastic.co/
+    elasticsearch-dina:
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.4.0
+      profiles: ["search_api"]
+      environment:
+        - xpack.security.enabled=false
+        - discovery.type=single-node
+      ulimits:
+        memlock:
+          soft: -1
+          hard: -1
+        nofile:
+          soft: 65536
+          hard: 65536
+      cap_add:
+        - IPC_LOCK
+      volumes:
+        - elasticsearch-data:/usr/share/elasticsearch/data
+      ports:
+        - 9200:9200
+        - 9300:9300
+      labels:
+ 
+  # Addition of Kibana, for development purpose or browsing through the dina indices.
+  kibana-dina:
+    image: docker.elastic.co/kibana/kibana:7.4.0
+    profiles: ["search_api"]
     environment:
-      - xpack.security.enabled=false
-      - discovery.type=single-node
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    cap_add:
-      - IPC_LOCK
-    volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data
+      - ELASTICSEARCH_HOSTS=http://elasticsearch-dina:9200
     ports:
-      - 9200:9200
-      - 9300:9300
+      - 5601:5601
+    depends_on:
+      - elasticsearch-dina
 
+  # Check the status of elasticsearch and configure indices if not already present.
   elastic-configurator:
-    image: aafcbicoe/dina-es-init-container:dev # Should match the name used locally to build the image
+    image: aafcbicoe/es-init-container:0.2
+    profiles: ["search_api"]
     environment:
       ELASTIC_SERVER_URL: $ELASTIC_SERVER_URL
       INDEX_CREATE_CMD: $INDEX_CREATE_CMD
-      INDEX_NAME: $INDEX_NAME
-      INDEX_SETTINGS_FILE: $INDEX_SETTINGS_FILE
+      DINA_DOCUMENT_INDEX_NAME: $DINA_DOCUMENT_INDEX_NAME 
+      DINA_AGENT_INDEX_NAME: $DINA_AGENT_INDEX_NAME 
+      DINA_DOCUMENT_INDEX_SETTINGS_FILE: /usr/share/elastic-configurator/settings/default-document-index/dina_document_index_settings.json
+      DINA_AGENT_INDEX_SETTINGS_FILE: /usr/share/elastic-configurator/settings/agent-index/dina_agent_index_settings.json
     volumes:
       - ./elastic-configurator-settings:/usr/share/elastic-configurator/settings
-
-  search-cli:
-    image: aafcbicoe/dina-search-cli:dev # Should match the name used locally to build the image
-    stdin_open: true
-    tty: true
+    depends_on:
+      - elasticsearch-dina
 
   search-ws:
-    image: aafcbicoe/dina-search-ws:dev # Should match the name used locally to build the image
+    image: aafcbicoe/dina-search-ws:0.2
+    profiles: ["search_api"]
+    networks:
+      - default
+
+  search-cli:
+    image: aafcbicoe/dina-search-cli:0.2  # Should match the name used locally to build the image
+    profiles: ["search_api"]
+    environment:
+      ELASTICSEARCH_URL: elasticsearch-dina
+      MATERIAL_SAMPLE_URL: http://api.dina.local/collection/api/v1/material-sample
+      METADATA_URL: http://api.dina.local/objectstore/api/v1/metadata
+      ORGANIZATION_URL: http://api.dina.local/agent/api/v1/organization
+      PERSON_URL: http://api.dina.local/agent/api/v1/person
+      RABBITMQ_HOSTNAME: rabbitmq-dina
+      IS_MESSAGE_CONSUMER: ${IS_MESSAGE_CONSUMER_SETTING_VALUE}
+      IS_MESSAGE_PRODUCER: ${IS_MESSAGE_PRODUCER_SETTING_VALUE}
+    stdin_open: true
+    tty: true
+    networks:
+      - dina_rabbitmq_net
+      - default
+
+  rabbitmq-dina:
+    image: rabbitmq:3-management-alpine
+    profiles: ["search_api"]
+    container_name: 'rabbitmq-dina'
     ports:
-      - 8085:8085
+        - 5672:5672
+        - 15672:15672
+    volumes:
+        - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+        - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+        - dina_rabbitmq_net
 
 volumes:
   elasticsearch-data:
     driver: local
   elastic-configurator-settings:
     driver: local      
+      
+networks:
+  dina_rabbitmq_net:
+    driver: bridge  
+    
