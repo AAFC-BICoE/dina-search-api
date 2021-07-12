@@ -62,6 +62,12 @@ services:
     image: aafcbicoe/dina-search-cli:dev # Should match the name used locally to build the image
     stdin_open: true
     tty: true
+    environment:
+      messaging.isConsumer: "true"
+      messaging.isProducer: "true"
+      rabbitmq.host: rabbitmq-dina
+    networks:
+      - dina_rabbitmq_net
 
   search-ws:
     image: aafcbicoe/dina-search-ws:dev # Should match the name used locally to build the image
