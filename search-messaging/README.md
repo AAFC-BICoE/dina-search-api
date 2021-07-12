@@ -1,5 +1,7 @@
 # search-messaging
 
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.aafc-bicoe/search-messaging.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.github.aafc-bicoe%22%20AND%20a:%22search-messaging%22)
+
 AAFC DINA search-messaging implementation.
 
 The search messaging is a library providing DINA document operations related messaging. The library is meant to be integrated with the Search API application. Messaging producer generate DINA message containing information about the document and the operation performed on that document. Messaging is dispatched/pushed within a queue. DINA messaging consumer(s) process the incoming messages by performing/delegating the processing to the Search CLI document commands. 
