@@ -37,3 +37,6 @@ endpoints:
       - organizations
   managed-attribute-map:
     targetUrl: ${MANAGED_ATTRIBUTE_URL:http://localhost:8081/api/v1}
+  storage-unit:
+    targetUrl: ${STORAGE_UNIT_URL:http://localhost:8085/api/v1/storage-unit}
+    indexName: dina_storage_index
