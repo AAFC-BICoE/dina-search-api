@@ -44,3 +44,4 @@ endpoints:
       - parentStorageUnit
       - storageUnitChildren
       - storageUnitType
+      - hierarchy
