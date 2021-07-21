@@ -40,6 +40,37 @@
                     "ignore_above": 256
                   }
                 }
+              },
+              "hierarchy": {
+                "properties": {
+                  "uuid": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  },
+                  "name": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  },
+                  "rank": {
+                    "type": "text",
+                    "fields": {
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  }
+                }
               }
             }
           },
