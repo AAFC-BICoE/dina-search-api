@@ -18,6 +18,7 @@
     <java-jwt.version>3.11.0</java-jwt.version>
     <json-path.version>2.5.0</json-path.version>
     <mockserver.version>5.11.2</mockserver.version>
+    <rabbitmq.testcontainers.version>1.15.3</rabbitmq.testcontainers.version>
   </properties>
 
   <dependencies>
@@ -121,6 +122,12 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>elasticsearch</artifactId>
       <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>rabbitmq</artifactId>
+      <version>${rabbitmq.testcontainers.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
