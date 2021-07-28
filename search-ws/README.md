@@ -94,17 +94,21 @@ http://<target-server>:8085/search/text?indexName=<target-index-name>
 
 #### Auto complete a value equal to 'Jim' by looking at displayname
 ```
-http://localhost:8085/search/auto-complete?prefix=Jim&autocompleteField=data.attributes.displayName&indexName=dina_document_index
+http://localhost:8085/search/auto-complete?prefix=Jim&autocompleteField=data.attributes.displayName&indexName=dina-agent-index
 ```
 <br/>
 
 #### Auto complete a value equal to 'Jim' by looking at displayname and aliases
 ```
-http://localhost:8085/search/auto-complete?prefix=Jim&autocompleteField=data.attributes.displayName&additionalField=data.attributes.aliases&indexName=dina_document_index
+http://localhost:8085/search/auto-complete?prefix=Jim&autocompleteField=data.attributes.displayName&additionalField=data.attributes.aliases&indexName=dina-agent-index
 ```
 
+*Note:* The provided fields (autocompleteField and additionalField) have to match the one defined in the selected index.
+
+As per the description in the #Auto Completion section the additonalField is optional and when provided a search is conducted with the information provided.
 
 ### Autocomplete support
+
 Only `displayName` field has been analyzed to support search-as-you-type capability.
 
 
