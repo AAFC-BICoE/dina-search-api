@@ -39,6 +39,8 @@ import lombok.SneakyThrows;
   })
 class DinaMessageProducerConsumerIT {
 
+  private static final String DINA_SEARCH_QUEUE = "dina.search.queue";
+
   @Autowired
   private MessageProducer messageProducer;
 
@@ -55,7 +57,7 @@ class DinaMessageProducerConsumerIT {
 
   @BeforeAll
   static void beforeAll() {
-    rabbitMQContainer.withQueue("dina.search.queue");
+    rabbitMQContainer.withQueue(DINA_SEARCH_QUEUE);
     rabbitMQContainer.start();
 
     assertEquals(5672, rabbitMQContainer.getMappedPort(5672).intValue());
@@ -97,7 +99,15 @@ class DinaMessageProducerConsumerIT {
     validateMessageTransferAndProcessingByConsumer(docNotification); 
   }
 
+  /*
+   * The method is responsible for sending a message from the producer class. Validating
+   * that the message consumer recived the expected message.
+   * 
+   * Nothing is mocked, we are making use of spy objects to validate real code flow.
+   *  
+   */
   private void validateMessageTransferAndProcessingByConsumer(DocumentOperationNotification docNotification) throws IOException {
+
     ArgumentCaptor<DocumentOperationNotification> argumentCaptor = ArgumentCaptor.forClass(DocumentOperationNotification.class);
     messageProducer.send(docNotification);
 
