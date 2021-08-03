@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @ConditionalOnProperty(prefix = "messaging", name = "isProducer", havingValue = "true")
-public class RabbitMQMessageProducer {
+public class RabbitMQMessageProducer implements MessageProducer {
   private static final String EXCHANGE = "exchange";
   private static final String ROUTING_KEY = "routingkey";
 
