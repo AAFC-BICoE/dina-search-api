@@ -1,3 +1,5 @@
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.aafc-bicoe/search-messaging.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22io.github.aafc-bicoe%22%20AND%20a:%22search-messaging%22)
+
 # search-messaging
 
 AAFC DINA search-messaging implementation.

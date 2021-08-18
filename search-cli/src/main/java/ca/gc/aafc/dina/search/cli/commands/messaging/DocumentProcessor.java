@@ -69,11 +69,11 @@ public class DocumentProcessor implements IMessageProcessor {
       case ADD:
       case UPDATE: 
         indexDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());
-      break;
+        break;
 
       case DELETE: 
         deleteDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());      
-      break;
+        break;
 
       case NOT_DEFINED:
       default:

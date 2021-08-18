@@ -49,7 +49,7 @@ jobs:
     name: Build Docker Image and Push to DockerHub
     needs: [build]
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/disabled' }}
+    if: ${{ github.ref == 'refs/heads/main' }}
 
     steps:
       - name: Download artifacts from build job
@@ -102,7 +102,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set up for Maven Central deploy (master branch only)
+      - name: Set up for Maven Central deploy
         uses: actions/setup-java@v1
         with: # running setup-java again overwrites the settings.xml
           java-version: 11
@@ -121,7 +121,9 @@ jobs:
             ${{ runner.os }}-maven-
 
       - name: Publish search-messaging to Maven Central
-        run: mvn -DsignArtifacts=true -N --batch-mode javadoc:javadoc javadoc:jar deploy
+        run: |
+          mvn -DsignArtifacts=true -N --batch-mode deploy
+          mvn -DsignArtifacts=true --batch-mode javadoc:javadoc javadoc:jar deploy -pl search-messaging
         env:
           MAVEN_USERNAME: aafcbicoe
           MAVEN_CENTRAL_PW: ${{ secrets.MAVEN_CENTRAL_PW }}
