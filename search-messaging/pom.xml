@@ -5,7 +5,7 @@
   <parent>
     <artifactId>search-api-parent</artifactId>
     <groupId>io.github.aafc-bicoe</groupId>
-    <version>0.3-SNAPSHOT</version>
+    <version>0.4-SNAPSHOT</version>
   </parent>
 
   <artifactId>search-messaging</artifactId>
@@ -13,15 +13,13 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <amqp-client.version>5.12.0</amqp-client.version>
-    <testcontainers.version>1.15.2</testcontainers.version>
   </properties>
 
   <dependencies>
     <dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-amqp</artifactId>
-		</dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-amqp</artifactId>
+    </dependency>
 
     <!-- TEST Scope-->
     <dependency>

@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 public class MessagingConfigurationCondition extends AnyNestedCondition {
 
   public MessagingConfigurationCondition() {
-      super(ConfigurationPhase.PARSE_CONFIGURATION);
+    super(ConfigurationPhase.PARSE_CONFIGURATION);
   }
 
   @ConditionalOnProperty(prefix = "messaging", name = "isConsumer", havingValue = "true")

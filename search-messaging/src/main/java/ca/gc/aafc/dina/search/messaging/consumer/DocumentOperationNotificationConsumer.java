@@ -20,10 +20,9 @@ public class DocumentOperationNotificationConsumer {
   
   @RabbitListener(queues = "dina.search.queue")
   public void receiveMessage(final DocumentOperationNotification docOperationMessage) {
-    log.info("Received message and deserialized to : {}", docOperationMessage.toString());
+    log.info("Received message and deserialized to : {}", docOperationMessage::toString);
 
     // Delegate to the message processor
-    //
     messageProcessor.processMessage(docOperationMessage);
   }
 }
