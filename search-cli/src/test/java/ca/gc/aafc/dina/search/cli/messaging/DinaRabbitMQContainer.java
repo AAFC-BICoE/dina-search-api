@@ -5,7 +5,7 @@ import org.testcontainers.utility.DockerImageName;
 
 public class DinaRabbitMQContainer extends RabbitMQContainer {
 
-  private static final DockerImageName myImage = DockerImageName.parse("rabbitmq:3-management-alpine");
+  private static final DockerImageName myImage = DockerImageName.parse("rabbitmq:3.8.20-management-alpine");
 
   public DinaRabbitMQContainer() {
     super(myImage);
