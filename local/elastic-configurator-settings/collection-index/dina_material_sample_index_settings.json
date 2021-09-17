@@ -5,7 +5,6 @@
       "number_of_replicas": "1"
     }
   },
-//  TODO review types and other usages
   "mappings": {
     "properties": {
       "data": {
@@ -61,22 +60,10 @@
                 }
               },
               "preparationDate": {
-                "type": "text",
-                "fields": {
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                  }
-                }
+                "type": "date"
               },
               "managedAttributes ": {
-                "type": "text",
-                "fields": {
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                  }
-                }
+                "type": "object"
               },
               "preparationRemarks": {
                 "type": "text",
@@ -115,13 +102,7 @@
                 }
               },
               "publiclyReleasable": {
-                "type": "text",
-                "fields": {
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                  }
-                }
+                "type": "boolean"
               },
               "notPubliclyReleasableReason": {
                 "type": "text",
