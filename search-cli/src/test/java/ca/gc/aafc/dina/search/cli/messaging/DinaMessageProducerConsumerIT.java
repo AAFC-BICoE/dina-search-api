@@ -131,8 +131,7 @@ class DinaMessageProducerConsumerIT {
     try {
       Thread.currentThread().sleep(1000 * 5);
     } catch (InterruptedException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
+      Assertions.fail(e.getMessage());
     }
   }
 }
