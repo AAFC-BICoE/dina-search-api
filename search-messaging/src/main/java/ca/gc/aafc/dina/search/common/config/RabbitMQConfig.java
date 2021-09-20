@@ -4,6 +4,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.ExchangeBuilder;
+import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -14,13 +15,14 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @Conditional(MessagingConfigurationCondition.class)
-public class RabbitMQProducerConfig {
+public class RabbitMQConfig {
 
   private static final String MQ_HOST = "host";
   private static final String MQ_PASSWORD = "password";
@@ -37,7 +39,7 @@ public class RabbitMQProducerConfig {
   private final String host;
 
   @Autowired
-  public RabbitMQProducerConfig(YAMLConfigProperties yamlConfigProps) {
+  public RabbitMQConfig(YAMLConfigProperties yamlConfigProps) {
     this.queue = yamlConfigProps.getRabbitmq().get(MQ_QUEUE);
     this.exchange = yamlConfigProps.getRabbitmq().get(MQ_EXCHANGE);
     this.routingKey = yamlConfigProps.getRabbitmq().get(MQ_ROUTING_KEY);
@@ -59,12 +61,12 @@ public class RabbitMQProducerConfig {
    *  Fallback here if the not.
    * @return
    */
-//  @Bean
-//  @ConditionalOnMissingBean(name = "dinaQueue")
-//  protected Queue createQueue() {
-//    return QueueBuilder.durable(queue)
-//        .build();
-//  }
+  @Bean
+  @ConditionalOnMissingBean(name = "dinaQueue")
+  protected Queue createQueue() {
+    return QueueBuilder.durable(queue)
+        .build();
+  }
 
   @Bean  
   protected Exchange createExchange() {
@@ -100,5 +102,41 @@ public class RabbitMQProducerConfig {
     rabbitTemplate.setMessageConverter(createMessageConverter());
     
     return rabbitTemplate;
+  }
+
+  @Configuration
+  @ConditionalOnProperty(prefix = "messaging", name = "isConsumer", havingValue = "true")
+  static class RabbitMQConsumerConfiguration {
+
+    private final String queueName;
+    private final String deadLetterQueue;
+    private final String deadLetterExchange;
+
+    public RabbitMQConsumerConfiguration(YAMLConfigProperties yamlConfigProps) {
+      this.queueName = yamlConfigProps.getRabbitmq().get(MQ_QUEUE);
+      this.deadLetterQueue = queueName + ".dlq";
+      this.deadLetterExchange = yamlConfigProps.getRabbitmq().get(MQ_EXCHANGE) + ".dlx";
+    }
+
+    @Bean("dinaQueue")
+    protected Queue createQueue() {
+      return QueueBuilder.durable(queueName)
+          .withArgument("x-dead-letter-exchange", deadLetterExchange).build();
+    }
+
+    @Bean
+    protected Queue deadLetterQueue() {
+      return QueueBuilder.durable(deadLetterQueue).build();
+    }
+
+    @Bean
+    protected FanoutExchange deadLetterExchange() {
+      return new FanoutExchange(deadLetterExchange);
+    }
+
+    @Bean
+    protected Binding deadLetterBinding() {
+      return BindingBuilder.bind(deadLetterQueue()).to(deadLetterExchange());
+    }
   }
 }
