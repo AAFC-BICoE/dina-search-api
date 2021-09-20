@@ -11,13 +11,13 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConditionalOnProperty(prefix = "messaging", name = "isConsumer", havingValue = "true")
-public class RabbitMQConsumerOnlyConfiguration {
+public class RabbitMQConsumerConfiguration {
 
   private final String queueName;
   private final String deadLetterQueue;
   private final String deadLetterExchange;
 
-  public RabbitMQConsumerOnlyConfiguration(RabbitMQProducerConfig rabbitMQProducerConfig) {
+  public RabbitMQConsumerConfiguration(RabbitMQProducerConfig rabbitMQProducerConfig) {
     this.queueName = rabbitMQProducerConfig.getQueueName();
     this.deadLetterQueue = rabbitMQProducerConfig.getQueueName()  + ".dlq";
     this.deadLetterExchange = rabbitMQProducerConfig.getExchangeName() + ".dlx";

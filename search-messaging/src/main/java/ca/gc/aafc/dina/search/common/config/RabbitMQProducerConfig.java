@@ -4,7 +4,6 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.ExchangeBuilder;
-import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
@@ -54,6 +53,11 @@ public class RabbitMQProducerConfig {
     return exchange;
   }
 
+  /**
+   *  Can be created by RabbitMQConsumerConfiguration.
+   *  Fallback here if the not.
+   * @return
+   */
   @Bean
   @ConditionalOnMissingBean(name = "dinaQueue")
   protected Queue createQueue() {
