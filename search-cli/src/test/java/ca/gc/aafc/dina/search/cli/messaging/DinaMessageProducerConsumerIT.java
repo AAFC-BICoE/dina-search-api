@@ -53,11 +53,11 @@ class DinaMessageProducerConsumerIT {
   private DocumentProcessor documentProcessor;
 
   @Container
-  private static RabbitMQContainer rabbitMQContainer = new DinaRabbitMQContainer();
+  private static final RabbitMQContainer rabbitMQContainer = new DinaRabbitMQContainer();
 
   @BeforeAll
   static void beforeAll() {
-    rabbitMQContainer.withQueue(DINA_SEARCH_QUEUE);
+    //rabbitMQContainer.withQueue(DINA_SEARCH_QUEUE);
     rabbitMQContainer.start();
 
     assertEquals(5672, rabbitMQContainer.getMappedPort(5672).intValue());
@@ -97,6 +97,14 @@ class DinaMessageProducerConsumerIT {
         "testDocumentId", DocumentOperationType.DELETE);
 
     validateMessageTransferAndProcessingByConsumer(docNotification); 
+  }
+
+  @SneakyThrows
+  @Test
+  void deleteDocumentOnNonExistingDocumentType() {
+    DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "xyz",
+        "testDocumentId", DocumentOperationType.DELETE);
+    validateMessageTransferAndProcessingByConsumer(docNotification);
   }
 
   /*
