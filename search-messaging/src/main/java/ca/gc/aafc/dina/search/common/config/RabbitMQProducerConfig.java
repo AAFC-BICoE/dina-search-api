@@ -12,6 +12,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
@@ -58,12 +59,12 @@ public class RabbitMQProducerConfig {
    *  Fallback here if the not.
    * @return
    */
-//  @Bean
-//  @ConditionalOnMissingBean(name = "dinaQueue")
-//  protected Queue createQueue() {
-//    return QueueBuilder.durable(queue)
-//        .build();
-//  }
+  @Bean
+  @ConditionalOnMissingBean(name = "dinaQueue")
+  protected Queue createQueue() {
+    return QueueBuilder.durable(queue)
+        .build();
+  }
 
   @Bean  
   protected Exchange createExchange() {
@@ -71,9 +72,9 @@ public class RabbitMQProducerConfig {
   }
   
   @Bean
-  protected Binding createBinding() {
+  protected Binding createBinding(@Qualifier("dinaQueue") Queue queue) {
     return BindingBuilder
-            .bind(createQueue())
+            .bind(queue)
             .to(createExchange())
             .with(routingKey)
             .noargs();
