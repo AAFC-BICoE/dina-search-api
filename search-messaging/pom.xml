@@ -54,6 +54,7 @@
         <artifactId>lombok-maven-plugin</artifactId>
         <configuration>
           <sourceDirectory>src/main/java</sourceDirectory>
+          <outputDirectory>${project.build.directory}/delombok</outputDirectory>
           <addOutputDirectory>false</addOutputDirectory>
         </configuration>
         <executions>
@@ -82,7 +83,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <doclint>none</doclint>
-	  <sourcepath>target/generated-sources/delombok</sourcepath>
+          <sourcepath>${project.build.directory}/delombok</sourcepath>
         </configuration>
       </plugin>
     </plugins>
