@@ -109,7 +109,7 @@ class DinaMessageProducerConsumerIT {
 
   /*
    * The method is responsible for sending a message from the producer class. Validating
-   * that the message consumer recived the expected message.
+   * that the message consumer received the expected message.
    * 
    * Nothing is mocked, we are making use of spy objects to validate real code flow.
    *  
@@ -122,7 +122,7 @@ class DinaMessageProducerConsumerIT {
     give5SecondsForMessageDelivery();
 
     verify(documentConsumer).receiveMessage(argumentCaptor.capture());
-    DocumentOperationNotification capturedArgument = argumentCaptor.<DocumentOperationNotification> getValue();
+    DocumentOperationNotification capturedArgument = argumentCaptor.getValue();
     assertResult(docNotification, capturedArgument);
 
     verify(documentProcessor).processMessage(Mockito.any(DocumentOperationNotification.class));
@@ -137,7 +137,7 @@ class DinaMessageProducerConsumerIT {
 
   private void give5SecondsForMessageDelivery() {
     try {
-      Thread.currentThread().sleep(1000 * 5);
+      Thread.sleep(1000 * 5);
     } catch (InterruptedException e) {
       Assertions.fail(e.getMessage());
     }
