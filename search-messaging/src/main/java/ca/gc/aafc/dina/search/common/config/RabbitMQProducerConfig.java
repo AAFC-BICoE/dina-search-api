@@ -4,13 +4,16 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Exchange;
 import org.springframework.amqp.core.ExchangeBuilder;
+import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
@@ -32,22 +35,30 @@ public class RabbitMQProducerConfig {
   private final String username;
   private final String password;
   private final String host;
-  
+
   @Autowired
   public RabbitMQProducerConfig(YAMLConfigProperties yamlConfigProps) {
-
     this.queue = yamlConfigProps.getRabbitmq().get(MQ_QUEUE);
     this.exchange = yamlConfigProps.getRabbitmq().get(MQ_EXCHANGE);
     this.routingKey = yamlConfigProps.getRabbitmq().get(MQ_ROUTING_KEY);
     this.username = yamlConfigProps.getRabbitmq().get(MQ_USERNAME);
     this.password = yamlConfigProps.getRabbitmq().get(MQ_PASSWORD);
     this.host = yamlConfigProps.getRabbitmq().get(MQ_HOST);
+  }
 
+  String getQueueName() {
+    return queue;
+  }
+
+  String getExchangeName() {
+    return exchange;
   }
 
   @Bean
+  @ConditionalOnMissingBean(name = "dinaQueue")
   protected Queue createQueue() {
-    return new Queue(queue, true);
+    return QueueBuilder.durable(queue)
+        .build();
   }
 
   @Bean  
