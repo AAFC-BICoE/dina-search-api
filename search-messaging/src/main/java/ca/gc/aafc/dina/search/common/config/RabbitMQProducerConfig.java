@@ -59,12 +59,12 @@ public class RabbitMQProducerConfig {
    *  Fallback here if the not.
    * @return
    */
-  @Bean
-  @ConditionalOnMissingBean(name = "dinaQueue")
-  protected Queue createQueue() {
-    return QueueBuilder.durable(queue)
-        .build();
-  }
+//  @Bean
+//  @ConditionalOnMissingBean(name = "dinaQueue")
+//  protected Queue createQueue() {
+//    return QueueBuilder.durable(queue)
+//        .build();
+//  }
 
   @Bean  
   protected Exchange createExchange() {
