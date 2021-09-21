@@ -57,7 +57,6 @@ class DinaMessageProducerConsumerIT {
 
   @BeforeAll
   static void beforeAll() {
-    //rabbitMQContainer.withQueue(DINA_SEARCH_QUEUE);
     rabbitMQContainer.start();
 
     assertEquals(5672, rabbitMQContainer.getMappedPort(5672).intValue());
@@ -99,14 +98,6 @@ class DinaMessageProducerConsumerIT {
     validateMessageTransferAndProcessingByConsumer(docNotification); 
   }
 
-  @SneakyThrows
-  @Test
-  void deleteDocumentOnNonExistingDocumentType() {
-    DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "xyz",
-        "testDocumentId", DocumentOperationType.DELETE);
-    validateMessageTransferAndProcessingByConsumer(docNotification);
-  }
-
   /*
    * The method is responsible for sending a message from the producer class. Validating
    * that the message consumer received the expected message.
@@ -114,7 +105,7 @@ class DinaMessageProducerConsumerIT {
    * Nothing is mocked, we are making use of spy objects to validate real code flow.
    *  
    */
-  private void validateMessageTransferAndProcessingByConsumer(DocumentOperationNotification docNotification) throws IOException {
+  private void validateMessageTransferAndProcessingByConsumer(DocumentOperationNotification docNotification) {
 
     ArgumentCaptor<DocumentOperationNotification> argumentCaptor = ArgumentCaptor.forClass(DocumentOperationNotification.class);
     messageProducer.send(docNotification);
@@ -128,7 +119,7 @@ class DinaMessageProducerConsumerIT {
     verify(documentProcessor).processMessage(Mockito.any(DocumentOperationNotification.class));
   }
 
-  private void assertResult(DocumentOperationNotification docOperation, DocumentOperationNotification fromConsumer) throws java.io.IOException {
+  private void assertResult(DocumentOperationNotification docOperation, DocumentOperationNotification fromConsumer) {
     Assertions.assertEquals(docOperation.isDryRun(), fromConsumer.isDryRun());
     Assertions.assertEquals(docOperation.getOperationType(), fromConsumer.getOperationType());
     Assertions.assertEquals(docOperation.getDocumentId(), fromConsumer.getDocumentId());

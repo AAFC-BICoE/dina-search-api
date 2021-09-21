@@ -33,7 +33,7 @@ public class DinaIndexDocumentIT {
   private DocumentIndexer documentIndexer;
 
   @Container
-  private static ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
+  private static final ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
 
   @DisplayName("Integration Test index document")
   @Test
@@ -59,7 +59,7 @@ public class DinaIndexDocumentIT {
       assertEquals(1, foundDocument);
 
     } catch (SearchApiException e) {
-      fail();
+      fail(e.getMessage());
     } finally {
       elasticsearchContainer.stop();
     }
@@ -99,7 +99,7 @@ public class DinaIndexDocumentIT {
       assertEquals(1, foundDocument);
 
     } catch (SearchApiException e) {
-      fail();
+      fail(e.getMessage());
     } finally {
       elasticsearchContainer.stop();
     }
@@ -140,7 +140,7 @@ public class DinaIndexDocumentIT {
       assertEquals(0, foundDocument);
 
     } catch (SearchApiException e) {
-      fail();
+      fail(e.getMessage());
     } finally {
       elasticsearchContainer.stop();
     }
@@ -170,7 +170,7 @@ public class DinaIndexDocumentIT {
     int foundDocument = -1;
     int nCount = 0;
     while (foundDocument != foundCondition && nCount < 10) {
-      Thread.currentThread().sleep(1000*5);
+      Thread.sleep(1000*5);
       foundDocument = search(client, searchValue);
       nCount++;
     }
