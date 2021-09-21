@@ -43,14 +43,14 @@ Once the services have started you can access the search-ws REST API at port 808
 ### Auto Completion 
 
 `
-http://<target-server>:8085/search/auto-complete?prefix=<string>&autocompleteField=<fully qualified field>&additionalField=<fully qualified field>&indexName=<target index name>
+http://<target-server>:8085/search/auto-complete?prefix=<string>&autoCompleteField=<fully qualified field>&additionalField=<fully qualified field>&indexName=<target index name>
 `
 
 - `target-server` = localhost
 - `prefix` = string that we are looking matches
-- `autocompleteField` = Fully qualified field that has been mapped as 'search_as_you_type'
+- `autoCompleteField` = Fully qualified field that has been mapped as 'search_as_you_type'
 - `additionalField` = Fully qualified field that we want to add as an alternative to the autocomplete field.
-- `target-index-name` =  dina-document-index | dina-agent-index
+- `target-index-name` =  dina_document_index | dina_agent_index
 
 <br/>
 
@@ -69,7 +69,7 @@ http://<target-server>:8085/search/text?indexName=<target-index-name>
 `
 
 - `target-server` = localhost
-- `target-index-name` =  dina-document-index | dina-agent-index
+- `target-index-name` =  dina_document_index | dina_agent_index
 
  
 | HTTP Verb | Supported | Content-Type | Produces |
@@ -85,8 +85,8 @@ http://<target-server>:8085/search/text?indexName=<target-index-name>
 <br/>
 
 ### Supported indices
-- dina-document-index (default index)
-- dina-agent-index (agent specific index)
+- dina_document_index (default index)
+- dina_agent_index (agent specific index)
 
 
 ### Autocomplete support using auto-complete endpoint
@@ -94,16 +94,16 @@ http://<target-server>:8085/search/text?indexName=<target-index-name>
 
 #### Auto complete a value equal to 'Jim' by looking at displayname
 ```
-http://localhost:8085/search/auto-complete?prefix=Jim&autocompleteField=data.attributes.displayName&indexName=dina-agent-index
+http://localhost:8085/search/auto-complete?prefix=Jim&autoCompleteField=data.attributes.displayName&indexName=dina_agent_index
 ```
 <br/>
 
 #### Auto complete a value equal to 'Jim' by looking at displayname and aliases
 ```
-http://localhost:8085/search/auto-complete?prefix=Jim&autocompleteField=data.attributes.displayName&additionalField=data.attributes.aliases&indexName=dina-agent-index
+http://localhost:8085/search/auto-complete?prefix=Jim&autoCompleteField=data.attributes.displayName&additionalField=data.attributes.aliases&indexName=dina_agent_index
 ```
 
-*Note:* The provided fields (autocompleteField and additionalField) have to match the one defined in the selected index.
+*Note:* The provided fields (autoCompleteField and additionalField) have to match the one defined in the selected index.
 
 As per the description in the #Auto Completion section the additonalField is optional and when provided a search is conducted with the information provided.
 
@@ -115,7 +115,7 @@ Only `displayName` field has been analyzed to support search-as-you-type capabil
 #### Sample auto-complete search
 <br/>
 
-#### dina-agent-index displayname in data section
+#### dina_agent_index displayname in data section
 
 ```
 {
@@ -137,7 +137,7 @@ string-to-auto-complete = the string that the caller wants to find autocomplete 
 
 ```
 
-#### dina-document-index displayname in included section
+#### dina_document_index displayName in included section
 
 ```
 {
