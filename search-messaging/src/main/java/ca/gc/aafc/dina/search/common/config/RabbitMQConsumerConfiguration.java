@@ -25,8 +25,8 @@ public class RabbitMQConsumerConfiguration {
     this.deadLetterExchangeName = yamlConfigProps.getRabbitmq().get(RabbitMQConfig.MQ_EXCHANGE) + ".dlx";
   }
 
-  public String getDeadLetterQueueName() {
-    return deadLetterQueueName;
+  public String getDeadLetterExchangeName() {
+    return deadLetterExchangeName;
   }
 
   @Bean

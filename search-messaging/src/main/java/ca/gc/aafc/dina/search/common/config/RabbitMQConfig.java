@@ -56,7 +56,7 @@ public class RabbitMQConfig {
   @Bean("dinaQueue")
   public Queue createDinaQueue(Optional<RabbitMQConsumerConfiguration> consumerConfig) {
     QueueBuilder bldr = QueueBuilder.durable(queueName);
-    consumerConfig.ifPresent( c -> bldr.withArgument("x-dead-letter-exchange", c.getDeadLetterQueueName()));
+    consumerConfig.ifPresent( c -> bldr.withArgument("x-dead-letter-exchange", c.getDeadLetterExchangeName()));
     return bldr.build();
   }
 
