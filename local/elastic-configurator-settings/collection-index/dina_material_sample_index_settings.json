@@ -62,7 +62,7 @@
               "preparationDate": {
                 "type": "date"
               },
-              "managedAttributes ": {
+              "managedAttributes": {
                 "type": "object"
               },
               "preparationRemarks": {
@@ -139,6 +139,12 @@
                     "ignore_above": 256
                   }
                 }
+              },
+              "organism": {
+                "type": "object"
+              },
+              "determination": {
+                "type": "object"
               }
             }
           },
