@@ -121,6 +121,24 @@
                     "ignore_above": 256
                   }
                 }
+              },
+              "materialSampleState": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "materialSampleRemarks": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
               }
             }
           },
