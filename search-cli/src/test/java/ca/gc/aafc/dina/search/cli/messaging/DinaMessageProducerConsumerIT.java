@@ -1,6 +1,7 @@
 package ca.gc.aafc.dina.search.cli.messaging;
 
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
+import ca.gc.aafc.dina.search.common.config.RabbitMQConsumerConfiguration;
 import ca.gc.aafc.dina.search.messaging.consumer.DocumentOperationNotificationConsumer;
 import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;
 import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
@@ -47,10 +48,14 @@ import static org.mockito.Mockito.verify;
 @EnableRabbit
 class DinaMessageProducerConsumerIT {
 
-  private static final String DINA_SEARCH_QUEUE = "dina.search.queue";
+  static int RABBIT_PORT_1 = 5672;
+  static int RABBIT_PORT_2 = 15672;
 
   @Autowired
   private MessageProducer messageProducer;
+
+  @Autowired
+  private RabbitMQConsumerConfiguration rabbitMQConsumerConfiguration;
 
   @SpyBean
   @Autowired
@@ -67,8 +72,8 @@ class DinaMessageProducerConsumerIT {
   static void beforeAll() {
     rabbitMQContainer.start();
 
-    assertEquals(5672, rabbitMQContainer.getMappedPort(5672).intValue());
-    assertEquals(15672, rabbitMQContainer.getMappedPort(15672).intValue());
+    assertEquals(RABBIT_PORT_1, rabbitMQContainer.getMappedPort(RABBIT_PORT_1).intValue());
+    assertEquals(RABBIT_PORT_2, rabbitMQContainer.getMappedPort(RABBIT_PORT_2).intValue());
   }
 
   @AfterAll
@@ -88,33 +93,24 @@ class DinaMessageProducerConsumerIT {
 
   @SneakyThrows
   @Test
-  void fatalMessage_DoesNotLoop() {
+  void onMessageThatThrowsException_messageSentInDLQ() {
     List<DocumentOperationNotification> results = new ArrayList<>();
-    Channel channel = openChannelToRabbit();
-    channel.basicConsume( // Listen to the dead man's que for any messages
-      "dina.search.queue.dlq",
-      true,
-      (s, delivery) -> results.add(new ObjectMapper().readValue(
-        new String(delivery.getBody()), DocumentOperationNotification.class)),
-      s -> {
-      });
+    try (Channel channel = openChannelToRabbit()) {
+      channel.basicConsume( // Listen to the dead man's que for any messages
+          rabbitMQConsumerConfiguration.getDeadLetterQueueName(), true, (s, delivery) -> results.add(new ObjectMapper()
+              .readValue(new String(delivery.getBody()), DocumentOperationNotification.class)), s -> {
+          });
 
-    DocumentOperationNotification expected = new DocumentOperationNotification(
-      false, // dryRun = false will fail to connect and throw the needed exception
-      "material-sample",
-      "Invalid",
-      DocumentOperationType.ADD);
-    messageProducer.send(expected);
-    give5SecondsForMessageDelivery();
+      DocumentOperationNotification expected = new DocumentOperationNotification(false,
+          // dryRun = false will fail to connect and throw the needed exception
+          "material-sample", "Invalid", DocumentOperationType.ADD);
+      messageProducer.send(expected);
+      give5SecondsForMessageDelivery();
 
-    Assertions.assertEquals(1, results.size());
-    Assertions.assertEquals(expected.getDocumentId(), results.get(0).getDocumentId());
-
-    results.clear();
-    channel.close();
+      Assertions.assertEquals(1, results.size());
+      Assertions.assertEquals(expected.getDocumentId(), results.get(0).getDocumentId());
+    }
   }
-
-
 
   @SneakyThrows
   @Test
@@ -175,7 +171,7 @@ class DinaMessageProducerConsumerIT {
   private Channel openChannelToRabbit() throws IOException, TimeoutException {
     ConnectionFactory factory = new ConnectionFactory();
     factory.setHost("localhost");
-    factory.setPort(5672);
+    factory.setPort(RABBIT_PORT_1);
     factory.setUsername("guest");
     factory.setPassword("guest");
     factory.setVirtualHost("/");
