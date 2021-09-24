@@ -7,9 +7,6 @@ import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;
 import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
 import ca.gc.aafc.dina.search.messaging.types.DocumentOperationType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -17,17 +14,14 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
@@ -56,6 +50,9 @@ class DinaMessageProducerConsumerIT {
 
   @Autowired
   private RabbitMQConsumerConfiguration rabbitMQConsumerConfiguration;
+
+  @Autowired
+  private RabbitTemplate rabbitTemplate;
 
   @SpyBean
   @Autowired
@@ -94,22 +91,23 @@ class DinaMessageProducerConsumerIT {
   @SneakyThrows
   @Test
   void onMessageThatThrowsException_messageSentInDLQ() {
-    List<DocumentOperationNotification> results = new ArrayList<>();
-    try (Channel channel = openChannelToRabbit()) {
-      channel.basicConsume( // Listen to the dead man's que for any messages
-          rabbitMQConsumerConfiguration.getDeadLetterQueueName(), true, (s, delivery) -> results.add(new ObjectMapper()
-              .readValue(new String(delivery.getBody()), DocumentOperationNotification.class)), s -> {
-          });
+    DocumentOperationNotification expected = new DocumentOperationNotification(false,
+      // dryRun = false will fail to connect and throw the needed exception
+      "material-sample", "Invalid", DocumentOperationType.ADD);
+    messageProducer.send(expected);
+    give5SecondsForMessageDelivery();
 
-      DocumentOperationNotification expected = new DocumentOperationNotification(false,
-          // dryRun = false will fail to connect and throw the needed exception
-          "material-sample", "Invalid", DocumentOperationType.ADD);
-      messageProducer.send(expected);
-      give5SecondsForMessageDelivery();
+    rabbitTemplate.setExchange(rabbitMQConsumerConfiguration.getDeadLetterExchangeName());
+    Message message = rabbitTemplate.receive(rabbitMQConsumerConfiguration.getDeadLetterQueueName());
 
-      Assertions.assertEquals(1, results.size());
-      Assertions.assertEquals(expected.getDocumentId(), results.get(0).getDocumentId());
+    if (message == null) {
+      Assertions.fail("a message should of been in the que");
     }
+
+    DocumentOperationNotification result = new ObjectMapper().readValue(
+      new String(message.getBody()),
+      DocumentOperationNotification.class);
+    Assertions.assertEquals(expected.getDocumentId(), result.getDocumentId());
   }
 
   @SneakyThrows
@@ -129,15 +127,15 @@ class DinaMessageProducerConsumerIT {
     DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "material-sample",
         "testDocumentId", DocumentOperationType.DELETE);
 
-    validateMessageTransferAndProcessingByConsumer(docNotification); 
+    validateMessageTransferAndProcessingByConsumer(docNotification);
   }
 
   /*
    * The method is responsible for sending a message from the producer class. Validating
    * that the message consumer received the expected message.
-   * 
+   *
    * Nothing is mocked, we are making use of spy objects to validate real code flow.
-   *  
+   *
    */
   private void validateMessageTransferAndProcessingByConsumer(DocumentOperationNotification docNotification) {
 
@@ -168,15 +166,4 @@ class DinaMessageProducerConsumerIT {
     }
   }
 
-  private Channel openChannelToRabbit() throws IOException, TimeoutException {
-    ConnectionFactory factory = new ConnectionFactory();
-    factory.setHost("localhost");
-    factory.setPort(RABBIT_PORT_1);
-    factory.setUsername("guest");
-    factory.setPassword("guest");
-    factory.setVirtualHost("/");
-    Connection connection = factory.newConnection();
-
-    return connection.createChannel();
-  }
 }
