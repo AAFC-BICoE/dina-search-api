@@ -1,28 +1,35 @@
 package ca.gc.aafc.dina.search.cli.messaging;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.verify;
-
-import java.io.IOException;
-
+import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
+import ca.gc.aafc.dina.search.messaging.consumer.DocumentOperationNotificationConsumer;
+import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;
+import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
+import ca.gc.aafc.dina.search.messaging.types.DocumentOperationType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
-import ca.gc.aafc.dina.search.messaging.consumer.DocumentOperationNotificationConsumer;
-import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;
-import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
-import ca.gc.aafc.dina.search.messaging.types.DocumentOperationType;
-import lombok.SneakyThrows;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest(
   properties = {
@@ -37,6 +44,7 @@ import lombok.SneakyThrows;
     "rabbitmq.host=localhost",
     "rabbitmq.port=15672"
   })
+@EnableRabbit
 class DinaMessageProducerConsumerIT {
 
   private static final String DINA_SEARCH_QUEUE = "dina.search.queue";
@@ -77,6 +85,36 @@ class DinaMessageProducerConsumerIT {
 
     validateMessageTransferAndProcessingByConsumer(docNotification);
   }
+
+  @SneakyThrows
+  @Test
+  void fatalMessage_DoesNotLoop() {
+    List<DocumentOperationNotification> results = new ArrayList<>();
+    Channel channel = openChannelToRabbit();
+    channel.basicConsume( // Listen to the dead man's que for any messages
+      "dina.search.queue.dlq",
+      true,
+      (s, delivery) -> results.add(new ObjectMapper().readValue(
+        new String(delivery.getBody()), DocumentOperationNotification.class)),
+      s -> {
+      });
+
+    DocumentOperationNotification expected = new DocumentOperationNotification(
+      false, // dryRun = false will fail to connect and throw the needed exception
+      "material-sample",
+      "Invalid",
+      DocumentOperationType.ADD);
+    messageProducer.send(expected);
+    give5SecondsForMessageDelivery();
+
+    Assertions.assertEquals(1, results.size());
+    Assertions.assertEquals(expected.getDocumentId(), results.get(0).getDocumentId());
+
+    results.clear();
+    channel.close();
+  }
+
+
 
   @SneakyThrows
   @Test
@@ -132,5 +170,17 @@ class DinaMessageProducerConsumerIT {
     } catch (InterruptedException e) {
       Assertions.fail(e.getMessage());
     }
+  }
+
+  private Channel openChannelToRabbit() throws IOException, TimeoutException {
+    ConnectionFactory factory = new ConnectionFactory();
+    factory.setHost("localhost");
+    factory.setPort(5672);
+    factory.setUsername("guest");
+    factory.setPassword("guest");
+    factory.setVirtualHost("/");
+    Connection connection = factory.newConnection();
+
+    return connection.createChannel();
   }
 }
