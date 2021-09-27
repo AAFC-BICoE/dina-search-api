@@ -12,8 +12,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Optional;
-
 /**
  * Configuration class that is only applied for RabbitMQ consumer. It prepares a DeadLetter
  * Queue/Exchange/Binding for Dead Letter (messages that can't be properly processed)
@@ -64,16 +62,15 @@ public class RabbitMQConsumerConfiguration {
   }
 
   /**
-   * Creates the main Dina Queue with a Dead Letter Exchange if the app is also a consumer.
+   * Creates the main Dina Queue with a Dead Letter Exchange if the app is a consumer.
    *
-   * @param consumerConfig optional since isConsumer can be false
    * @return
    */
   @Bean("dinaQueue")
-  public Queue createDinaQueue(Optional<RabbitMQConsumerConfiguration> consumerConfig) {
-    QueueBuilder bldr = QueueBuilder.durable(queueName);
-    consumerConfig.ifPresent(c -> bldr.withArgument("x-dead-letter-exchange", c.getDeadLetterExchangeName()));
-    return bldr.build();
+  public Queue createDinaQueue() {
+    return QueueBuilder.durable(queueName)
+        .withArgument("x-dead-letter-exchange", deadLetterExchangeName)
+        .build();
   }
 
   @Bean
