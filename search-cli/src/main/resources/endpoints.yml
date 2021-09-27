@@ -4,7 +4,7 @@
 # DINA schemas.
 #
 # Objects declared in the relationships section correspond to navigation
-# links that may be exerciced when augmenting the parent object.
+# links that may be exercised when augmenting the parent object.
 #
 # For example in the material-sample example, without an entry for collectingEvent
 # or preparationType these objects will not be automatically included and augmented
@@ -19,7 +19,6 @@ endpoints:
   metadata: 
     targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
     relationships:
-      - managedAttributeMap
       - acMetadataCreator
       - dcCreator
   organization: 
@@ -30,5 +29,3 @@ endpoints:
     indexName: dina_agent_index
     relationships:
       - organizations
-  managed-attribute-map:
-    targetUrl: ${MANAGED_ATTRIBUTE_URL:http://localhost:8081/api/v1}
