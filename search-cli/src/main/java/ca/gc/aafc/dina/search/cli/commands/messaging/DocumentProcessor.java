@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.commands.messaging;
 
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +40,7 @@ public class DocumentProcessor implements IMessageProcessor {
    * 
    */
   @Override
+  @SneakyThrows
   public void processMessage(DocumentOperationNotification docOpMessage) {
 
     if (docOpMessage == null) {
@@ -84,7 +86,7 @@ public class DocumentProcessor implements IMessageProcessor {
     
   }
    
-  public String indexDocument(String type, String documentId) {
+  public String indexDocument(String type, String documentId) throws SearchApiException {
 
     String processedMessage = null;
     if (!svcEndpointProps.getEndpoints().containsKey(type)) {
@@ -93,36 +95,30 @@ public class DocumentProcessor implements IMessageProcessor {
       return processedMessage;
     }
 
-    try {
+    // Step #1: get the document
+    log.info("Retrieve document id:{}", documentId);
+    EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
+    processedMessage = aClient.getDataFromUrl(endpointDescriptor, documentId);
 
-      // Step #1: get the document
-      log.info("Retrieve document id:{}", documentId);
-      EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
-      processedMessage = aClient.getDataFromUrl(endpointDescriptor, documentId);
+    // Step #2: Assemble the document
+    log.info("Assemble document id:{}", documentId);
+    processedMessage = indexableDocumentHandler.assembleDocument(processedMessage);
 
-      // Step #2: Assemble the document
-      log.info("Assemble document id:{}", documentId);
-      processedMessage = indexableDocumentHandler.assembleDocument(processedMessage);
+    // Step #3: index the document into the default DINA Document index
+    log.info("Sending document id:{} to default indexer", documentId);
+    indexer.indexDocument(documentId, processedMessage);
 
-      // Step #3: index the document into the default DINA Document index
-      log.info("Sending document id:{} to default indexer", documentId);
-      indexer.indexDocument(documentId, processedMessage);
-
-      // Step #4: Index the document into elasticsearch
-      if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
-        log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
-        indexer.indexDocument(documentId, processedMessage, endpointDescriptor.getIndexName());
-      }
-    
-    } catch (SearchApiException sapiEx) {
-      log.error("Error during operation execution", sapiEx);
+    // Step #4: Index the document into elasticsearch
+    if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
+      log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
+      indexer.indexDocument(documentId, processedMessage, endpointDescriptor.getIndexName());
     }
 
     return processedMessage;
   }
 
 
-  public String deleteDocument(String type, String documentId) {
+  public String deleteDocument(String type, String documentId) throws SearchApiException {
 
     String processedMessage = null;
     if (!svcEndpointProps.getEndpoints().containsKey(type)) {
@@ -131,22 +127,16 @@ public class DocumentProcessor implements IMessageProcessor {
       return processedMessage;
     }
 
-    try {
+    EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
 
-      EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
+    // Step #1: Delete the document from the default DINA Document index
+    log.info("Delete document id:{} to default indexer", documentId);
+    indexer.deleteDocument(documentId);
 
-      // Step #1: Delete the document from the default DINA Document index
-      log.info("Delete document id:{} to default indexer", documentId);
-      indexer.deleteDocument(documentId);
-
-      // Step #2: Delete the document from elasticsearch
-      if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
-        log.info("Deleting document id:{} from specific index {}", documentId, endpointDescriptor.getIndexName());
-        indexer.deleteDocument(documentId, endpointDescriptor.getIndexName());
-      }
-    
-    } catch (SearchApiException sapiEx) {
-      log.error("Error during operation execution", sapiEx);
+    // Step #2: Delete the document from elasticsearch
+    if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
+      log.info("Deleting document id:{} from specific index {}", documentId, endpointDescriptor.getIndexName());
+      indexer.deleteDocument(documentId, endpointDescriptor.getIndexName());
     }
     
     return processedMessage;
