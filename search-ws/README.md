@@ -50,7 +50,7 @@ http://<target-server>:8085/search/auto-complete?prefix=<string>&autoCompleteFie
 - `prefix` = string that we are looking matches
 - `autoCompleteField` = Fully qualified field that has been mapped as 'search_as_you_type'
 - `additionalField` = Fully qualified field that we want to add as an alternative to the autocomplete field.
-- `target-index-name` =  dina_document_index | dina_agent_index
+- `target-index-name` =  dina_agent_index
 
 <br/>
 
@@ -69,7 +69,7 @@ http://<target-server>:8085/search/text?indexName=<target-index-name>
 `
 
 - `target-server` = localhost
-- `target-index-name` =  dina_document_index | dina_agent_index
+- `target-index-name` =  dina_agent_index
 
  
 | HTTP Verb | Supported | Content-Type | Produces |
@@ -85,9 +85,8 @@ http://<target-server>:8085/search/text?indexName=<target-index-name>
 <br/>
 
 ### Supported indices
-- dina_document_index (default index)
 - dina_agent_index (agent specific index)
-
+- dina_material_sample_index
 
 ### Autocomplete support using auto-complete endpoint
 <br/>
@@ -137,7 +136,7 @@ string-to-auto-complete = the string that the caller wants to find autocomplete 
 
 ```
 
-#### dina_document_index displayName in included section
+#### dina_agent_index displayName in included section
 
 ```
 {

@@ -104,10 +104,6 @@ public class DocumentProcessor implements IMessageProcessor {
     log.info("Assemble document id:{}", documentId);
     processedMessage = indexableDocumentHandler.assembleDocument(processedMessage);
 
-    // Step #3: index the document into the default DINA Document index
-    log.info("Sending document id:{} to default indexer", documentId);
-    indexer.indexDocument(documentId, processedMessage);
-
     // Step #4: Index the document into elasticsearch
     if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
       log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
@@ -128,10 +124,6 @@ public class DocumentProcessor implements IMessageProcessor {
     }
 
     EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
-
-    // Step #1: Delete the document from the default DINA Document index
-    log.info("Delete document id:{} to default indexer", documentId);
-    indexer.deleteDocument(documentId);
 
     // Step #2: Delete the document from elasticsearch
     if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
