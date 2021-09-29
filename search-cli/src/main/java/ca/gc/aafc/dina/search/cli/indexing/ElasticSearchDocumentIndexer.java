@@ -28,15 +28,10 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   private static final String PROTOCOL = "protocol";
   private static final String PORT_1 = "port_1";
   private static final String PORT_2 = "port_2";
-  private static final String INDEX_NAME = "indexName";
-
-  private final YAMLConfigProperties yamlConfigProps;
 
   private final RestHighLevelClient client;
 
   public ElasticSearchDocumentIndexer(YAMLConfigProperties yamlConfigProps) {
-    this.yamlConfigProps = yamlConfigProps;
-
     client = new RestHighLevelClient(RestClient.builder(
         new HttpHost(yamlConfigProps.getElasticsearch().get(SERVER_ADDRESS),
             Integer.parseInt(yamlConfigProps.getElasticsearch().get(PORT_1).trim()),
@@ -46,10 +41,6 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
             yamlConfigProps.getElasticsearch().get(PROTOCOL))));
   }
 
-  @Override
-  public OperationStatus indexDocument(String documentId, String rawPayload) throws SearchApiException {
-    return indexDocument(documentId, rawPayload, yamlConfigProps.getElasticsearch().get(INDEX_NAME));
-  }
 
   @Override
   public OperationStatus indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException {
@@ -95,11 +86,6 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
     } catch (IOException ioEx) {
       log.error("exception during client closure...");
     }
-  }
-
-  @Override
-  public OperationStatus deleteDocument(String documentId) throws SearchApiException {
-    return deleteDocument(documentId, yamlConfigProps.getElasticsearch().get(INDEX_NAME));
   }
 
   @Override
