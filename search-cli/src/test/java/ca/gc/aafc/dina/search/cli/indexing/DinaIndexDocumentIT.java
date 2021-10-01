@@ -26,9 +26,10 @@ import org.testcontainers.junit.jupiter.Container;
 
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 
-@SpringBootTest(properties = { "spring.shell.interactive.enabled=false" })
+@SpringBootTest(properties = {"spring.shell.interactive.enabled=false"})
 public class DinaIndexDocumentIT {
 
+  public static final String INDEX_NAME = "index";
   @Autowired
   private DocumentIndexer documentIndexer;
 
@@ -37,7 +38,7 @@ public class DinaIndexDocumentIT {
 
   @DisplayName("Integration Test index document")
   @Test
-  public void testIndexDocument() throws Exception { 
+  public void testIndexDocument() throws Exception {
 
     elasticsearchContainer.start();
 
@@ -46,7 +47,10 @@ public class DinaIndexDocumentIT {
 
     assertNotNull(documentIndexer);
     try {
-      OperationStatus result = documentIndexer.indexDocument("123-456-789", "{\"name\": \"initial\"}");
+      OperationStatus result = documentIndexer.indexDocument(
+        "123-456-789",
+        "{\"name\": \"initial\"}",
+        INDEX_NAME);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
@@ -54,7 +58,7 @@ public class DinaIndexDocumentIT {
       //
       RestHighLevelClient client = new RestHighLevelClient(
         RestClient.builder(new HttpHost("localhost", 9200)));
-      
+
       int foundDocument = searchAndWait(client, "initial", 1);
       assertEquals(1, foundDocument);
 
@@ -65,10 +69,9 @@ public class DinaIndexDocumentIT {
     }
   }
 
-
   @DisplayName("Integration Test index document and update")
   @Test
-  public void testIndexAndUpdateDocument() throws Exception { 
+  public void testIndexAndUpdateDocument() throws Exception {
 
     elasticsearchContainer.start();
 
@@ -77,7 +80,10 @@ public class DinaIndexDocumentIT {
 
     assertNotNull(documentIndexer);
     try {
-      OperationStatus result = documentIndexer.indexDocument("123-456-789", "{\"name\": \"initial\"}");
+      OperationStatus result = documentIndexer.indexDocument(
+        "123-456-789",
+        "{\"name\": \"initial\"}",
+        INDEX_NAME);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
@@ -85,11 +91,11 @@ public class DinaIndexDocumentIT {
       //
       RestHighLevelClient client = new RestHighLevelClient(
         RestClient.builder(new HttpHost("localhost", 9200)));
-      
+
       int foundDocument = searchAndWait(client, "initial", 1);
       assertEquals(1, foundDocument);
 
-      result = documentIndexer.indexDocument("123-456-789", "{\"name\": \"updated\"}");
+      result = documentIndexer.indexDocument("123-456-789", "{\"name\": \"updated\"}", INDEX_NAME);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
@@ -107,7 +113,7 @@ public class DinaIndexDocumentIT {
 
   @DisplayName("Integration Test index document and delete")
   @Test
-  public void testIndexAndDeleteDocument() throws Exception { 
+  public void testIndexAndDeleteDocument() throws Exception {
 
     elasticsearchContainer.start();
 
@@ -116,7 +122,10 @@ public class DinaIndexDocumentIT {
 
     assertNotNull(documentIndexer);
     try {
-      OperationStatus result = documentIndexer.indexDocument("123-456-789", "{\"name\": \"initial\"}");
+      OperationStatus result = documentIndexer.indexDocument(
+        "123-456-789",
+        "{\"name\": \"initial\"}",
+        INDEX_NAME);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
@@ -124,16 +133,16 @@ public class DinaIndexDocumentIT {
       //
       RestHighLevelClient client = new RestHighLevelClient(
         RestClient.builder(new HttpHost("localhost", 9200)));
-      
+
       int foundDocument = searchAndWait(client, "initial", 1);
       assertEquals(1, foundDocument);
 
       // Delete the document
       //
-      result = documentIndexer.deleteDocument("123-456-789");
+      result = documentIndexer.deleteDocument("123-456-789", INDEX_NAME);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
-      
+
       // Retrieve deleted document from elasticsearch
       //
       foundDocument = searchAndWait(client, "initial", 0);
@@ -154,7 +163,7 @@ public class DinaIndexDocumentIT {
     searchSourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
     searchSourceBuilder.query(QueryBuilders.matchQuery("name", searchValue));
     SearchRequest searchRequest = new SearchRequest();
-    searchRequest.indices("dina_document_index");
+    searchRequest.indices(INDEX_NAME);
     searchRequest.source(searchSourceBuilder);
     SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
 
@@ -162,7 +171,6 @@ public class DinaIndexDocumentIT {
     SearchHit[] searchHits = hits.getHits();
 
     return searchHits.length;
-
   }
 
   private int searchAndWait(RestHighLevelClient client, String searchValue, int foundCondition) throws InterruptedException, Exception {
@@ -170,7 +178,7 @@ public class DinaIndexDocumentIT {
     int foundDocument = -1;
     int nCount = 0;
     while (foundDocument != foundCondition && nCount < 10) {
-      Thread.sleep(1000*5);
+      Thread.sleep(1000 * 5);
       foundDocument = search(client, searchValue);
       nCount++;
     }
