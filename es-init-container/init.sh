@@ -8,8 +8,12 @@
 #     Initial configuration for the index
 #
 
-# Wait for and create DINA_AGENT_INDEX
-./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL $DINA_AGENT_INDEX_NAME $DINA_AGENT_INDEX_SETTINGS_FILE
+db_array=($INDEX_DECLARATIONS)
+for currIndex in ${db_array[@]}; do
 
-# Wait for and create DINA_MATERIAL_SAMPLE_INDEX
-./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL $DINA_MATERIAL_SAMPLE_INDEX_NAME $DINA_MATERIAL_SAMPLE_INDEX_SETTINGS_FILE
+  indexName=DINA_${currIndex}_INDEX_NAME
+  indexFile=DINA_${currIndex}_INDEX_SETTINGS_FILE
+
+  ./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL ${!indexName} ${!indexFile}
+
+done
