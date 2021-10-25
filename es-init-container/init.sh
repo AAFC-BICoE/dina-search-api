@@ -8,8 +8,8 @@
 #     Initial configuration for the index
 #
 
-db_array=($DINA_INDEX_DECLARATIONS)
-for currIndex in ${db_array[@]}; do
+index_array=($DINA_INDEX_DECLARATIONS)
+for currIndex in ${index_array[@]}; do
 
   indexName=DINA_${currIndex}_INDEX_NAME
   indexFile=DINA_${currIndex}_INDEX_SETTINGS_FILE
