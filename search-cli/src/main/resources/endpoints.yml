@@ -31,5 +31,3 @@ endpoints:
     indexName: dina_agent_index
     relationships:
       - organizations
-  managed-attribute-map:
-    targetUrl: ${MANAGED_ATTRIBUTE_URL:http://localhost:8081/api/v1}
