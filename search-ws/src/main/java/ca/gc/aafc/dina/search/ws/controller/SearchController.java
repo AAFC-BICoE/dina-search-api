@@ -28,7 +28,7 @@ public class SearchController {
 
   @GetMapping(path = "/auto-complete")
   public ResponseEntity<SearchResponse> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
-      @RequestParam String autoCompleteField, @RequestParam String additionalField) {
+      @RequestParam String autoCompleteField, @RequestParam(required = false) String additionalField) {
 
     log.info("prefix={}, indexName={}, autoCompleteField={}, additionalField={}", prefix, indexName, autoCompleteField, additionalField);
     return new ResponseEntity<>(searchService.autoComplete(prefix, indexName, autoCompleteField, additionalField), HttpStatus.ACCEPTED);

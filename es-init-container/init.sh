@@ -6,13 +6,14 @@
 #     Script create_index that will evaluate if the index creation is needed or not
 #     Index name to be created
 #     Initial configuration for the index
-# 
+#
 
-# Wait for and create DINA_DOCUMENT_INDEX
-./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL $DINA_DOCUMENT_INDEX_NAME $DINA_DOCUMENT_INDEX_SETTINGS_FILE
+index_array=($DINA_INDEX_DECLARATIONS)
+for currIndex in ${index_array[@]}; do
 
-# Wait for and create DINA_AGENT_INDEX
-./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL $DINA_AGENT_INDEX_NAME $DINA_AGENT_INDEX_SETTINGS_FILE
+  indexName=DINA_${currIndex}_INDEX_NAME
+  indexFile=DINA_${currIndex}_INDEX_SETTINGS_FILE
 
-# Wait for and create DINA_STORAGE_INDEX
-./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL $DINA_STORAGE_INDEX_NAME $DINA_STORAGE_INDEX_SETTINGS_FILE
+  ./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL ${!indexName} ${!indexFile}
+
+done

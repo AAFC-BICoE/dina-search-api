@@ -4,7 +4,7 @@
 # DINA schemas.
 #
 # Objects declared in the relationships section correspond to navigation
-# links that may be exerciced when augmenting the parent object.
+# links that may be exercised when augmenting the parent object.
 #
 # For example in the material-sample example, without an entry for collectingEvent
 # or preparationType these objects will not be automatically included and augmented
@@ -15,16 +15,12 @@ endpoints:
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
     relationships:
       - collectingEvent
-      - preparationType
-      - parentMaterialSample
-      - materialSampleChildren
-      - attachment
+    indexName: dina_material_sample_index
   preparation-type: 
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/preparation-type}
   metadata: 
     targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
     relationships:
-      - managedAttributeMap
       - acMetadataCreator
       - dcCreator
   organization: 
@@ -37,11 +33,3 @@ endpoints:
       - organizations
   managed-attribute-map:
     targetUrl: ${MANAGED_ATTRIBUTE_URL:http://localhost:8081/api/v1}
-  storage-unit:
-    targetUrl: ${STORAGE_UNIT_URL:http://localhost:8085/api/v1/storage-unit}
-    indexName: dina_storage_index
-    relationships:
-      - parentStorageUnit
-      - storageUnitChildren
-      - storageUnitType
-      - hierarchy
