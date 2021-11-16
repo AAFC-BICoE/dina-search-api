@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import ca.gc.aafc.dina.search.cli.commands.ShowEndpointConfig;
-import org.springframework.test.context.TestPropertySource;
 
 /**
  * Unit test for show endpoint cli command.
@@ -28,15 +27,20 @@ public class ShowEndpointConfigTest {
   @Test
   public void showEndpointConfig() {
     assertNotNull(showEndpointConfig.showEndpointConfig());
-    assertNotEquals("", showEndpointConfig.showEndpointConfig()); 
+    assertNotEquals("", showEndpointConfig.showEndpointConfig());
+
+    EndpointDescriptor storageDescriptor = serviceEndpointProperties.getEndpoints().get("storage-unit");
 
     assertNotNull(serviceEndpointProperties.getEndpoints().get("metadata"));
     assertNotNull(serviceEndpointProperties.getEndpoints().get("organization"));
     assertNotNull(serviceEndpointProperties.getEndpoints().get("person"));
+    assertNotNull(storageDescriptor);
 
     assertEquals("http://localhost:8081/api/v1/metadata", serviceEndpointProperties.getEndpoints().get("metadata").getTargetUrl());
     assertEquals("http://localhost:8082/api/v1/organization", serviceEndpointProperties.getEndpoints().get("organization").getTargetUrl());
     assertEquals("http://localhost:8082/api/v1/person", serviceEndpointProperties.getEndpoints().get("person").getTargetUrl());
     assertEquals("http://localhost:8085/api/v1/material-sample", serviceEndpointProperties.getEndpoints().get("material-sample").getTargetUrl());
+    assertEquals("http://localhost:8085/api/v1/storage-unit", storageDescriptor.getTargetUrl());
+
   }
 }
