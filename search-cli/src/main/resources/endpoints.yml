@@ -31,3 +31,10 @@ endpoints:
     indexName: dina_agent_index
     relationships:
       - organizations
+  storage-unit:
+    targetUrl: ${STORAGE_UNIT_URL:http://localhost:8085/api/v1/storage-unit}
+    indexName: dina_storage_index
+    relationships:
+      - storageUnitChildren
+      - storageUnitType
+      - parentStorageUnit 

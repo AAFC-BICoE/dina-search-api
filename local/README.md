@@ -47,3 +47,7 @@ From a new terminal window run the following command to attach the terminal to t
 After pressing the return key you should see in your terminal the search-cli command prompt `search-cli:>`
 
 **Note**: Search API is currently not integrated with the DINA local deployment. As such the DINA local deployment needs to be deployed separately to perform end to end test.
+
+## How To Add indexes
+
+see [es-init-container docs](https://github.com/AAFC-BICoE/dina-search-api/tree/dev/es-init-container#how-to-add-indexes)

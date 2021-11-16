@@ -1,11 +1,6 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
-import java.util.concurrent.TimeUnit;
-
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -17,6 +12,8 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +21,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
 
 @SpringBootTest(properties = {"spring.shell.interactive.enabled=false"})
 public class DinaIndexDocumentIT {
@@ -36,16 +35,22 @@ public class DinaIndexDocumentIT {
   @Container
   private static final ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
 
-  @DisplayName("Integration Test index document")
-  @Test
-  public void testIndexDocument() throws Exception {
-
+  @BeforeAll
+  static void beforeAll() {
     elasticsearchContainer.start();
 
     assertEquals(9200, elasticsearchContainer.getMappedPort(9200).intValue());
     assertEquals(9300, elasticsearchContainer.getMappedPort(9300).intValue());
+  }
 
-    assertNotNull(documentIndexer);
+  @AfterAll
+  static void afterAll() {
+    elasticsearchContainer.stop();
+  }
+
+  @DisplayName("Integration Test index document")
+  @Test
+  public void testIndexDocument() throws Exception {
     try {
       OperationStatus result = documentIndexer.indexDocument(
         "123-456-789",
@@ -64,21 +69,12 @@ public class DinaIndexDocumentIT {
 
     } catch (SearchApiException e) {
       fail(e.getMessage());
-    } finally {
-      elasticsearchContainer.stop();
     }
   }
 
   @DisplayName("Integration Test index document and update")
   @Test
   public void testIndexAndUpdateDocument() throws Exception {
-
-    elasticsearchContainer.start();
-
-    assertEquals(9200, elasticsearchContainer.getMappedPort(9200).intValue());
-    assertEquals(9300, elasticsearchContainer.getMappedPort(9300).intValue());
-
-    assertNotNull(documentIndexer);
     try {
       OperationStatus result = documentIndexer.indexDocument(
         "123-456-789",
@@ -106,21 +102,12 @@ public class DinaIndexDocumentIT {
 
     } catch (SearchApiException e) {
       fail(e.getMessage());
-    } finally {
-      elasticsearchContainer.stop();
     }
   }
 
   @DisplayName("Integration Test index document and delete")
   @Test
   public void testIndexAndDeleteDocument() throws Exception {
-
-    elasticsearchContainer.start();
-
-    assertEquals(9200, elasticsearchContainer.getMappedPort(9200).intValue());
-    assertEquals(9300, elasticsearchContainer.getMappedPort(9300).intValue());
-
-    assertNotNull(documentIndexer);
     try {
       OperationStatus result = documentIndexer.indexDocument(
         "123-456-789",
@@ -150,8 +137,6 @@ public class DinaIndexDocumentIT {
 
     } catch (SearchApiException e) {
       fail(e.getMessage());
-    } finally {
-      elasticsearchContainer.stop();
     }
   }
 
