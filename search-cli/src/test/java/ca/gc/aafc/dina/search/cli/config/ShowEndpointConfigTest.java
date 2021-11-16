@@ -40,7 +40,7 @@ public class ShowEndpointConfigTest {
     assertEquals("http://localhost:8082/api/v1/organization", serviceEndpointProperties.getEndpoints().get("organization").getTargetUrl());
     assertEquals("http://localhost:8082/api/v1/person", serviceEndpointProperties.getEndpoints().get("person").getTargetUrl());
     assertEquals("http://localhost:8085/api/v1/material-sample", serviceEndpointProperties.getEndpoints().get("material-sample").getTargetUrl());
-    assertEquals("http://localhost:8085/api/v1/storage-unit?include=storageUnitChildren,storageUnitType,parentStorageUnit", storageDescriptor.getTargetUrl());
+    assertEquals("http://localhost:8085/api/v1/storage-unit", storageDescriptor.getTargetUrl());
 
   }
 }
