@@ -4,7 +4,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: 'rabbitmq'
+    container_name: 'rabbitmq-dina'
     ports:
         - 5672:5672
         - 15672:15672
@@ -36,33 +36,35 @@ services:
       - 9300:9300
 
   elastic-configurator:
-    image: aafcbicoe/dina-es-init-container:dev # Should match the name used locally to build the image
+    image: aafcbicoe/es-init-container:0.6 # Should match the name used locally to build the image
     environment:
       ELASTIC_SERVER_URL: $ELASTIC_SERVER_URL
       INDEX_CREATE_CMD: $INDEX_CREATE_CMD
-      DINA_INDEX_DECLARATIONS: AGENT MATERIAL_SAMPLE STORAGE
+      DINA_INDEX_DECLARATIONS: AGENT MATERIAL_SAMPLE STORAGE OBJECT_STORE
       DINA_AGENT_INDEX_NAME: $DINA_AGENT_INDEX_NAME
       DINA_AGENT_INDEX_SETTINGS_FILE: $DINA_AGENT_INDEX_SETTINGS_FILE
       DINA_MATERIAL_SAMPLE_INDEX_NAME: $DINA_MATERIAL_SAMPLE_INDEX_NAME
       DINA_MATERIAL_SAMPLE_INDEX_SETTINGS_FILE: $DINA_MATERIAL_SAMPLE_INDEX_SETTINGS_FILE
       DINA_STORAGE_INDEX_NAME: $DINA_STORAGE_INDEX_NAME
       DINA_STORAGE_INDEX_SETTINGS_FILE: $DINA_STORAGE_INDEX_SETTINGS_FILE
+      DINA_OBJECT_STORE_INDEX_NAME: $DINA_OBJECT_STORE_NAME
+      DINA_OBJECT_STORE_INDEX_SETTINGS_FILE: $DINA_OBJECT_SETTINGS_FILE
     volumes:
       - ./elastic-configurator-settings:/usr/share/elastic-configurator/settings
 
   # Addition of Kibana, for development purpose or browsing through the dina indices.
-  #kibana-dina:
-  #  container_name: kibana-dina
-  #  image: docker.elastic.co/kibana/kibana:7.13.3
-  #  environment:
-  #    - ELASTICSEARCH_HOSTS=http://elasticsearch-dina:9200
-  #  ports:
-  #    - 5601:5601
-  #  depends_on:
-  #    - elasticsearch-dina
+  kibana-dina:
+    container_name: kibana-dina
+    image: docker.elastic.co/kibana/kibana:7.13.3
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch-dina:9200
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch-dina
 
   search-cli:
-    image: aafcbicoe/dina-search-cli:dev # Should match the name used locally to build the image
+    image: aafcbicoe/dina-search-cli:0.6 # Should match the name used locally to build the image
     stdin_open: true
     tty: true
     environment:
@@ -73,7 +75,7 @@ services:
       - dina_rabbitmq_net
 
   search-ws:
-    image: aafcbicoe/dina-search-ws:dev # Should match the name used locally to build the image
+    image: aafcbicoe/dina-search-ws:0.6 # Should match the name used locally to build the image
     ports:
       - 8085:8085
 
