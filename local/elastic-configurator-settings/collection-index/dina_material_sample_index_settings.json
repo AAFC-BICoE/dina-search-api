@@ -140,6 +140,19 @@
                   }
                 }
               },
+              "verbatimDeterminer": {
+                "type": "text",
+                "fields": {
+                  "autocomplete": {
+                    "type": "search_as_you_type",
+                    "max_shingle_size": 3
+                  },
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
               "organism": {
                 "type": "object"
               },
