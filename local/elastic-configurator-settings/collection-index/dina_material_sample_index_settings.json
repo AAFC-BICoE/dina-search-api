@@ -140,6 +140,12 @@
                   }
                 }
               },
+              "startEventDateTime": {
+                "type": "date"
+              },
+              "endEventDateTime": {
+                "type": "date"
+              },
               "organism": {
                 "type": "object"
               },
