@@ -6,25 +6,14 @@ The DINA Search API docker-compose local deployment is made of the following ser
 - DINA Search CLI
 - DINA Search Web Service API
 
-<br/>
-
-## How to build
-
-1. Build es-init-container:
-   1. cd es-init-container/
-   2. docker build -t aafcbicoe/dina-es-init-container:dev .
-2. Build search-cli
-   1. cd search-cli
-   2. docker build -t aafcbicoe/dina-search-cli:dev .
-3. Build search-ws
-   1. cd search-ws
-   2. docker build -t aafcbicoe/dina-search-ws:dev .
-
 
 ## How to Run
 
-`cd local
- docker-compose up`
+```
+cd local
+cp docker-compose.yml.example docker-compose.yml
+docker-compose up
+```
 
 **Verify that all components are up and running**
 

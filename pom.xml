@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.aafc-bicoe</groupId>
   <artifactId>search-api-parent</artifactId>
-  <version>0.7-SNAPSHOT</version>
+  <version>0.8-SNAPSHOT</version>
 
   <packaging>pom</packaging>
 
@@ -30,6 +30,7 @@
 
     <elasticsearch.version>7.16.1</elasticsearch.version>
     <dina-base-api.version>0.67</dina-base-api.version>
+    <log4j2.version>2.15.0</log4j2.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
