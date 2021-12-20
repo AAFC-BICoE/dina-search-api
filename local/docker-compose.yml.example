@@ -16,7 +16,7 @@ services:
 
   # Elasticsearch Docker Images: https://www.docker.elastic.co/
   elasticsearch-dina:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.1
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
     environment:
       - xpack.security.enabled=false
       - discovery.type=single-node
@@ -55,7 +55,7 @@ services:
   # Addition of Kibana, for development purpose or browsing through the dina indices.
   #kibana-dina:
   #  container_name: kibana-dina
-  #  image: docker.elastic.co/kibana/kibana:7.16.1
+  #  image: docker.elastic.co/kibana/kibana:7.16.2
   #  environment:
   #    - ELASTICSEARCH_HOSTS=http://elasticsearch-dina:9200
   #  ports:
@@ -64,7 +64,7 @@ services:
   #    - elasticsearch-dina
 
   search-cli:
-    image: aafcbicoe/dina-search-cli:0.7
+    image: aafcbicoe/dina-search-cli:0.8
     stdin_open: true
     tty: true
     environment:
@@ -75,7 +75,7 @@ services:
       - dina_rabbitmq_net
 
   search-ws:
-    image: aafcbicoe/dina-search-ws:0.7
+    image: aafcbicoe/dina-search-ws:0.8
     ports:
       - 8085:8085
 
