@@ -41,7 +41,7 @@ public class DinaSearchDocumentIT {
   private SearchService searchService;
 
   @Container
-  private static ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
+  private static final ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
 
   @DisplayName("Integration Test search autocomplete document")
   @Test
