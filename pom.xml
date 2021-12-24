@@ -29,7 +29,7 @@
     <java.version>11</java.version>
 
     <elasticsearch.version>7.16.2</elasticsearch.version>
-    <dina-base-api.version>0.67</dina-base-api.version>
+    <dina-base-api.version>0.77</dina-base-api.version>
     <log4j2.version>2.17.0</log4j2.version>
 
     <!-- Build plugin properties -->
@@ -45,10 +45,19 @@
 
   <!-- Common sub module dependencies -->
   <dependencies>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-log4j2</artifactId>
     </dependency>
 
     <!--Util -->

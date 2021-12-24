@@ -1,0 +1,22 @@
+
+Configuration:
+  name: search-cli
+
+  Appenders:
+    Console:
+      name: LogToConsole
+      target: SYSTEM_OUT
+      PatternLayout:
+        pattern: "%d [%t] %-5p %c - %m%n"
+
+  Loggers:
+    Logger:
+      - name: ca.gc.aafc
+        additivity: false
+        level: info
+        AppenderRef:
+          - ref: LogToConsole
+    Root:
+      level: warn
+      AppenderRef:
+         - ref: LogToConsole
