@@ -33,6 +33,16 @@ public class SearchController {
     log.info("prefix={}, indexName={}, autoCompleteField={}, additionalField={}", prefix, indexName, autoCompleteField, additionalField);
     return new ResponseEntity<>(searchService.autoComplete(prefix, indexName, autoCompleteField, additionalField), HttpStatus.ACCEPTED);
   }
+
+  @GetMapping(path = "/mapping")
+  public ResponseEntity<String> mapping(@RequestParam String indexName) {
+    log.info("indexName={}", indexName);
+    try {
+      return new ResponseEntity<>(searchService.getIndexMapping(indexName), HttpStatus.ACCEPTED);
+    } catch (SearchApiException e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+  }
     
   @PostMapping(path = "/text", consumes = "application/json")
   public ResponseEntity<String> query(@RequestBody String query, @RequestParam String indexName) {

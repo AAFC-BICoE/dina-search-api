@@ -3,6 +3,7 @@ package ca.gc.aafc.dina.search.ws.search;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +33,7 @@ import org.testcontainers.junit.jupiter.Container;
 
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 
-@SpringBootTest()
+@SpringBootTest
 public class DinaSearchDocumentIT {
   
   private static final String DINA_AGENT_INDEX = "dina_agent_index";
@@ -200,6 +201,48 @@ public class DinaSearchDocumentIT {
     }
   }
 
+  @Test
+  public void onGetMapping() {
+    elasticsearchContainer.start();
+
+    try {
+      String documentContentInput = "person-1.json";
+      String path = "src/test/resources/test-documents";
+      Path filename = Path.of(path + "/" + documentContentInput);
+
+      String documentContent = Files.readString(filename);
+      indexDocumentForIT(DINA_AGENT_INDEX,"test-document-1",  documentContent);
+
+      String result = searchService.getIndexMapping(DINA_AGENT_INDEX);
+
+      // TODO assert the response
+
+    } catch (Exception e) {
+      fail(e);
+    } finally {
+      elasticsearchContainer.stop();
+    }
+  }
+
+  /**
+   * Index a document for integration test purpose and wait until the document is indexed.
+   */
+  private void indexDocumentForIT(String indexName, String documentId, String documentContent)
+      throws Exception {
+
+    RestHighLevelClient client = new RestHighLevelClient(
+        RestClient.builder(new HttpHost("localhost", 9200)));
+
+    IndexRequest request = new IndexRequest(indexName);
+    request.id(documentId);
+    request.source(documentContent, XContentType.JSON);
+
+    IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
+
+    assertEquals(Result.CREATED, indexResponse.getResult());
+    searchAndWait(client, documentId, 1);
+  }
+
   private int search(RestHighLevelClient client, String searchValue) throws Exception {
 
     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
@@ -219,7 +262,8 @@ public class DinaSearchDocumentIT {
 
   }
 
-  private int searchAndWait(RestHighLevelClient client, String searchValue, int foundCondition) throws InterruptedException, Exception {
+  private int searchAndWait(RestHighLevelClient client, String searchValue, int foundCondition)
+      throws Exception {
 
     int foundDocument = -1;
     int nCount = 0;

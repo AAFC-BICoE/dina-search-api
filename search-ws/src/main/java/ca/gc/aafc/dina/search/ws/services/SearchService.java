@@ -55,4 +55,6 @@ public interface SearchService {
    */
   String search(String indexName, String query) throws SearchApiException;
 
+  String getIndexMapping(String indexName) throws SearchApiException;
+
 }

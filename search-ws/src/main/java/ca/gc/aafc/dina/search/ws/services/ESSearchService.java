@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,6 +16,9 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,4 +139,28 @@ public class ESSearchService implements SearchService {
       throw new SearchApiException("Error during search processing", e);
     }
   }
+
+  @Override
+  public String getIndexMapping(String indexName) throws SearchApiException {
+
+    GetMappingsRequest mappingRequest = new GetMappingsRequest().indices(indexName);
+    Map<String, Object> mapping;
+    try {
+      GetMappingsResponse getMappingResponse = esClient.indices().getMapping(mappingRequest, RequestOptions.DEFAULT);
+      // since we only asked for a single index we can get it from the result
+      MappingMetadata mappingMetadata = getMappingResponse.mappings().get(indexName);
+
+      // Filter to only send term and type
+      // email={type=text, fields={keyword={ignore_above=256, type=keyword}}}}} we want to only keep email={type=text}
+      mapping = mappingMetadata.getSourceAsMap();
+      
+    } catch (IOException e) {
+      throw new SearchApiException("Error during search processing", e);
+    }
+
+    //TODO more processing to remove some noise
+    return Objects.toString(mapping);
+
+  }
+
 }
