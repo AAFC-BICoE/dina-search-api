@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.aafc-bicoe</groupId>
   <artifactId>search-api-parent</artifactId>
-  <version>0.9-SNAPSHOT</version>
+  <version>0.11-SNAPSHOT</version>
 
   <packaging>pom</packaging>
 
@@ -14,7 +14,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.5.5</version>
+    <version>2.5.8</version>
   </parent>
 
   <modules>
@@ -28,27 +28,36 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>11</java.version>
 
-    <elasticsearch.version>7.16.1</elasticsearch.version>
-    <dina-base-api.version>0.67</dina-base-api.version>
-    <log4j2.version>2.16.0</log4j2.version>
+    <elasticsearch.version>7.16.2</elasticsearch.version>
+    <dina-base-api.version>0.77</dina-base-api.version>
+    <log4j2.version>2.17.1</log4j2.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
     <checkstyle.version>8.44</checkstyle.version>
     <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
-    <spotbugs.version>4.2.3</spotbugs.version>
-    <maven-spotbugs.version>4.2.0</maven-spotbugs.version>
-    <dependency.check.version>6.2.2</dependency.check.version>
+    <spotbugs.version>4.5.2</spotbugs.version>
+    <maven-spotbugs.version>4.5.0.0</maven-spotbugs.version>
+    <dependency.check.version>6.5.2</dependency.check.version>
 
-    <testcontainers.version>1.16.0</testcontainers.version>
+    <testcontainers.version>1.16.2</testcontainers.version>
   </properties>
 
   <!-- Common sub module dependencies -->
   <dependencies>
-
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-log4j2</artifactId>
     </dependency>
 
     <!--Util -->
@@ -121,6 +130,9 @@
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
         <version>${maven-spotbugs.version}</version>
+        <configuration>
+          <excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
+        </configuration>
         <dependencies>
           <!-- SpotBug itself can be ahead of the Maven plugin -->
           <dependency>
