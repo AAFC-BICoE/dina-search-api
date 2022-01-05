@@ -61,8 +61,8 @@ public interface SearchService {
    * Get the mapping of the provided indexName.
    * Mapping is returned as a Map where the key is like "data.attributes.displayName.type" and the value like "text"
    * @param indexName
-   * @return
-   * @throws SearchApiException
+   * @return mapping of the index
+   * @throws SearchApiException if something goes wrong with the request
    */
   Map<String, String> getIndexMapping(String indexName) throws SearchApiException;
 

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -170,9 +171,8 @@ public class ESSearchService implements SearchService {
         crawlMapping(pathStack, (Map<String, Object>) entry.getValue(), pathType);
         mapping.putAll(pathType);
       }
-      
-    } catch (IOException e) {
-      throw new SearchApiException("Error during search processing", e);
+    } catch (IOException | ElasticsearchStatusException e) {
+      throw new SearchApiException("Error during index-mapping processing", e);
     }
     return mapping;
 

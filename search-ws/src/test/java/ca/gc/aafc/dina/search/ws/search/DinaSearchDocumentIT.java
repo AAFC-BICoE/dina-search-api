@@ -3,6 +3,7 @@ package ca.gc.aafc.dina.search.ws.search;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.file.Files;
@@ -10,6 +11,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.index.IndexRequest;
@@ -203,7 +205,7 @@ public class DinaSearchDocumentIT {
   }
 
   @Test
-  public void onGetMapping() {
+  public void onGetMapping_whenMappingSetup_ReturnExpectedResult() {
     elasticsearchContainer.start();
 
     try {
@@ -218,6 +220,10 @@ public class DinaSearchDocumentIT {
 
       assertTrue(result.containsKey("data.attributes.createdOn.type"));
       assertEquals("date", result.get("data.attributes.createdOn.type"));
+
+
+      // test behavior of non-existing index
+      assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
 
     } catch (Exception e) {
       fail(e);
