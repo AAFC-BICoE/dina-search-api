@@ -3,7 +3,6 @@ package ca.gc.aafc.dina.search.ws.services;
 import org.elasticsearch.action.search.SearchResponse;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 
-import java.util.List;
 import java.util.Map;
 
 public interface SearchService {

@@ -184,12 +184,11 @@ public class ESSearchService implements SearchService {
   private static void crawlMapping(Stack<String> path, Map<String, Object> esMappingStructure, Map<String, String> mappingDefinition) {
     for (Map.Entry<String, Object> propEntry : esMappingStructure.entrySet()) {
       // skip "fields" for now
-      if(!ES_MAPPING_FIELDS.equals(propEntry.getKey())) {
+      if (!ES_MAPPING_FIELDS.equals(propEntry.getKey())) {
         path.push(propEntry.getKey());
-        if(propEntry.getValue() instanceof Map){
+        if (propEntry.getValue() instanceof Map) {
           crawlMapping(path, (Map<String, Object>) propEntry.getValue(), mappingDefinition);
-        }
-        else {
+        } else {
           // we only record leaf "type"
           if (ES_MAPPING_TYPE.equals(propEntry.getKey())) {
             mappingDefinition.put(path.stream().filter(s -> !s.equals(ES_MAPPING_PROPERTIES))
