@@ -3,6 +3,8 @@ package ca.gc.aafc.dina.search.ws.services;
 import org.elasticsearch.action.search.SearchResponse;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 
+import java.util.Map;
+
 public interface SearchService {
 
   /**
@@ -54,5 +56,14 @@ public interface SearchService {
    * 
    */
   String search(String indexName, String query) throws SearchApiException;
+
+  /**
+   * Get the mapping of the provided indexName.
+   * Mapping is returned as a Map where the key is like "data.attributes.displayName.type" and the value like "text"
+   * @param indexName
+   * @return mapping of the index
+   * @throws SearchApiException if something goes wrong with the request
+   */
+  Map<String, String> getIndexMapping(String indexName) throws SearchApiException;
 
 }
