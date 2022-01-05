@@ -35,7 +35,7 @@ public class SearchController {
   }
 
   @GetMapping(path = "/mapping")
-  public ResponseEntity<String> mapping(@RequestParam String indexName) {
+  public ResponseEntity<?> mapping(@RequestParam String indexName) {
     log.info("indexName={}", indexName);
     try {
       return new ResponseEntity<>(searchService.getIndexMapping(indexName), HttpStatus.ACCEPTED);

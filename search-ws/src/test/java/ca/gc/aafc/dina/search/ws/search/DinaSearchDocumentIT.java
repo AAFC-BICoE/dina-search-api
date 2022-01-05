@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.http.HttpHost;
@@ -213,9 +214,10 @@ public class DinaSearchDocumentIT {
       String documentContent = Files.readString(filename);
       indexDocumentForIT(DINA_AGENT_INDEX,"test-document-1",  documentContent);
 
-      String result = searchService.getIndexMapping(DINA_AGENT_INDEX);
+      Map<String, String> result = searchService.getIndexMapping(DINA_AGENT_INDEX);
 
-      // TODO assert the response
+      assertTrue(result.containsKey("data.attributes.createdOn.type"));
+      assertEquals("date", result.get("data.attributes.createdOn.type"));
 
     } catch (Exception e) {
       fail(e);
