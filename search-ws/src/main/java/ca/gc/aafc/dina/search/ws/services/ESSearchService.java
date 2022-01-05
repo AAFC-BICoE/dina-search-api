@@ -92,12 +92,15 @@ public class ESSearchService implements SearchService {
     // additionalField (if defined)
     //
     List<String> fields = new ArrayList<>();
+    List<String> fieldsToReturn = new ArrayList<>();
     fields.add(autoCompleteField);
+    fieldsToReturn.add(autoCompleteField);
     fields.add(autoCompleteField + ".autocomplete._2gram");
     fields.add(autoCompleteField + ".autocomplete._3gram");
 
     if (StringUtils.hasText(additionalField)) {
       fields.add(additionalField);
+      fieldsToReturn.add(additionalField);
     }
 
     String[] arrayFields = new String[fields.size()];
@@ -106,13 +109,14 @@ public class ESSearchService implements SearchService {
     MultiMatchQueryBuilder multiMatchQueryBuilder = new MultiMatchQueryBuilder(textToMatch, arrayFields);
 
     // Boolean Prefix based request...
-    //
     multiMatchQueryBuilder.type(MultiMatchQueryBuilder.Type.BOOL_PREFIX);
 
     SearchRequest searchRequest = new SearchRequest(indexName);
 
     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-    searchSourceBuilder.fetchSource(true);
+
+    // Select fields to return
+    searchSourceBuilder.fetchSource(fieldsToReturn.toArray(String[]::new), null);
 
     searchSourceBuilder.query(multiMatchQueryBuilder);
     searchRequest.source(searchSourceBuilder);
