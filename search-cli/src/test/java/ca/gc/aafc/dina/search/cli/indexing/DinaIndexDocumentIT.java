@@ -1,19 +1,19 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.json.jackson.JacksonJsonpMapper;
+import co.elastic.clients.transport.ElasticsearchTransport;
+import co.elastic.clients.transport.rest_client.RestClientTransport;
+
 import org.apache.http.HttpHost;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,12 +28,17 @@ import static org.junit.Assert.*;
 @SpringBootTest(properties = {"spring.shell.interactive.enabled=false"})
 public class DinaIndexDocumentIT {
 
-  public static final String INDEX_NAME = "index";
+  private static final String INDEX_NAME = "index";
+  private static final String HOST = "localhost";
+  private static final int PORT = 9200;
+
   @Autowired
   private DocumentIndexer documentIndexer;
 
   @Container
   private static final ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
+
+  private ElasticsearchClient client;
 
   @BeforeAll
   static void beforeAll() {
@@ -41,6 +46,17 @@ public class DinaIndexDocumentIT {
 
     assertEquals(9200, elasticsearchContainer.getMappedPort(9200).intValue());
     assertEquals(9300, elasticsearchContainer.getMappedPort(9300).intValue());
+  }
+
+  @BeforeEach
+  void beforeEach() {
+    RestClient restClient = RestClient.builder(new HttpHost(HOST, PORT)).build();
+
+    // Create the transportation layer, using the JacksonJsonpMapper.
+    ElasticsearchTransport transport = new RestClientTransport(restClient, new JacksonJsonpMapper());
+
+    // Create the high level elastic search client.
+    client = new ElasticsearchClient(transport);
   }
 
   @AfterAll
@@ -60,10 +76,6 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      //
-      RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200)));
-
       int foundDocument = searchAndWait(client, "initial", 1);
       assertEquals(1, foundDocument);
 
@@ -84,10 +96,6 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      //
-      RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200)));
-
       int foundDocument = searchAndWait(client, "initial", 1);
       assertEquals(1, foundDocument);
 
@@ -117,10 +125,6 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      //
-      RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200)));
-
       int foundDocument = searchAndWait(client, "initial", 1);
       assertEquals(1, foundDocument);
 
@@ -140,14 +144,15 @@ public class DinaIndexDocumentIT {
     }
   }
 
-  private int search(RestHighLevelClient client, String searchValue) throws Exception {
+  private int search(ElasticsearchClient client, String searchValue) throws Exception {
 
     SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
     searchSourceBuilder.from(0);
     searchSourceBuilder.size(100);
     searchSourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
     searchSourceBuilder.query(QueryBuilders.matchQuery("name", searchValue));
-    SearchRequest searchRequest = new SearchRequest();
+
+    SearchResponse searchResponse = client.search(builder -> builder.query, String.class);
     searchRequest.indices(INDEX_NAME);
     searchRequest.source(searchSourceBuilder);
     SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
@@ -158,7 +163,7 @@ public class DinaIndexDocumentIT {
     return searchHits.length;
   }
 
-  private int searchAndWait(RestHighLevelClient client, String searchValue, int foundCondition) throws InterruptedException, Exception {
+  private int searchAndWait(ElasticsearchClient client, String searchValue, int foundCondition) throws InterruptedException, Exception {
 
     int foundDocument = -1;
     int nCount = 0;
