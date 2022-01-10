@@ -2,6 +2,7 @@ package ca.gc.aafc.dina.search.ws.controller;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.ws.services.AutoCompleteResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 import lombok.extern.log4j.Log4j2;
 
@@ -27,7 +29,7 @@ public class SearchController {
   }
 
   @GetMapping(path = "/auto-complete")
-  public ResponseEntity<SearchResponse> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
+  public ResponseEntity<SearchHits<AutoCompleteResponse>> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
       @RequestParam String autoCompleteField, @RequestParam(required = false) String additionalField) {
 
     log.info("prefix={}, indexName={}, autoCompleteField={}, additionalField={}", prefix, indexName, autoCompleteField, additionalField);

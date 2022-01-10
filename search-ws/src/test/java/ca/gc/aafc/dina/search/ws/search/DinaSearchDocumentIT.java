@@ -2,28 +2,23 @@ package ca.gc.aafc.dina.search.ws.search;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 
-import org.elasticsearch.action.DocWriteResponse.Result;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.IndexQuery;
+import org.springframework.data.elasticsearch.core.query.IndexQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
+import ca.gc.aafc.dina.search.ws.services.AutoCompleteResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 
 import static org.junit.Assert.assertEquals;
@@ -39,7 +34,7 @@ public class DinaSearchDocumentIT {
   private SearchService searchService;
 
   @Autowired
-  private RestHighLevelClient elasticsearchClient; 
+  private ElasticsearchOperations elasticsearchOperations;
 
   @Container
   private static ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
@@ -62,23 +57,22 @@ public class DinaSearchDocumentIT {
       Path filename = Path.of(path + "/" + documentContentInput);
 
       String documentContent = Files.readString(filename);   
-      IndexRequest request = new IndexRequest(DINA_AGENT_INDEX); 
-      request.id("test-document"); 
-      request.source(documentContent, XContentType.JSON);
 
-      IndexResponse indexResponse = elasticsearchClient.index(request, RequestOptions.DEFAULT);
+      IndexQuery indexQuery = new IndexQueryBuilder()
+          .withId("test-document")
+          .withSource(documentContent)
+          .build();
+      elasticsearchOperations.index(indexQuery, IndexCoordinates.of(DINA_AGENT_INDEX));
 
-      assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(elasticsearchClient, "test-document", 1);
+      searchAndWait("test-document", 1);
 
       String textToMatch = "joh";
       String autoCompleteField = "data.attributes.displayName";
       String additionalField = "";
-      SearchResponse searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField);
+      SearchHits<AutoCompleteResponse> searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField);
       
-      assertNotNull(searchResponse.getHits());
-      assertNotNull(searchResponse.getHits().getHits());
-      assertEquals(1, searchResponse.getHits().getHits().length);
+      assertNotNull(searchResponse.getSearchHits());
+      assertEquals(1, searchResponse.getSearchHits().size());
       
     } finally {
       elasticsearchContainer.stop();
@@ -103,14 +97,13 @@ public class DinaSearchDocumentIT {
       Path filename = Path.of(path + "/" + documentContentInput);
 
       String documentContent = Files.readString(filename);   
-      IndexRequest request = new IndexRequest(DINA_AGENT_INDEX); 
-      request.id("test-document"); 
-      request.source(documentContent, XContentType.JSON);
+      IndexQuery indexQuery = new IndexQueryBuilder()
+          .withId("test-document")
+          .withSource(documentContent)
+          .build();
+      elasticsearchOperations.index(indexQuery, IndexCoordinates.of(DINA_AGENT_INDEX));
 
-      IndexResponse indexResponse = elasticsearchClient.index(request, RequestOptions.DEFAULT);
-
-      assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(elasticsearchClient, "test-document", 1);
+      searchAndWait("test-document", 1);
 
       // Auto-Complete search
       String queryFile = "autocomplete-search.json";
@@ -145,26 +138,24 @@ public class DinaSearchDocumentIT {
       String path = "src/test/resources/test-documents";
       Path filename = Path.of(path + "/" + documentContentInput);
 
-      String documentContent = Files.readString(filename);   
-      IndexRequest request = new IndexRequest(DINA_AGENT_INDEX); 
-      request.id("test-document-1"); 
-      request.source(documentContent, XContentType.JSON);
-      IndexResponse indexResponse = elasticsearchClient.index(request, RequestOptions.DEFAULT);
-
-      assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(elasticsearchClient, "test-document-1", 1);
+      String documentContent = Files.readString(filename);
+      IndexQuery indexQuery1 = new IndexQueryBuilder()
+          .withId("test-document-1")
+          .withSource(documentContent)
+          .build();
+      elasticsearchOperations.index(indexQuery1, IndexCoordinates.of(DINA_AGENT_INDEX));
+      searchAndWait("test-document-1", 1);
 
       documentContentInput = "person-2.json";
       filename = Path.of(path + "/" + documentContentInput);
 
       documentContent = Files.readString(filename);   
-      request = new IndexRequest(DINA_AGENT_INDEX); 
-      request.id("test-document-2"); 
-      request.source(documentContent, XContentType.JSON);
-      indexResponse = elasticsearchClient.index(request, RequestOptions.DEFAULT);
-
-      assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(elasticsearchClient, "test-document-2", 1);
+      IndexQuery indexQuery2 = new IndexQueryBuilder()
+          .withId("test-document-2")
+          .withSource(documentContent)
+          .build();
+      elasticsearchOperations.index(indexQuery2, IndexCoordinates.of(DINA_AGENT_INDEX));
+      searchAndWait("test-document-2", 1);
 
       // Get All search
       String queryFile = "get-all-search.json";
@@ -181,32 +172,21 @@ public class DinaSearchDocumentIT {
     }
   }
 
-  private int search(RestHighLevelClient client, String searchValue) throws Exception {
+  private long search(String searchValue) throws Exception {
+    Query searchQuery = new NativeSearchQueryBuilder()
+      .withMaxResults(100)
+      .withQuery(QueryBuilders.matchQuery("name", searchValue))
+      .build();
 
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-    searchSourceBuilder.from(0);
-    searchSourceBuilder.size(100);
-    searchSourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
-    searchSourceBuilder.query(QueryBuilders.matchQuery("id", searchValue));
-    SearchRequest searchRequest = new SearchRequest();
-    searchRequest.indices(DINA_AGENT_INDEX);
-    searchRequest.source(searchSourceBuilder);
-    SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-
-    SearchHits hits = searchResponse.getHits();
-    SearchHit[] searchHits = hits.getHits();
-
-    return searchHits.length;
-
+    return elasticsearchOperations.count(searchQuery, IndexCoordinates.of(DINA_AGENT_INDEX));
   }
 
-  private int searchAndWait(RestHighLevelClient client, String searchValue, int foundCondition) throws InterruptedException, Exception {
-
-    int foundDocument = -1;
-    int nCount = 0;
+  private long searchAndWait(String searchValue, int foundCondition) throws InterruptedException, Exception {
+    long foundDocument = -1;
+    long nCount = 0;
     while (foundDocument != foundCondition && nCount < 10) {
-      Thread.sleep(1000);
-      foundDocument = search(client, searchValue);
+      Thread.sleep(1000 * 5);
+      foundDocument = search(searchValue);
       nCount++;
     }
     return foundDocument;

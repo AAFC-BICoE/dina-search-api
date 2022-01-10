@@ -14,11 +14,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -41,16 +45,16 @@ public class ESSearchService implements SearchService {
   private static final ObjectMapper OM = new ObjectMapper();
   private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
 
-  private final RestHighLevelClient esClient;
+  private final ElasticsearchOperations elasticsearchOperations;
   private final RestTemplate restTemplate;
   private final UriBuilder searchUriBuilder;
   
   public ESSearchService(
                   @Autowired RestTemplateBuilder builder, 
-                  @Autowired RestHighLevelClient esClient,
+                  @Autowired ElasticsearchOperations elasticsearchOperations,
                   YAMLConfigProperties yamlConfigProperties) {
     this.restTemplate = builder.build();
-    this.esClient = esClient;
+    this.elasticsearchOperations = elasticsearchOperations;
 
     // Create a URIBuilder that will be used as part of the search for documents
     // within a specific index.
@@ -72,7 +76,7 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
-  public SearchResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
+  public SearchHits<AutoCompleteResponse> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
     
     // Based on our naming convention, we will create the expected fields to search for:
     //
@@ -97,25 +101,14 @@ public class ESSearchService implements SearchService {
     MultiMatchQueryBuilder multiMatchQueryBuilder = new MultiMatchQueryBuilder(textToMatch, arrayFields);
 
     // Boolean Prefix based request...
-    //
     multiMatchQueryBuilder.type(MultiMatchQueryBuilder.Type.BOOL_PREFIX);
 
-    SearchRequest searchRequest = new SearchRequest(indexName);
+    Query searchQuery = new NativeSearchQueryBuilder()
+        .withQuery(multiMatchQueryBuilder)
+        .build();
 
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-    searchSourceBuilder.fetchSource(true);
-
-    searchSourceBuilder.query(multiMatchQueryBuilder);
-    searchRequest.source(searchSourceBuilder);
-
-    SearchResponse searchResponse = null;
-    try {
-      searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
-    } catch (IOException ex) {
-      log.error("Error in autocomplete search", ex);
-    }
-
-    return searchResponse;
+    SearchHits<AutoCompleteResponse> searchHits = elasticsearchOperations.search(searchQuery, AutoCompleteResponse.class, IndexCoordinates.of(indexName));
+    return searchHits;
   }
 
   @Override
