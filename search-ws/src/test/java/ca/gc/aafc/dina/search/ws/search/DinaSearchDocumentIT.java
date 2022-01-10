@@ -1,28 +1,22 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.http.HttpHost;
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.core.TimeValue;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.xcontent.XContentType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,13 +26,20 @@ import org.testcontainers.junit.jupiter.Container;
 
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 
-@SpringBootTest()
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+@SpringBootTest(properties = "elasticsearch.host=localhost")
 public class DinaSearchDocumentIT {
   
   private static final String DINA_AGENT_INDEX = "dina_agent_index";
 
   @Autowired
   private SearchService searchService;
+
+  @Autowired
+  private RestHighLevelClient elasticsearchClient; 
 
   @Container
   private static ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
@@ -55,13 +56,7 @@ public class DinaSearchDocumentIT {
     assertNotNull(searchService);
     try {
 
-      // Let's add a document into the elasticsearch cluster
-      //
-      RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200)));
-
       // Read document from test/resources
-      //
       String documentContentInput = "person-1.json";
       String path = "src/test/resources/test-documents";
       Path filename = Path.of(path + "/" + documentContentInput);
@@ -71,10 +66,10 @@ public class DinaSearchDocumentIT {
       request.id("test-document"); 
       request.source(documentContent, XContentType.JSON);
 
-      IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
+      IndexResponse indexResponse = elasticsearchClient.index(request, RequestOptions.DEFAULT);
 
       assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(client, "test-document", 1);
+      searchAndWait(elasticsearchClient, "test-document", 1);
 
       String textToMatch = "joh";
       String autoCompleteField = "data.attributes.displayName";
@@ -102,13 +97,7 @@ public class DinaSearchDocumentIT {
     assertNotNull(searchService);
     try {
 
-      // Let's add a document into the elasticsearch cluster
-      //
-      RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200)));
-
       // Read document from test/resources
-      //
       String documentContentInput = "person-1.json";
       String path = "src/test/resources/test-documents";
       Path filename = Path.of(path + "/" + documentContentInput);
@@ -118,10 +107,10 @@ public class DinaSearchDocumentIT {
       request.id("test-document"); 
       request.source(documentContent, XContentType.JSON);
 
-      IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
+      IndexResponse indexResponse = elasticsearchClient.index(request, RequestOptions.DEFAULT);
 
       assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(client, "test-document", 1);
+      searchAndWait(elasticsearchClient, "test-document", 1);
 
       // Auto-Complete search
       String queryFile = "autocomplete-search.json";
@@ -151,15 +140,7 @@ public class DinaSearchDocumentIT {
 
     try {
 
-      // Let's add a document into the elasticsearch cluster
-      //
-      // Retrieve the document from elasticsearch
-      //
-      RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200)));
-
       // Get document from test/resources
-      //
       String documentContentInput = "person-1.json";
       String path = "src/test/resources/test-documents";
       Path filename = Path.of(path + "/" + documentContentInput);
@@ -168,10 +149,10 @@ public class DinaSearchDocumentIT {
       IndexRequest request = new IndexRequest(DINA_AGENT_INDEX); 
       request.id("test-document-1"); 
       request.source(documentContent, XContentType.JSON);
-      IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
+      IndexResponse indexResponse = elasticsearchClient.index(request, RequestOptions.DEFAULT);
 
       assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(client, "test-document-1", 1);
+      searchAndWait(elasticsearchClient, "test-document-1", 1);
 
       documentContentInput = "person-2.json";
       filename = Path.of(path + "/" + documentContentInput);
@@ -180,10 +161,10 @@ public class DinaSearchDocumentIT {
       request = new IndexRequest(DINA_AGENT_INDEX); 
       request.id("test-document-2"); 
       request.source(documentContent, XContentType.JSON);
-      indexResponse = client.index(request, RequestOptions.DEFAULT);
+      indexResponse = elasticsearchClient.index(request, RequestOptions.DEFAULT);
 
       assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(client, "test-document-2", 1);
+      searchAndWait(elasticsearchClient, "test-document-2", 1);
 
       // Get All search
       String queryFile = "get-all-search.json";

@@ -13,7 +13,7 @@ public interface DocumentIndexer {
    * @param indexName Elasticsearch index to use for the document.
    * @throws SearchApiException
    */
-  OperationStatus indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException;
+  void indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException;
 
   /**
    * Delete the document identified by the documentId from all supported indices.
@@ -24,7 +24,7 @@ public interface DocumentIndexer {
    * 
    * @throws SearchApiException
    */
-  OperationStatus deleteDocument(String documentId, String indexName) throws SearchApiException;
+  void deleteDocument(String documentId, String indexName) throws SearchApiException;
   
   /**
    * Release resources created by the elasticsearch client

@@ -27,8 +27,7 @@
     <!-- Compile properties -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>11</java.version>
-
-    <elasticsearch.version>7.16.1</elasticsearch.version>
+    <spring-data-elasticsearch.version>4.3.0</spring-data-elasticsearch.version>
     <dina-base-api.version>0.67</dina-base-api.version>
     <log4j2.version>2.16.0</log4j2.version>
 
