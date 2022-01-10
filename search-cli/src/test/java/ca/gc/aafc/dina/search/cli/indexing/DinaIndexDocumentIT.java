@@ -1,22 +1,16 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
-import java.util.concurrent.TimeUnit;
-
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
+import org.springframework.data.elasticsearch.core.query.Query;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
@@ -33,37 +27,32 @@ public class DinaIndexDocumentIT {
   private DocumentIndexer documentIndexer;
 
   @Autowired
-  private RestHighLevelClient elasticsearchClient;
+  private ElasticsearchOperations elasticsearchOperations;
 
   @Container
-  private static final ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
+  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
 
   @BeforeAll
   static void beforeAll() {
-    elasticsearchContainer.start();
+    ELASTICSEARCH_CONTAINER.start();
 
-    assertEquals(9200, elasticsearchContainer.getMappedPort(9200).intValue());
-    assertEquals(9300, elasticsearchContainer.getMappedPort(9300).intValue());
+    assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
+    assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
   }
 
   @AfterAll
   static void afterAll() {
-    elasticsearchContainer.stop();
+    ELASTICSEARCH_CONTAINER.stop();
   }
 
   @DisplayName("Integration Test index document")
   @Test
   public void testIndexDocument() throws Exception {
     try {
-      OperationStatus result = documentIndexer.indexDocument(
-        "123-456-789",
-        "{\"name\": \"initial\"}",
-        INDEX_NAME);
-      assertNotNull(result);
-      assertEquals(OperationStatus.SUCCEEDED, result);
+      documentIndexer.indexDocument("123-456-789", "{\"name\": \"initial\"}", INDEX_NAME);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = searchAndWait(elasticsearchClient, "initial", 1);
+      long foundDocument = searchAndWait("initial", 1);
       assertEquals(1, foundDocument);
 
     } catch (SearchApiException e) {
@@ -75,23 +64,16 @@ public class DinaIndexDocumentIT {
   @Test
   public void testIndexAndUpdateDocument() throws Exception {
     try {
-      OperationStatus result = documentIndexer.indexDocument(
-        "123-456-789",
-        "{\"name\": \"initial\"}",
-        INDEX_NAME);
-      assertNotNull(result);
-      assertEquals(OperationStatus.SUCCEEDED, result);
+      documentIndexer.indexDocument("123-456-789", "{\"name\": \"initial\"}", INDEX_NAME);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = searchAndWait(elasticsearchClient, "initial", 1);
+      long foundDocument = searchAndWait("initial", 1);
       assertEquals(1, foundDocument);
 
-      result = documentIndexer.indexDocument("123-456-789", "{\"name\": \"updated\"}", INDEX_NAME);
-      assertNotNull(result);
-      assertEquals(OperationStatus.SUCCEEDED, result);
+      documentIndexer.indexDocument("123-456-789", "{\"name\": \"updated\"}", INDEX_NAME);
 
       // Retrieve updated document from elasticsearchs
-      foundDocument = searchAndWait(elasticsearchClient, "updated", 1);
+      foundDocument = searchAndWait("updated", 1);
       assertEquals(1, foundDocument);
 
     } catch (SearchApiException e) {
@@ -103,24 +85,17 @@ public class DinaIndexDocumentIT {
   @Test
   public void testIndexAndDeleteDocument() throws Exception {
     try {
-      OperationStatus result = documentIndexer.indexDocument(
-        "123-456-789",
-        "{\"name\": \"initial\"}",
-        INDEX_NAME);
-      assertNotNull(result);
-      assertEquals(OperationStatus.SUCCEEDED, result);
+      documentIndexer.indexDocument("123-456-789", "{\"name\": \"initial\"}", INDEX_NAME);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = searchAndWait(elasticsearchClient, "initial", 1);
+      long foundDocument = searchAndWait("initial", 1);
       assertEquals(1, foundDocument);
 
       // Delete the document
-      result = documentIndexer.deleteDocument("123-456-789", INDEX_NAME);
-      assertNotNull(result);
-      assertEquals(OperationStatus.SUCCEEDED, result);
+      documentIndexer.deleteDocument("123-456-789", INDEX_NAME);
 
       // Retrieve deleted document from elasticsearch
-      foundDocument = searchAndWait(elasticsearchClient, "initial", 0);
+      foundDocument = searchAndWait("initial", 0);
       assertEquals(0, foundDocument);
 
     } catch (SearchApiException e) {
@@ -128,34 +103,23 @@ public class DinaIndexDocumentIT {
     }
   }
 
-  private int search(RestHighLevelClient client, String searchValue) throws Exception {
+  private long search(String searchValue) throws Exception {
+    Query searchQuery = new NativeSearchQueryBuilder()
+      .withMaxResults(100)
+      .withQuery(QueryBuilders.matchQuery("name", searchValue))
+      .build();
 
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-    searchSourceBuilder.from(0);
-    searchSourceBuilder.size(100);
-    searchSourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
-    searchSourceBuilder.query(QueryBuilders.matchQuery("name", searchValue));
-    SearchRequest searchRequest = new SearchRequest();
-    searchRequest.indices(INDEX_NAME);
-    searchRequest.source(searchSourceBuilder);
-    SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-
-    SearchHits hits = searchResponse.getHits();
-    SearchHit[] searchHits = hits.getHits();
-
-    return searchHits.length;
+    return elasticsearchOperations.count(searchQuery, IndexCoordinates.of(INDEX_NAME));
   }
 
-  private int searchAndWait(RestHighLevelClient client, String searchValue, int foundCondition) throws InterruptedException, Exception {
-
-    int foundDocument = -1;
-    int nCount = 0;
+  private long searchAndWait(String searchValue, int foundCondition) throws InterruptedException, Exception {
+    long foundDocument = -1;
+    long nCount = 0;
     while (foundDocument != foundCondition && nCount < 10) {
       Thread.sleep(1000 * 5);
-      foundDocument = search(client, searchValue);
+      foundDocument = search(searchValue);
       nCount++;
     }
     return foundDocument;
   }
-
 }

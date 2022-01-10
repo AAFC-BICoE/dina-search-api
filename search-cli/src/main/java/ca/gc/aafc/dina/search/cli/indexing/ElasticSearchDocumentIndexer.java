@@ -1,7 +1,9 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
+import java.io.IOException;
+
 import org.apache.commons.lang3.StringUtils;
-import org.elasticsearch.client.ElasticsearchClient;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.mapping.IndexCoordinates;
@@ -11,8 +13,14 @@ import org.springframework.stereotype.Service;
 
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 
+import lombok.extern.log4j.Log4j2;
+
 @Service
+@Log4j2
 public class ElasticSearchDocumentIndexer implements DocumentIndexer {
+
+  @Autowired
+  private RestHighLevelClient client;
 
   @Autowired
   private ElasticsearchOperations elasticsearchOperations;
@@ -49,5 +57,11 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
   @Override
   public void releaseResources() {
+    try {
+      client.close();
+      log.info("Indexer client closed");
+    } catch (IOException ioEx) {
+      log.error("exception during client closure...");
+    }
   }
 }
