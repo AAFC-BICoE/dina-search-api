@@ -85,7 +85,7 @@ public class OpenIDHttpClient {
       } else if (response.code() == 404) {
         throw new SearchApiNotFoundException(ERROR_DURING_RETRIEVAL_FROM + route.uri() + " status code:" + response.code());
       } else {
-        log.warn("Status code:" + response.code() +", Body: " + response.body());
+        log.warn("Status code:" + response.code() + ", Body: " + response.body());
         throw new SearchApiException(ERROR_DURING_RETRIEVAL_FROM + route.uri() + " Status code:" + response.code());
       }
     } catch (IOException ioEx) {
@@ -158,9 +158,8 @@ public class OpenIDHttpClient {
       } else if (response.code() == 400) {
         log.warn("Refresh token failure, call getToken() to reinitialize all tokens");
         getToken();
-      }
-      else {
-        log.error("Status code: {}, Body: {}", response.code(),response.body());
+      } else {
+        log.error("Status code: {}, Body: {}", response.code(), response.body());
       }
     } catch (IOException ioEx) {
       throw new SearchApiException("Error during authentication token refresh", ioEx);
