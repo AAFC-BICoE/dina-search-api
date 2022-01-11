@@ -1,7 +1,7 @@
 package ca.gc.aafc.dina.search.ws.services;
 
-import org.elasticsearch.action.search.SearchResponse;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 
 import java.util.Map;
 
@@ -42,7 +42,7 @@ public interface SearchService {
    * @param additionalField additional or alternate field to evaluate in addition to the autoCompleteField.
    * @return
    */
-  SearchResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField);
+  SearchResponse<?> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField);
 
   /**
    * Search will take the provided json text query and forward it to the configured

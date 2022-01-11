@@ -14,16 +14,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.GetMappingsRequest;
-import org.elasticsearch.client.indices.GetMappingsResponse;
-import org.elasticsearch.cluster.metadata.MappingMetadata;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -39,6 +29,13 @@ import org.springframework.web.util.UriBuilder;
 
 import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
+import co.elastic.clients.elasticsearch.indices.get_mapping.IndexMappingRecord;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -51,16 +48,16 @@ public class ESSearchService implements SearchService {
   private static final String ES_MAPPING_TYPE = "type";
   private static final String ES_MAPPING_FIELDS = "fields";
 
-  private final RestHighLevelClient esClient;
+  private final ElasticsearchClient client;
   private final RestTemplate restTemplate;
   private final UriBuilder searchUriBuilder;
   
   public ESSearchService(
                   @Autowired RestTemplateBuilder builder, 
-                  @Autowired RestHighLevelClient esClient,
+                  @Autowired ElasticsearchClient client,
                   YAMLConfigProperties yamlConfigProperties) {
     this.restTemplate = builder.build();
-    this.esClient = esClient;
+    this.client = client;
 
     // Create a URIBuilder that will be used as part of the search for documents
     // within a specific index.
@@ -82,7 +79,7 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
-  public SearchResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
+  public SearchResponse<?> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
     
     // Based on our naming convention, we will create the expected fields to search for:
     //
@@ -107,29 +104,26 @@ public class ESSearchService implements SearchService {
     String[] arrayFields = new String[fields.size()];
     fields.toArray(arrayFields);
 
-    MultiMatchQueryBuilder multiMatchQueryBuilder = new MultiMatchQueryBuilder(textToMatch, arrayFields);
-
-    // Boolean Prefix based request...
-    multiMatchQueryBuilder.type(MultiMatchQueryBuilder.Type.BOOL_PREFIX);
-
-    SearchRequest searchRequest = new SearchRequest(indexName);
-
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-
-    // Select fields to return
-    searchSourceBuilder.fetchSource(fieldsToReturn.toArray(String[]::new), null);
-
-    searchSourceBuilder.query(multiMatchQueryBuilder);
-    searchRequest.source(searchSourceBuilder);
-
-    SearchResponse searchResponse = null;
     try {
-      searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
+      // Generate multi match query.
+      MultiMatchQuery multiMatchQuery = MultiMatchQuery.of(queryBuilder -> queryBuilder
+        .fields(fields)
+        .query(textToMatch)
+        .type(TextQueryType.BoolPrefix)
+      );
+
+      // Create the search response using the multi match query.
+      SearchResponse<?> searchResponse = client.search(searchBuilder -> searchBuilder
+        .index(indexName)
+        .query(queryBuilder -> queryBuilder.multiMatch(multiMatchQuery))
+      , null);
+
+      return searchResponse;
     } catch (IOException ex) {
       log.error("Error in autocomplete search", ex);
     }
 
-    return searchResponse;
+    return null;
   }
 
   @Override
@@ -154,9 +148,22 @@ public class ESSearchService implements SearchService {
   @SuppressWarnings("unchecked")
   public Map<String, String> getIndexMapping(String indexName) throws SearchApiException {
     Map<String, String> mapping = new HashMap<>();
-    GetMappingsRequest mappingRequest = new GetMappingsRequest().indices(indexName);
+
     try {
-      GetMappingsResponse getMappingResponse = esClient.indices().getMapping(mappingRequest, RequestOptions.DEFAULT);
+      GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
+      IndexMappingRecord indexMap = mappingResponse.get(indexName);
+
+    } catch (ElasticsearchException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+
+    /*
+    try {
+
       // since we only asked for a single index we can get it from the result
       MappingMetadata mappingMetadata = getMappingResponse.mappings().get(indexName);
 
@@ -174,6 +181,7 @@ public class ESSearchService implements SearchService {
     } catch (IOException | ElasticsearchStatusException e) {
       throw new SearchApiException("Error during index-mapping processing", e);
     }
+    */
     return mapping;
 
   }
