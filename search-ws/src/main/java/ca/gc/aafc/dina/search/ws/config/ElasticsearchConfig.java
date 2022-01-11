@@ -22,7 +22,7 @@ public class ElasticsearchConfig {
     this.yamlConfigProps = yamlConfigProps;
   }
 
-  @Bean(destroyMethod = "close")
+  @Bean
   public ElasticsearchClient client() {
     // Create low level client for the elastic search client to use.
     RestClient restClient = RestClient.builder(
