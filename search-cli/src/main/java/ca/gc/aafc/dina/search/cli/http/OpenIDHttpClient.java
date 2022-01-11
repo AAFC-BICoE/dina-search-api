@@ -72,7 +72,6 @@ public class OpenIDHttpClient {
     HttpUrl route = validateArgumentAndCreateRoute(endpointDescriptor, objectId);
 
     try {
-
       evaluateLoginRequired();
 
       Response response = processGetRequest(route);
@@ -86,7 +85,8 @@ public class OpenIDHttpClient {
       } else if (response.code() == 404) {
         throw new SearchApiNotFoundException(ERROR_DURING_RETRIEVAL_FROM + route.uri() + " status code:" + response.code());
       } else {
-        throw new SearchApiException(ERROR_DURING_RETRIEVAL_FROM + route.uri() + " status code:" + response.code());
+        log.warn("Status code:" + response.code() +", Body: " + response.body());
+        throw new SearchApiException(ERROR_DURING_RETRIEVAL_FROM + route.uri() + " Status code:" + response.code());
       }
     } catch (IOException ioEx) {
       throw new SearchApiException("Exception during retrieval from " + route.uri(), ioEx);
@@ -116,13 +116,13 @@ public class OpenIDHttpClient {
         ResponseBody bodyContent = response.body();
         if (bodyContent != null) {
           keyCloakAuth = mapper.readValue(bodyContent.string(), KeyCloakAuthentication.class);
+          log.info("Authenticated, received Keycloak token");
           return;
         }
       }
 
       log.error("Authentication rejected reason:{}", response.code());
       throw new SearchApiException("Authentication rejected");
-
     } catch (IOException ioEx) {
       throw new SearchApiException("Authentication rejected", ioEx);
     }
@@ -130,7 +130,7 @@ public class OpenIDHttpClient {
 
   /**
    * As per its name the method will refresh the authentication token through a request 
-   * to the configured keyCloakAutneitcation server. The keyCloakAuthentication data member
+   * to the configured keyCloakAuthentication server. The keyCloakAuthentication data member
    * is updated with the newly provided jwt token.
    * 
    * @throws SearchApiException in case of communication errors.
@@ -150,14 +150,17 @@ public class OpenIDHttpClient {
       if (response.isSuccessful() && response.body() != null) {
         ResponseBody bodyContent = response.body();
         if (bodyContent != null) {
+          log.info("Received Keycloak token");
           keyCloakAuth = mapper.readValue(bodyContent.string(), KeyCloakAuthentication.class);
           return;
         }
-
         throw new SearchApiException("Error during authentication token refresh invalid body content");
       } else if (response.code() == 400) {
         log.warn("Refresh token failure, call getToken() to reinitialize all tokens");
         getToken();
+      }
+      else {
+        log.error("Status code: {}, Body: {}", response.code(),response.body());
       }
     } catch (IOException ioEx) {
       throw new SearchApiException("Error during authentication token refresh", ioEx);
@@ -168,21 +171,14 @@ public class OpenIDHttpClient {
   /**
    * Validate provided arguments and returns a route object to be used by the caller.
    * 
-   * @param targetUrl
+   * @param endpointDescriptor
    * @param objectId
-   * @param includeQueryParams
-   * @return route object to be usee by the calling method.
+   * @return route object to be used by the calling method.
    * 
    * @throws SearchApiException in case of a validation error.
    */
   private HttpUrl validateArgumentAndCreateRoute(EndpointDescriptor endpointDescriptor, String objectId)
       throws SearchApiException {
-
-                    // // Special case for managed-attribute-map, we will drop the 'metadata' prefix
-                    // //
-                    // String urlEntry = curObjectId.startsWith("managed-attribute-map")
-                    //         ? curObjectId.substring(curObjectId.lastIndexOf("metadata/"))
-                    //         : curObjectId;
 
     String pathParam = Objects.toString(objectId, "");
     Builder urlBuilder = null;
@@ -221,6 +217,7 @@ public class OpenIDHttpClient {
     Response response = executeGetRequest(clientInstance, route);
     if (response.code() == 401 && keyCloakAuth != null && keyCloakAuth.getRefreshToken() != null) {
       // request has been denied because of an expired authentication token
+      log.info("Denied, trying to refresh Keycloak token.");
       refreshToken();
       response = executeGetRequest(clientInstance, route);
     }
@@ -229,6 +226,7 @@ public class OpenIDHttpClient {
 
   private void evaluateLoginRequired() throws SearchApiException {
     if (keyCloakAuth == null || keyCloakAuth.getAccessToken() == null) {
+      log.info("Initializing Keycloak client");
       // Login was never done, proceed with it
       getToken();
     }
