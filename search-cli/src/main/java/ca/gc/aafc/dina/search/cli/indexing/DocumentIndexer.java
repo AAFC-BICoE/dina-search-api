@@ -25,10 +25,5 @@ public interface DocumentIndexer {
    * @throws SearchApiException
    */
   OperationStatus deleteDocument(String documentId, String indexName) throws SearchApiException;
-  
-  /**
-   * Release resources created by the elasticsearch client
-   */
-  void releaseResources();
 
 }
