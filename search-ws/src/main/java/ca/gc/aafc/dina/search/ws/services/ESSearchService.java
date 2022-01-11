@@ -10,10 +10,6 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -27,10 +23,14 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
+
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
@@ -150,40 +150,24 @@ public class ESSearchService implements SearchService {
     Map<String, String> mapping = new HashMap<>();
 
     try {
+      // Retrieve the index mapping.
       GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
-      IndexMappingRecord indexMap = mappingResponse.get(indexName);
 
-    } catch (ElasticsearchException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-
-    /*
-    try {
-
-      // since we only asked for a single index we can get it from the result
-      MappingMetadata mappingMetadata = getMappingResponse.mappings().get(indexName);
-
-      Map<String, Object> esMapping = mappingMetadata.getSourceAsMap();
-
-      // First level is always "properties"
-      Map<String, Object> properties = (Map<String, Object>) esMapping.get(ES_MAPPING_PROPERTIES);
-      for (Map.Entry<String, Object> entry : properties.entrySet()) {
+      // First level is always "properties".
+      Map<String, IndexMappingRecord> properties = (Map<String, IndexMappingRecord>) mappingResponse.result().get(ES_MAPPING_PROPERTIES);
+      for (Map.Entry<String, IndexMappingRecord> entry : properties.entrySet()) {
         Stack<String> pathStack = new Stack<>();
         pathStack.push(entry.getKey());
         Map<String, String> pathType = new HashMap<>();
         crawlMapping(pathStack, (Map<String, Object>) entry.getValue(), pathType);
         mapping.putAll(pathType);
       }
-    } catch (IOException | ElasticsearchStatusException e) {
+
+    } catch (IOException e) {
       throw new SearchApiException("Error during index-mapping processing", e);
     }
-    */
-    return mapping;
 
+    return mapping;
   }
 
   /**
