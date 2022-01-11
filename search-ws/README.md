@@ -42,9 +42,10 @@ Once the services have started you can access the search-ws REST API at port 808
 
 ### Auto Completion 
 
-`
-http://<target-server>:8085/search/auto-complete?prefix=<string>&autoCompleteField=<fully qualified field>&additionalField=<fully qualified field>&indexName=<target index name>
-`
+```
+GET http://<target-server>:8085/search/auto-complete?prefix=<string>&autoCompleteField=<fully qualified field>&additionalField=<fully qualified field>&indexName=<target index name>
+```
+Content-Type: `application-json`
 
 - `target-server` = localhost
 - `prefix` = string that we are looking matches
@@ -52,35 +53,18 @@ http://<target-server>:8085/search/auto-complete?prefix=<string>&autoCompleteFie
 - `additionalField` = Fully qualified field that we want to add as an alternative to the autocomplete field.
 - `target-index-name` =  dina_agent_index
 
-<br/>
 
-| HTTP Verb | Supported | Content-Type | Produces |
-| --------------- | --------------- | --------------- | --- |
-| GET | Yes | None | application-json |
-| POST | Not | | |
-| PUT | Not |  | |
-| DELETE | Not | | |
+### Generic searches based on ElasticSearch compliant JSON payload 
 
-<br/>
-### Generic searches based on elasticsearch compliant JSON payload 
-
-`
-http://<target-server>:8085/search/text?indexName=<target-index-name>
-`
+```
+POST http://<target-server>:8085/search/text?indexName=<target-index-name>
+```
+Content-Type: `application-json`
 
 - `target-server` = localhost
 - `target-index-name` =  dina_agent_index
 
  
-| HTTP Verb | Supported | Content-Type | Produces |
-| --------------- | --------------- | --------------- | --- |
-| POST | Yes | application-json | application-json |
-| PUT | Not |  | |
-| GET | Not |  | |
-| DELETE | Not | | |
-
-<br/>
-
 ## Search Queries and Autocomplete support
 <br/>
 
@@ -217,6 +201,17 @@ string-to-auto-complete = the string that the caller wants to find autocomplete 
   }
 }
 
+```
+
+## Get Index Mapping
+
+Query:
+```
+http://localhost:8085/search/mapping?indexName=dina_agent_index
+```
+Response:
+```
+{"data.id.type":"text","data.attributes.createdOn.type":"date"}
 ```
 
 Cleanup:

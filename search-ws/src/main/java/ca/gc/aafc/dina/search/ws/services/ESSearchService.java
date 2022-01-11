@@ -4,17 +4,24 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +47,9 @@ public class ESSearchService implements SearchService {
 
   private static final ObjectMapper OM = new ObjectMapper();
   private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
+  private static final String ES_MAPPING_PROPERTIES = "properties";
+  private static final String ES_MAPPING_TYPE = "type";
+  private static final String ES_MAPPING_FIELDS = "fields";
 
   private final RestHighLevelClient esClient;
   private final RestTemplate restTemplate;
@@ -139,4 +149,59 @@ public class ESSearchService implements SearchService {
       throw new SearchApiException("Error during search processing", e);
     }
   }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Map<String, String> getIndexMapping(String indexName) throws SearchApiException {
+    Map<String, String> mapping = new HashMap<>();
+    GetMappingsRequest mappingRequest = new GetMappingsRequest().indices(indexName);
+    try {
+      GetMappingsResponse getMappingResponse = esClient.indices().getMapping(mappingRequest, RequestOptions.DEFAULT);
+      // since we only asked for a single index we can get it from the result
+      MappingMetadata mappingMetadata = getMappingResponse.mappings().get(indexName);
+
+      Map<String, Object> esMapping = mappingMetadata.getSourceAsMap();
+
+      // First level is always "properties"
+      Map<String, Object> properties = (Map<String, Object>) esMapping.get(ES_MAPPING_PROPERTIES);
+      for (Map.Entry<String, Object> entry : properties.entrySet()) {
+        Stack<String> pathStack = new Stack<>();
+        pathStack.push(entry.getKey());
+        Map<String, String> pathType = new HashMap<>();
+        crawlMapping(pathStack, (Map<String, Object>) entry.getValue(), pathType);
+        mapping.putAll(pathType);
+      }
+    } catch (IOException | ElasticsearchStatusException e) {
+      throw new SearchApiException("Error during index-mapping processing", e);
+    }
+    return mapping;
+
+  }
+
+  /**
+   * Crawl ElasticSearch mapping until we find the "type".
+   * @param path current path expressed as a Stack
+   * @param esMappingStructure structure returned by the ElasticSearch client
+   * @param mappingDefinition result containing the mapping and its type
+   */
+  @SuppressWarnings("unchecked")
+  private static void crawlMapping(Stack<String> path, Map<String, Object> esMappingStructure, Map<String, String> mappingDefinition) {
+    for (Map.Entry<String, Object> propEntry : esMappingStructure.entrySet()) {
+      // skip "fields" for now
+      if (!ES_MAPPING_FIELDS.equals(propEntry.getKey())) {
+        path.push(propEntry.getKey());
+        if (propEntry.getValue() instanceof Map) {
+          crawlMapping(path, (Map<String, Object>) propEntry.getValue(), mappingDefinition);
+        } else {
+          // we only record leaf "type"
+          if (ES_MAPPING_TYPE.equals(propEntry.getKey())) {
+            mappingDefinition.put(path.stream().filter(s -> !s.equals(ES_MAPPING_PROPERTIES))
+                .collect(Collectors.joining(".")), propEntry.getValue().toString());
+          }
+        }
+        path.pop();
+      }
+    }
+  }
+
 }
