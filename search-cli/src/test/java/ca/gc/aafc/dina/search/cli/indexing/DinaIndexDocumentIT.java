@@ -14,13 +14,22 @@ import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch.core.CountResponse;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
 import static org.junit.Assert.*;
 
-@SpringBootTest(properties = {"spring.shell.interactive.enabled=false", "elasticsearch.server_address=localhost"})
+@SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 public class DinaIndexDocumentIT {
 
-  public static final String INDEX_NAME = "index";
+  private static final String INDEX_NAME = "index";
+  private static final String DOCUMENT_ID = "123-456-789";
+  private static final String INITIAL_MSG = "initial";
+  private static final String UPDATED_MSG = "updated";
+  private static final TestDocument TEST_DOCUMENT = new TestDocument(INITIAL_MSG);
+  private static final TestDocument TEST_DOCUMENT_UPDATED = new TestDocument(UPDATED_MSG);
+
   @Autowired
   private DocumentIndexer documentIndexer;
 
@@ -47,15 +56,12 @@ public class DinaIndexDocumentIT {
   @Test
   public void testIndexDocument() throws Exception {
     try {
-      OperationStatus result = documentIndexer.indexDocument(
-        "123-456-789",
-        "{\"name\": \"initial\"}",
-        INDEX_NAME);
+      OperationStatus result = documentIndexer.indexDocument(DOCUMENT_ID, TEST_DOCUMENT, INDEX_NAME);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = searchAndWait("initial", 1);
+      int foundDocument = searchAndWait(INITIAL_MSG, 1);
       assertEquals(1, foundDocument);
 
     } catch (SearchApiException e) {
@@ -67,23 +73,20 @@ public class DinaIndexDocumentIT {
   @Test
   public void testIndexAndUpdateDocument() throws Exception {
     try {
-      OperationStatus result = documentIndexer.indexDocument(
-        "123-456-789",
-        "{\"name\": \"initial\"}",
-        INDEX_NAME);
+      OperationStatus result = documentIndexer.indexDocument(DOCUMENT_ID, TEST_DOCUMENT, INDEX_NAME);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = searchAndWait("initial", 1);
+      int foundDocument = searchAndWait(INITIAL_MSG, 1);
       assertEquals(1, foundDocument);
 
-      result = documentIndexer.indexDocument("123-456-789", "{\"name\": \"updated\"}", INDEX_NAME);
+      result = documentIndexer.indexDocument(DOCUMENT_ID, TEST_DOCUMENT_UPDATED, INDEX_NAME);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve updated document from elasticsearch
-      foundDocument = searchAndWait("updated", 1);
+      foundDocument = searchAndWait(UPDATED_MSG, 1);
       assertEquals(1, foundDocument);
 
     } catch (SearchApiException e) {
@@ -96,23 +99,23 @@ public class DinaIndexDocumentIT {
   public void testIndexAndDeleteDocument() throws Exception {
     try {
       OperationStatus result = documentIndexer.indexDocument(
-        "123-456-789",
-        "{\"name\": \"initial\"}",
+        DOCUMENT_ID,
+        TEST_DOCUMENT,
         INDEX_NAME);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = searchAndWait("initial", 1);
+      int foundDocument = searchAndWait(INITIAL_MSG, 1);
       assertEquals(1, foundDocument);
 
       // Delete the document
-      result = documentIndexer.deleteDocument("123-456-789", INDEX_NAME);
+      result = documentIndexer.deleteDocument(DOCUMENT_ID, INDEX_NAME);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve deleted document from elasticsearch
-      foundDocument = searchAndWait("initial", 0);
+      foundDocument = searchAndWait(INITIAL_MSG, 0);
       assertEquals(0, foundDocument);
 
     } catch (SearchApiException e) {
@@ -144,6 +147,13 @@ public class DinaIndexDocumentIT {
       nCount++;
     }
     return foundDocument;
+  }
+
+  @AllArgsConstructor
+  @Getter
+  @Setter
+  public static class TestDocument {
+    private String name;
   }
 
 }

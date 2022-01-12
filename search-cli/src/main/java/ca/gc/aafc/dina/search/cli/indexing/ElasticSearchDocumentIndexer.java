@@ -26,9 +26,9 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   private ElasticsearchClient client;
 
   @Override
-  public OperationStatus indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException {
+  public OperationStatus indexDocument(String documentId, Object payload, String indexName) throws SearchApiException {
 
-    if (!StringUtils.isNotBlank(documentId) || !StringUtils.isNotBlank(rawPayload)
+    if (!StringUtils.isNotBlank(documentId) || payload == null
         || !StringUtils.isNotBlank(indexName)) {
       throw new SearchApiException("Invalid arguments, values can not be null");
     }
@@ -38,7 +38,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
       IndexResponse response = client.index(builder -> builder
         .id(documentId)
         .index(indexName)
-        .document(rawPayload)
+        .document(payload)
       );
       Result indexResult = response.result();
 
