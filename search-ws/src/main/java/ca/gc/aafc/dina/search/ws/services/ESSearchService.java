@@ -31,7 +31,6 @@ import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
@@ -79,7 +78,7 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
-  public SearchResponse<?> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
+  public SearchResponse<JsonNode> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
     
     // Based on our naming convention, we will create the expected fields to search for:
     //
@@ -105,18 +104,14 @@ public class ESSearchService implements SearchService {
     fields.toArray(arrayFields);
 
     try {
-      // Generate multi match query.
-      MultiMatchQuery multiMatchQuery = MultiMatchQuery.of(queryBuilder -> queryBuilder
-        .fields(fields)
-        .query(textToMatch)
-        .type(TextQueryType.BoolPrefix)
-      );
-
       // Create the search response using the multi match query.
-      SearchResponse<?> searchResponse = client.search(searchBuilder -> searchBuilder
-        .index(indexName)
-        .query(queryBuilder -> queryBuilder.multiMatch(multiMatchQuery))
-      , null);
+      SearchResponse<JsonNode> searchResponse = client.search(searchBuilder -> searchBuilder
+          .index(indexName)
+          .query(queryBuilder -> queryBuilder.multiMatch(multiMatchQuery -> multiMatchQuery
+              .fields(fields)
+              .query(textToMatch)
+              .type(TextQueryType.BoolPrefix)))
+          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
 
       return searchResponse;
     } catch (IOException ex) {

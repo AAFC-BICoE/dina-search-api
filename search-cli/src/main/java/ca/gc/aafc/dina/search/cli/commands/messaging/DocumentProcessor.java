@@ -1,17 +1,23 @@
 package ca.gc.aafc.dina.search.cli.commands.messaging;
 
-import lombok.SneakyThrows;
+import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
 import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
-import ca.gc.aafc.dina.search.cli.json.IndexableDocumentHandler;
 import ca.gc.aafc.dina.search.messaging.consumer.IMessageProcessor;
 import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
+
+import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -20,17 +26,15 @@ public class DocumentProcessor implements IMessageProcessor {
 
   private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
-  private final IndexableDocumentHandler indexableDocumentHandler;
   private final ElasticSearchDocumentIndexer indexer;
+  private final ObjectMapper objectMapper;
 
   public DocumentProcessor(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
-              IndexableDocumentHandler indexableDocumentHandler,
               ElasticSearchDocumentIndexer indexer) {
-
     this.aClient = aClient;
     this.svcEndpointProps = svcEndpointProps;
-    this.indexableDocumentHandler = indexableDocumentHandler;
     this.indexer = indexer;
+    this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   /**
@@ -85,10 +89,12 @@ public class DocumentProcessor implements IMessageProcessor {
     log.info("Processing from the message processor: {}", docOpMessage);
     
   }
-   
+
+  @SuppressWarnings("unchecked")
   public String indexDocument(String type, String documentId) throws SearchApiException {
 
     String processedMessage = null;
+    Map<String,Object> objectMap = null;
     if (!svcEndpointProps.getEndpoints().containsKey(type)) {
       processedMessage = "Unsupported endpoint type:" + type;
       log.error(processedMessage);
@@ -100,19 +106,22 @@ public class DocumentProcessor implements IMessageProcessor {
     EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
     processedMessage = aClient.getDataFromUrl(endpointDescriptor, documentId);
 
-    // Step #2: Assemble the document
+    // Step #2: Assemble the document into a JSON map
     log.info("Assemble document id:{}", documentId);
-    processedMessage = indexableDocumentHandler.assembleDocument(processedMessage);
+    try {
+      objectMap = objectMapper.readValue(processedMessage, Map.class);
+    } catch (JsonProcessingException ex) {
+      throw new SearchApiException("Unable to parse type '" + type + "' with the id '" + documentId + "'", ex);
+    }
 
-    // Step #4: Index the document into elasticsearch
+    // Step #3: Index the document into elasticsearch
     if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
       log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
-      indexer.indexDocument(documentId, processedMessage, endpointDescriptor.getIndexName());
+      indexer.indexDocument(documentId, objectMap, endpointDescriptor.getIndexName());
     }
 
     return processedMessage;
   }
-
 
   public String deleteDocument(String type, String documentId) throws SearchApiException {
 

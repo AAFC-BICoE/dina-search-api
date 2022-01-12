@@ -1,5 +1,7 @@
 package ca.gc.aafc.dina.search.ws.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,7 +30,7 @@ public class SearchController {
   }
 
   @GetMapping(path = "/auto-complete")
-  public ResponseEntity<SearchResponse<?>> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
+  public ResponseEntity<SearchResponse<JsonNode>> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
       @RequestParam String autoCompleteField, @RequestParam(required = false) String additionalField) {
 
     log.info("prefix={}, indexName={}, autoCompleteField={}, additionalField={}", prefix, indexName, autoCompleteField, additionalField);
