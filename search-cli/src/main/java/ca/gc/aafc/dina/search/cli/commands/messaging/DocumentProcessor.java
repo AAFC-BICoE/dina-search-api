@@ -1,12 +1,11 @@
 package ca.gc.aafc.dina.search.cli.commands.messaging;
 
-import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
@@ -87,11 +86,10 @@ public class DocumentProcessor implements IMessageProcessor {
     }
   }
 
-  @SuppressWarnings("unchecked")
   public String indexDocument(String type, String documentId) throws SearchApiException {
 
     String processedMessage = null;
-    Map<String,Object> objectMap = null;
+    JsonNode jsonNode = null;
     if (!svcEndpointProps.getEndpoints().containsKey(type)) {
       processedMessage = "Unsupported endpoint type:" + type;
       log.error(processedMessage);
@@ -106,7 +104,7 @@ public class DocumentProcessor implements IMessageProcessor {
     // Step #2: Assemble the document into a JSON map
     log.info("Assembling document id:{}", documentId);
     try {
-      objectMap = objectMapper.readValue(processedMessage, Map.class);
+      jsonNode = objectMapper.readTree(processedMessage);
     } catch (JsonProcessingException ex) {
       throw new SearchApiException("Unable to parse type '" + type + "' with the id '" + documentId + "'", ex);
     }
@@ -114,7 +112,7 @@ public class DocumentProcessor implements IMessageProcessor {
     // Step #3: Indexing the document into elasticsearch
     if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
       log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
-      indexer.indexDocument(documentId, objectMap, endpointDescriptor.getIndexName());
+      indexer.indexDocument(documentId, jsonNode, endpointDescriptor.getIndexName());
     }
 
     return processedMessage;

@@ -57,6 +57,16 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   }
 
   @Override
+  public void releaseResources() {
+    try {
+      client._transport().close();
+      log.info("Indexer client closed");
+    } catch (IOException ioEx) {
+      log.error("exception during client closure...");
+    }
+  }
+
+  @Override
   public OperationStatus deleteDocument(String documentId, String indexName) throws SearchApiException {
 
     if (!StringUtils.isNotBlank(documentId) || !StringUtils.isNotBlank(indexName)) {
