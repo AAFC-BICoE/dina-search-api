@@ -15,7 +15,6 @@ import co.elastic.clients.elasticsearch._types.ShardFailure;
 import co.elastic.clients.elasticsearch._types.ShardStatistics;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
-
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2

@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
@@ -132,11 +131,11 @@ public class DinaSearchDocumentIT {
 
     Map<String, String> result = searchService.getIndexMapping(DINA_AGENT_INDEX);
 
-    assertTrue(result.containsKey("data.attributes.createdOn.type"));
-    assertEquals("date", result.get("data.attributes.createdOn.type"));
+    assertTrue(result.containsKey("data.attributes.createdOn"));
+    assertEquals("date", result.get("data.attributes.createdOn"));
 
     // test behavior of non-existing index
-    assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
+    assertThrows(ElasticsearchException.class, () -> searchService.getIndexMapping("abcd"));
   }
 
   @SuppressWarnings("unchecked")

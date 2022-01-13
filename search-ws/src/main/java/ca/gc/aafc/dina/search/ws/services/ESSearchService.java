@@ -31,10 +31,10 @@ import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
-import co.elastic.clients.elasticsearch.indices.get_mapping.IndexMappingRecord;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -43,9 +43,6 @@ public class ESSearchService implements SearchService {
 
   private static final ObjectMapper OM = new ObjectMapper();
   private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
-  private static final String ES_MAPPING_PROPERTIES = "properties";
-  private static final String ES_MAPPING_TYPE = "type";
-  private static final String ES_MAPPING_FIELDS = "fields";
 
   private final ElasticsearchClient client;
   private final RestTemplate restTemplate;
@@ -140,7 +137,6 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Map<String, String> getIndexMapping(String indexName) throws SearchApiException {
     Map<String, String> mapping = new HashMap<>();
 
@@ -149,14 +145,13 @@ public class ESSearchService implements SearchService {
       GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
 
       // First level is always "properties".
-      Map<String, IndexMappingRecord> properties = (Map<String, IndexMappingRecord>) mappingResponse.result().get(ES_MAPPING_PROPERTIES);
-      for (Map.Entry<String, IndexMappingRecord> entry : properties.entrySet()) {
+      mappingResponse.result().get(indexName).mappings().properties().forEach((propertyName, property) -> {
         Stack<String> pathStack = new Stack<>();
-        pathStack.push(entry.getKey());
+        pathStack.push(propertyName);
         Map<String, String> pathType = new HashMap<>();
-        crawlMapping(pathStack, (Map<String, Object>) entry.getValue(), pathType);
+        crawlMapping(pathStack, property, pathType);
         mapping.putAll(pathType);
-      }
+      });
 
     } catch (IOException e) {
       throw new SearchApiException("Error during index-mapping processing", e);
@@ -171,24 +166,22 @@ public class ESSearchService implements SearchService {
    * @param esMappingStructure structure returned by the ElasticSearch client
    * @param mappingDefinition result containing the mapping and its type
    */
-  @SuppressWarnings("unchecked")
-  private static void crawlMapping(Stack<String> path, Map<String, Object> esMappingStructure, Map<String, String> mappingDefinition) {
-    for (Map.Entry<String, Object> propEntry : esMappingStructure.entrySet()) {
-      // skip "fields" for now
-      if (!ES_MAPPING_FIELDS.equals(propEntry.getKey())) {
-        path.push(propEntry.getKey());
-        if (propEntry.getValue() instanceof Map) {
-          crawlMapping(path, (Map<String, Object>) propEntry.getValue(), mappingDefinition);
-        } else {
-          // we only record leaf "type"
-          if (ES_MAPPING_TYPE.equals(propEntry.getKey())) {
-            mappingDefinition.put(path.stream().filter(s -> !s.equals(ES_MAPPING_PROPERTIES))
-                .collect(Collectors.joining(".")), propEntry.getValue().toString());
-          }
-        }
-        path.pop();
+  private static void crawlMapping(Stack<String> path, Property propertyToCrawl, Map<String, String> mappingDefinition) {
+
+    propertyToCrawl.object().properties().forEach((propertyName, property) -> {
+      // Add path to path stack.
+      path.push(propertyName);
+
+      if (property.isObject()) {
+        crawlMapping(path, property, mappingDefinition);
+      } else {
+        mappingDefinition.put(
+            path.stream().collect(Collectors.joining(".")),
+            property._kind().jsonValue());
       }
-    }
+
+      path.pop();
+    });
   }
 
 }
