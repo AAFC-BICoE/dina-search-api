@@ -65,7 +65,7 @@ public class DocumentProcessor implements IMessageProcessor {
       log.info("Message processor received document notification with dryRun option set to true, processing will not be done for message:{}", docOpMessage);
       return;
     }
-
+    log.info("Processing: {}", docOpMessage);
     switch (docOpMessage.getOperationType()) {
 
       case ADD:
@@ -81,9 +81,6 @@ public class DocumentProcessor implements IMessageProcessor {
       default:
         log.warn("Unsupported document operation, documentId:{} of type:{} will not be processed", docOpMessage.getDocumentId(), docOpMessage.getDocumentType());
     }
-    
-    log.info("Processing from the message processor: {}", docOpMessage);
-    
   }
    
   public String indexDocument(String type, String documentId) throws SearchApiException {
@@ -96,15 +93,15 @@ public class DocumentProcessor implements IMessageProcessor {
     }
 
     // Step #1: get the document
-    log.info("Retrieve document id:{}", documentId);
+    log.info("Retrieving document id:{}", documentId);
     EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
     processedMessage = aClient.getDataFromUrl(endpointDescriptor, documentId);
 
     // Step #2: Assemble the document
-    log.info("Assemble document id:{}", documentId);
+    log.info("Assembling document id:{}", documentId);
     processedMessage = indexableDocumentHandler.assembleDocument(processedMessage);
 
-    // Step #4: Index the document into elasticsearch
+    // Step #3: Indexing the document into elasticsearch
     if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
       log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
       indexer.indexDocument(documentId, processedMessage, endpointDescriptor.getIndexName());
