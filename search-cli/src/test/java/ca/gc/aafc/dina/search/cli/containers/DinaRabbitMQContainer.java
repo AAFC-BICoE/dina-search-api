@@ -1,4 +1,4 @@
-package ca.gc.aafc.dina.search.cli.messaging;
+package ca.gc.aafc.dina.search.cli.containers;
 
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.utility.DockerImageName;

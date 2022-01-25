@@ -13,6 +13,7 @@ import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
 import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
+import ca.gc.aafc.dina.search.cli.json.IndexableDocumentHandler;
 import ca.gc.aafc.dina.search.messaging.consumer.IMessageProcessor;
 import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
 
@@ -25,13 +26,15 @@ public class DocumentProcessor implements IMessageProcessor {
 
   private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
+  private final IndexableDocumentHandler indexableDocumentHandler;
   private final ElasticSearchDocumentIndexer indexer;
   private final ObjectMapper objectMapper;
 
   public DocumentProcessor(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
-              ElasticSearchDocumentIndexer indexer) {
+      IndexableDocumentHandler indexableDocumentHandler, ElasticSearchDocumentIndexer indexer) {
     this.aClient = aClient;
     this.svcEndpointProps = svcEndpointProps;
+    this.indexableDocumentHandler = indexableDocumentHandler;
     this.indexer = indexer;
     this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
@@ -103,6 +106,7 @@ public class DocumentProcessor implements IMessageProcessor {
 
     // Step #2: Assemble the document into a JSON map
     log.info("Assembling document id:{}", documentId);
+    processedMessage = indexableDocumentHandler.assembleDocument(processedMessage);
     try {
       jsonNode = objectMapper.readTree(processedMessage);
     } catch (JsonProcessingException ex) {

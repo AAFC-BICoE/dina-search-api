@@ -9,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
+import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;

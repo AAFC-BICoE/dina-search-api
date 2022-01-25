@@ -1,0 +1,24 @@
+{
+  "data": {
+    "id": "3c7018ce-cf47-418a-9a15-bf5867a6c320",
+    "type": "organization",
+    "attributes": {
+      "names": [
+        {
+          "languageCode": "EN",
+          "name": "World Wide Fund for Nature"
+        },
+        {
+          "languageCode": "FR",
+          "name": "Fonds mondial pour la nature"
+        }
+      ],
+      "aliases": [
+        "WWF",
+        "World Wide Fund for Nature"
+      ],
+      "createdBy": "test user",
+      "createdOn": "1985-04-12T23:20:50.52Z"
+    }
+  }
+}
