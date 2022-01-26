@@ -13,9 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
-import org.mockserver.model.Header;
-import org.mockserver.model.Parameter;
-import org.mockserver.model.ParameterBody;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
@@ -26,13 +23,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
-import ca.gc.aafc.dina.search.cli.http.KeyCloakAuthentication;
+import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
 
 import lombok.SneakyThrows;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @ExtendWith(MockServerExtension.class) 
@@ -82,68 +77,26 @@ public class DocumentProcessorIT {
   @Test
   public void processMessage_withIncludedData_properlyAssembledMessage() {
 
-    // Fake Keycloak Authentication
-    KeyCloakAuthentication fakeKeyCloakPayload = new KeyCloakAuthentication();
-    fakeKeyCloakPayload.setAccessToken("accessToken");
-    fakeKeyCloakPayload.setExpiresIn(10);
-    fakeKeyCloakPayload.setIdToken("aToken");
-    fakeKeyCloakPayload.setNotBeforePolicy(10);
-    fakeKeyCloakPayload.setRefreshExpiresIn(10);
-    fakeKeyCloakPayload.setRefreshToken("aRefresh");
-    fakeKeyCloakPayload.setScope("aScope");
-    fakeKeyCloakPayload.setSessionState("sessionState");
-    fakeKeyCloakPayload.setTokenType("authentication");
-
-    ParameterBody params = new ParameterBody();
-    Parameter clientId = new Parameter("client_id", "objectstore");
-    Parameter username = new Parameter("username", "cnc-cm");
-    Parameter password = new Parameter("password", "cnc-cm");
-    Parameter grantType = new Parameter("grant_type", "password");
-    ParameterBody.params(clientId, username, password, grantType);
-
-    // Expectation for Authentication Token
-    client
-        .when(
-          request()
-            .withMethod("POST")
-            .withPath("/auth/realms/dina/protocol/openid-connect/token")
-            .withHeader("Content-type", "application/x-www-form-urlencoded")
-            .withHeader("Connection", "Keep-Alive")
-            .withHeader("Accept-Encoding", "application/json")
-            .withBody(params))
-          .respond(response().withStatusCode(200)
-            .withHeaders(
-                new Header("Content-Type", "application/json; charset=utf-8"),
-                new Header("Cache-Control", "public, max-age=86400"))
-            .withBody(OM.writeValueAsString(fakeKeyCloakPayload))
-            .withDelay(TimeUnit.SECONDS, 1));
+    MockKeyCloakAuthentication mockKeycloakAuthentication = new MockKeyCloakAuthentication(client);
 
     // Mock the person request.
-    client.when(request()
+    client.when(mockKeycloakAuthentication.setupMockRequest()
         .withMethod("GET")
         .withPath("/api/v1/" + DOCUMENT_TYPE + "/" + DOCUMENT_ID)
-        .withQueryStringParameter("include", "organizations")
-        .withHeader("Authorization", "Bearer " + fakeKeyCloakPayload.getAccessToken())
-        .withHeader("crnk-compact", "true").withHeader("Connection", "Keep-Alive")
-        .withHeader("Accept-Encoding", "application/json"))
-        .respond(response().withStatusCode(200)
-            .withHeaders(
-                new Header("Content-Type", "application/json; charset=utf-8"),
-                new Header("Cache-Control", "public, max-age=86400"))
-            .withBody(Files.readString(PERSON_RESPONSE_PATH)).withDelay(TimeUnit.SECONDS, 1));
+        .withQueryStringParameter("include", "organizations"))
+        .respond(mockKeycloakAuthentication.setupMockResponse()
+            .withStatusCode(200)
+            .withBody(Files.readString(PERSON_RESPONSE_PATH))
+            .withDelay(TimeUnit.SECONDS, 1));
 
     // Mock the organization request.
-    client.when(request()
+    client.when(mockKeycloakAuthentication.setupMockRequest()
         .withMethod("GET")
-        .withPath("/api/v1/" + DOCUMENT_INCLUDE_TYPE + "/" + DOCUMENT_INCLUDE_ID)
-        .withHeader("crnk-compact", "true").withHeader("Connection", "Keep-Alive")
-        .withHeader("Authorization", "Bearer " + fakeKeyCloakPayload.getAccessToken())
-        .withHeader("Accept-Encoding", "application/json"))
-        .respond(response().withStatusCode(200)
-            .withHeaders(
-                new Header("Content-Type", "application/json; charset=utf-8"),
-                new Header("Cache-Control", "public, max-age=86400"))
-            .withBody(Files.readString(ORGANIZATION_RESPONSE_PATH)).withDelay(TimeUnit.SECONDS, 1));
+        .withPath("/api/v1/" + DOCUMENT_INCLUDE_TYPE + "/" + DOCUMENT_INCLUDE_ID))
+        .respond(mockKeycloakAuthentication.setupMockResponse()
+            .withStatusCode(200)
+            .withBody(Files.readString(ORGANIZATION_RESPONSE_PATH))
+            .withDelay(TimeUnit.SECONDS, 1));
 
     // Create a request for the document processor.
     JsonNode jsonMessage = OM.readTree(documentProcessor.indexDocument(DOCUMENT_TYPE, DOCUMENT_ID));
