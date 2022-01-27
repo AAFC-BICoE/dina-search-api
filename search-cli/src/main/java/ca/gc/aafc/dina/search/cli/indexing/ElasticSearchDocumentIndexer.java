@@ -3,85 +3,63 @@ package ca.gc.aafc.dina.search.cli.indexing;
 import java.io.IOException;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHost;
-import org.elasticsearch.action.DocWriteResponse.Result;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.support.replication.ReplicationResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.xcontent.XContentType;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
-import ca.gc.aafc.dina.search.common.config.YAMLConfigProperties;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.Result;
+import co.elastic.clients.elasticsearch._types.ShardFailure;
+import co.elastic.clients.elasticsearch._types.ShardStatistics;
+import co.elastic.clients.elasticsearch.core.DeleteResponse;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service
 public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
-  private static final String SERVER_ADDRESS = "server_address";
-  private static final String PROTOCOL = "protocol";
-  private static final String PORT_1 = "port_1";
-  private static final String PORT_2 = "port_2";
-
-  private final RestHighLevelClient client;
-
-  public ElasticSearchDocumentIndexer(YAMLConfigProperties yamlConfigProps) {
-    client = new RestHighLevelClient(RestClient.builder(
-        new HttpHost(yamlConfigProps.getElasticsearch().get(SERVER_ADDRESS),
-            Integer.parseInt(yamlConfigProps.getElasticsearch().get(PORT_1).trim()),
-            yamlConfigProps.getElasticsearch().get(PROTOCOL)),
-        new HttpHost(yamlConfigProps.getElasticsearch().get(SERVER_ADDRESS),
-            Integer.parseInt(yamlConfigProps.getElasticsearch().get(PORT_2).trim()),
-            yamlConfigProps.getElasticsearch().get(PROTOCOL))));
-  }
-
+  @Autowired
+  private ElasticsearchClient client;
 
   @Override
-  public OperationStatus indexDocument(String documentId, String rawPayload, String indexName) throws SearchApiException {
+  public OperationStatus indexDocument(String documentId, Object payload, String indexName) throws SearchApiException {
 
-    if (!StringUtils.isNotBlank(documentId) || !StringUtils.isNotBlank(rawPayload)
+    if (!StringUtils.isNotBlank(documentId) || payload == null
         || !StringUtils.isNotBlank(indexName)) {
       throw new SearchApiException("Invalid arguments, values can not be null");
     }
 
-    IndexRequest indexRequest = new IndexRequest(indexName);
-
-    // Set index document id to the passed documentId
-    indexRequest.id(documentId);
-
-    // Initialize source document
-    indexRequest.source(rawPayload, XContentType.JSON);
-
-    // Make the call to elastic..
     try {
-      IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
+      // Make the call to elastic to index the document.
+      IndexResponse response = client.index(builder -> builder
+        .id(documentId)
+        .index(indexName)
+        .document(payload)
+      );
+      Result indexResult = response.result();
 
-      Result operationResult = indexResponse.getResult();
-
-      if (operationResult == Result.CREATED || operationResult == Result.UPDATED) {
-        log.info("Document {} in {} with id:{} and version:{}", operationResult.name(), indexResponse.getIndex(),
-            indexResponse.getId(), indexResponse.getVersion());
+      if (indexResult == Result.Created || indexResult == Result.Updated) {
+        log.info("Document {} in {} with id:{}", indexResult.name(), indexName, documentId);
         return OperationStatus.SUCCEEDED;
       } else {
-        log.error("Issue with the index operation, result:{}", operationResult);
-      }
+        log.error("Issue with the index operation, result:{}", indexResult);
+      }      
+    } catch (ElasticsearchException esEx) {
+      throw new SearchApiException("Elastic search could not accept or process this request", esEx);
     } catch (IOException ioEx) {
       throw new SearchApiException("Connectivity issue with the elasticsearch server", ioEx);
     }
-
+    
     return OperationStatus.FAILED;
   }
 
   @Override
   public void releaseResources() {
     try {
-      client.close();
+      client._transport().close();
       log.info("Indexer client closed");
     } catch (IOException ioEx) {
       log.error("exception during client closure...");
@@ -95,31 +73,37 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
       throw new SearchApiException("Invalid arguments, can not be null or blank");
     }
 
-    DeleteRequest deleteRequest = new DeleteRequest(indexName, documentId);
-
-    // Make the call to elastic to perform synchronous deletion
     try {
-      DeleteResponse deleteResponse = client.delete(deleteRequest, RequestOptions.DEFAULT);
+      // Make the call to elastic to delete the document from the index.
+      DeleteResponse deleteResponse = client.delete(builder -> builder
+        .id(documentId)
+        .index(indexName)
+      );
+      ShardStatistics deleteShards = deleteResponse.shards();
 
-      ReplicationResponse.ShardInfo shardInfo = deleteResponse.getShardInfo();
-      if (shardInfo.getTotal() != shardInfo.getSuccessful()) {
+      if (deleteShards.total().intValue() != deleteShards.successful().intValue()) {
         log.warn(
-            "Document deletion for documentId:{}, not successful on all shards (total Shards:{}/Successful Shards:{}",
-            documentId, shardInfo.getTotal(), shardInfo.getSuccessful());
+          "Document deletion for documentId:{}, not successful on all shards (total Shards:{}/Successful Shards:{}",
+          documentId, 
+          deleteShards.total(), 
+          deleteShards.successful()
+        );
         return OperationStatus.SUCCEEDED;
       }
 
-      if (shardInfo.getFailed() > 0) {
-        for (ReplicationResponse.ShardInfo.Failure failure : shardInfo.getFailures()) {
-          log.warn("Shard info failure reason:{}", failure.reason());
+      // Report any shard failures.
+      if (deleteShards.failed().intValue() > 0) {
+        for (ShardFailure failedShard : deleteShards.failures()) {
+          log.warn("Shard info failure reason:{}", failedShard.reason());
         }
         return OperationStatus.FAILED;
       }
+    } catch (ElasticsearchException esEx) {
+      throw new SearchApiException("Elastic search could not accept or process this request", esEx);
     } catch (IOException ioEx) {
       throw new SearchApiException("Connectivity issue with the elasticsearch server", ioEx);
     }
 
     return OperationStatus.FAILED;
-    
   }
 }

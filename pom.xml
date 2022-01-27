@@ -29,6 +29,7 @@
     <java.version>11</java.version>
 
     <elasticsearch.version>7.16.2</elasticsearch.version>
+    <jakarta.json.version>2.0.1</jakarta.json.version>
     <dina-base-api.version>0.77</dina-base-api.version>
     <log4j2.version>2.17.1</log4j2.version>
 
@@ -91,6 +92,17 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <!-- Required version needed for elasticsearch 7.16.2 -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>jakarta.json</groupId>
+        <artifactId>jakarta.json-api</artifactId>
+        <version>${jakarta.json.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <build>
     <plugins>

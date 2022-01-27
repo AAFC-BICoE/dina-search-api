@@ -18,13 +18,9 @@ import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
 import lombok.extern.log4j.Log4j2;
 
 /**
- * This class handle merging DINA API document with external document references embedded in the 
- * passed document. Extrernal references are defined within the meta section of the orginal document.
- * 
- * In this current version of the code, assemble is supported for the following document types:
- *  - Metadata
- *  - Organization
- *  - Person
+ * This class handles merging DINA API document with external document references embedded in the
+ * passed document. External references are defined within the meta section of the original document.
+ *
  * 
  * The assembling process is taking advantage of the included section defined in any JSON API
  * compliant document.
