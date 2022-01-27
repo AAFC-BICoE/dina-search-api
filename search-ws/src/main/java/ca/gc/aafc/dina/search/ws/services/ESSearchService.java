@@ -10,20 +10,6 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.GetMappingsRequest;
-import org.elasticsearch.client.indices.GetMappingsResponse;
-import org.elasticsearch.cluster.metadata.MappingMetadata;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -37,8 +23,18 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
+
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.mapping.Property;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -47,20 +43,17 @@ public class ESSearchService implements SearchService {
 
   private static final ObjectMapper OM = new ObjectMapper();
   private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
-  private static final String ES_MAPPING_PROPERTIES = "properties";
-  private static final String ES_MAPPING_TYPE = "type";
-  private static final String ES_MAPPING_FIELDS = "fields";
 
-  private final RestHighLevelClient esClient;
+  private final ElasticsearchClient client;
   private final RestTemplate restTemplate;
   private final UriBuilder searchUriBuilder;
   
   public ESSearchService(
                   @Autowired RestTemplateBuilder builder, 
-                  @Autowired RestHighLevelClient esClient,
+                  @Autowired ElasticsearchClient client,
                   YAMLConfigProperties yamlConfigProperties) {
     this.restTemplate = builder.build();
-    this.esClient = esClient;
+    this.client = client;
 
     // Create a URIBuilder that will be used as part of the search for documents
     // within a specific index.
@@ -82,7 +75,7 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
-  public SearchResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
+  public SearchResponse<JsonNode> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
     
     // Based on our naming convention, we will create the expected fields to search for:
     //
@@ -107,29 +100,22 @@ public class ESSearchService implements SearchService {
     String[] arrayFields = new String[fields.size()];
     fields.toArray(arrayFields);
 
-    MultiMatchQueryBuilder multiMatchQueryBuilder = new MultiMatchQueryBuilder(textToMatch, arrayFields);
-
-    // Boolean Prefix based request...
-    multiMatchQueryBuilder.type(MultiMatchQueryBuilder.Type.BOOL_PREFIX);
-
-    SearchRequest searchRequest = new SearchRequest(indexName);
-
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-
-    // Select fields to return
-    searchSourceBuilder.fetchSource(fieldsToReturn.toArray(String[]::new), null);
-
-    searchSourceBuilder.query(multiMatchQueryBuilder);
-    searchRequest.source(searchSourceBuilder);
-
-    SearchResponse searchResponse = null;
     try {
-      searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
+      // Create the search response using the multi match query.
+      SearchResponse<JsonNode> searchResponse = client.search(searchBuilder -> searchBuilder
+          .index(indexName)
+          .query(queryBuilder -> queryBuilder.multiMatch(multiMatchQuery -> multiMatchQuery
+              .fields(fields)
+              .query(textToMatch)
+              .type(TextQueryType.BoolPrefix)))
+          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
+
+      return searchResponse;
     } catch (IOException ex) {
       log.error("Error in autocomplete search", ex);
     }
 
-    return searchResponse;
+    return null;
   }
 
   @Override
@@ -151,31 +137,27 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public Map<String, String> getIndexMapping(String indexName) throws SearchApiException {
     Map<String, String> mapping = new HashMap<>();
-    GetMappingsRequest mappingRequest = new GetMappingsRequest().indices(indexName);
+
     try {
-      GetMappingsResponse getMappingResponse = esClient.indices().getMapping(mappingRequest, RequestOptions.DEFAULT);
-      // since we only asked for a single index we can get it from the result
-      MappingMetadata mappingMetadata = getMappingResponse.mappings().get(indexName);
+      // Retrieve the index mapping.
+      GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
 
-      Map<String, Object> esMapping = mappingMetadata.getSourceAsMap();
-
-      // First level is always "properties"
-      Map<String, Object> properties = (Map<String, Object>) esMapping.get(ES_MAPPING_PROPERTIES);
-      for (Map.Entry<String, Object> entry : properties.entrySet()) {
+      // First level is always "properties".
+      mappingResponse.result().get(indexName).mappings().properties().forEach((propertyName, property) -> {
         Stack<String> pathStack = new Stack<>();
-        pathStack.push(entry.getKey());
+        pathStack.push(propertyName);
         Map<String, String> pathType = new HashMap<>();
-        crawlMapping(pathStack, (Map<String, Object>) entry.getValue(), pathType);
+        crawlMapping(pathStack, property, pathType);
         mapping.putAll(pathType);
-      }
-    } catch (IOException | ElasticsearchStatusException e) {
+      });
+
+    } catch (IOException e) {
       throw new SearchApiException("Error during index-mapping processing", e);
     }
-    return mapping;
 
+    return mapping;
   }
 
   /**
@@ -184,24 +166,22 @@ public class ESSearchService implements SearchService {
    * @param esMappingStructure structure returned by the ElasticSearch client
    * @param mappingDefinition result containing the mapping and its type
    */
-  @SuppressWarnings("unchecked")
-  private static void crawlMapping(Stack<String> path, Map<String, Object> esMappingStructure, Map<String, String> mappingDefinition) {
-    for (Map.Entry<String, Object> propEntry : esMappingStructure.entrySet()) {
-      // skip "fields" for now
-      if (!ES_MAPPING_FIELDS.equals(propEntry.getKey())) {
-        path.push(propEntry.getKey());
-        if (propEntry.getValue() instanceof Map) {
-          crawlMapping(path, (Map<String, Object>) propEntry.getValue(), mappingDefinition);
-        } else {
-          // we only record leaf "type"
-          if (ES_MAPPING_TYPE.equals(propEntry.getKey())) {
-            mappingDefinition.put(path.stream().filter(s -> !s.equals(ES_MAPPING_PROPERTIES))
-                .collect(Collectors.joining(".")), propEntry.getValue().toString());
-          }
-        }
-        path.pop();
+  private static void crawlMapping(Stack<String> path, Property propertyToCrawl, Map<String, String> mappingDefinition) {
+
+    propertyToCrawl.object().properties().forEach((propertyName, property) -> {
+      // Add path to path stack.
+      path.push(propertyName);
+
+      if (property.isObject()) {
+        crawlMapping(path, property, mappingDefinition);
+      } else {
+        mappingDefinition.put(
+            path.stream().collect(Collectors.joining(".")),
+            property._kind().jsonValue());
       }
-    }
+
+      path.pop();
+    });
   }
 
 }

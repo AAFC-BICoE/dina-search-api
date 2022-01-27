@@ -1,9 +1,11 @@
-package ca.gc.aafc.dina.search.ws.config;
+package ca.gc.aafc.dina.search.cli.config;
 
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import ca.gc.aafc.dina.search.common.config.YAMLConfigProperties;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.json.jackson.JacksonJsonpMapper;
@@ -13,8 +15,9 @@ import co.elastic.clients.transport.rest_client.RestClientTransport;
 @Configuration
 public class ElasticsearchConfig {
 
-  private static final String HOST = "host";
-  private static final String PORT = "port";
+  private static final String HOST = "server_address";
+  private static final String PORT_1 = "port_1";
+  private static final String PORT_2 = "port_2";
 
   private final YAMLConfigProperties yamlConfigProps;
 
@@ -28,7 +31,11 @@ public class ElasticsearchConfig {
     RestClient restClient = RestClient.builder(
       new HttpHost(
         yamlConfigProps.getElasticsearch().get(HOST), 
-        Integer.parseInt(yamlConfigProps.getElasticsearch().get(PORT))
+        Integer.parseInt(yamlConfigProps.getElasticsearch().get(PORT_1))
+      ),
+      new HttpHost(
+        yamlConfigProps.getElasticsearch().get(HOST), 
+        Integer.parseInt(yamlConfigProps.getElasticsearch().get(PORT_2))
       )
     ).build();
 

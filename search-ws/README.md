@@ -211,7 +211,7 @@ http://localhost:8085/search/mapping?indexName=dina_agent_index
 ```
 Response:
 ```
-{"data.id.type":"text","data.attributes.createdOn.type":"date"}
+{"data.id":"text","data.attributes.createdOn":"date"}
 ```
 
 Cleanup:

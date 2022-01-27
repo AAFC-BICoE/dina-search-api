@@ -16,7 +16,7 @@ import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
 public class QuitExitCli implements Quit.Command {
 
   private final ElasticSearchDocumentIndexer indexer;
-  
+
   @Autowired
   private ApplicationContext appContext;
 
