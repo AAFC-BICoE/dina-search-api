@@ -1,12 +1,21 @@
 package ca.gc.aafc.dina.search.cli.commands.messaging;
 
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.stereotype.Service;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.stereotype.Service;
 
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
@@ -16,7 +25,6 @@ import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
 import ca.gc.aafc.dina.search.cli.json.IndexableDocumentHandler;
 import ca.gc.aafc.dina.search.messaging.consumer.IMessageProcessor;
 import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
-
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
@@ -24,11 +32,15 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class DocumentProcessor implements IMessageProcessor {
 
+  private static final String DOCUMENT_TYPE_TOKEN = "@documentType@";
+  private static final String DOCUMENT_ID_TOKEN = "@documentId@";
+  
   private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
   private final IndexableDocumentHandler indexableDocumentHandler;
   private final ElasticSearchDocumentIndexer indexer;
   private final ObjectMapper objectMapper;
+  private String searchEmbeddedTemplate;
 
   public DocumentProcessor(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
       IndexableDocumentHandler indexableDocumentHandler, ElasticSearchDocumentIndexer indexer) {
@@ -37,6 +49,12 @@ public class DocumentProcessor implements IMessageProcessor {
     this.indexableDocumentHandler = indexableDocumentHandler;
     this.indexer = indexer;
     this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    try {
+      searchEmbeddedTemplate = new String(new ClassPathResource("search_embedded.template").getInputStream().readAllBytes());
+    } catch (IOException ioEx) {
+      log.error("Search embedded template file could not be read", ioEx);
+    }
   }
 
   /**
@@ -77,6 +95,9 @@ public class DocumentProcessor implements IMessageProcessor {
       case ADD:
       case UPDATE: 
         indexDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());
+
+        // Handle update to document that maybe embedded in others
+        processEmbeddedDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());        
         break;
 
       case DELETE: 
@@ -89,6 +110,9 @@ public class DocumentProcessor implements IMessageProcessor {
     }
   }
 
+  /**
+   * Index or re-index the document identified by the type and documentId
+   */
   public String indexDocument(String type, String documentId) throws SearchApiException {
 
     String processedMessage = null;
@@ -141,4 +165,108 @@ public class DocumentProcessor implements IMessageProcessor {
     
     return processedMessage;
   }
+
+  /**
+   * Processing of embedded dcoument will take the reverse direction of the relationships defined
+   * in the endpoints.yml
+   * For example material-sample --> collecting-event (Means that material-sample contains collecting-event)
+   * So when a collecting-event is updated, we will have to look for its presence the material-sample index
+   * and re-index document with that specific collecting-events embedded.
+   * 
+   */
+  public void processEmbeddedDocument(String documentType, String documentId) throws SearchApiException {
+
+    EndpointDescriptor descriptor = svcEndpointProps.getEndpoints().get(documentType);
+
+    // Check if we need to process embedded
+    if (descriptor == null || descriptor.getEmbedded() == null || descriptor.getEmbedded().isEmpty()) {
+      return;
+    }
+
+    // Build index names to visit...
+    String indexList = getIndexList(descriptor);
+
+    // Search Query
+    String searchQuery = searchEmbeddedTemplate
+                            .replace(DOCUMENT_ID_TOKEN, documentId)
+                            .replace(DOCUMENT_TYPE_TOKEN, documentType);
+                            
+    log.debug("===========================================");     
+    log.debug(searchQuery);
+    log.debug("===========================================");
+
+    try {
+      JsonNode embeddedDocuments = indexer.search(indexList, searchQuery);
+
+      Map<String, Map<String, String>> mapTypeToId = processSearchResults(embeddedDocuments);
+
+      log.debug("===========================================");
+      log.debug("mapTypeToId:" +mapTypeToId.toString());
+      log.debug("===========================================");
+
+      // mapTypeToId, contains the list of documents for reindexing.
+      //
+      if (!mapTypeToId.isEmpty()) {
+        reIndexDocuments(documentType, documentId, mapTypeToId);
+      }
+
+    } catch (SearchApiException e) {
+      log.error("Error during re-indexing from embedded document id {} of type {}", documentId, documentType, e.getMessage());
+      throw e;
+    }
+  }
+
+  public Map<String, Map<String, String>> processSearchResults(JsonNode embeddedDocuments) {
+
+    Map<String, Map<String, String>> mapTypeToId = new HashMap<>();
+    if (embeddedDocuments != null && embeddedDocuments.get("hits") != null) {
+      JsonNode results = embeddedDocuments.get("hits").get("hits");
+      if (results.isArray()) {
+
+        results.forEach(curNode -> {
+            String indexName = curNode.get("_index").asText();
+            String docId = curNode.get("_id").asText();
+            String docType = curNode.get("fields").get("data.type").get(0).asText();
+          
+            Map<String, String> innerMap = mapTypeToId.get(indexName);
+            if (innerMap == null) {
+              innerMap = new HashMap<>();
+              mapTypeToId.put(indexName, innerMap);
+            }
+            innerMap.put(docId, docType);
+        });
+      }
+    }
+    return mapTypeToId;
+  }
+
+  public void reIndexDocuments(String documentType, String documentId, Map<String, Map<String, String>> mapTypeToId) {
+    
+    mapTypeToId.entrySet().forEach(ndx -> {
+      ndx.getValue().entrySet().forEach(entry -> {
+
+        //re-index the document.
+        try {
+          log.debug("re-indexing document type:{} id:{} triggered by document type:{}, id:{} update", 
+                        entry.getValue(), entry.getKey(), documentType, documentId);
+          indexDocument(entry.getValue(), entry.getKey());
+        } catch (SearchApiException e) {
+          log.error("Document id {} of type {} could not be re-indexed. (Reason:{})", entry.getKey(), entry.getValue(), e.getMessage());
+        }
+      });       
+    });
+  }
+
+  public String getIndexList(EndpointDescriptor descriptor) {
+    List<String> indexNames = new ArrayList<>();
+    descriptor.getEmbedded().forEach(curType -> {
+        if (svcEndpointProps.getEndpoints().containsKey(curType)) {
+          if (StringUtils.isNotBlank(svcEndpointProps.getEndpoints().get(curType).getIndexName())) {
+            indexNames.add(svcEndpointProps.getEndpoints().get(curType).getIndexName());
+          }
+        }
+    });
+    return String.join(",", indexNames);
+  }
+
 }

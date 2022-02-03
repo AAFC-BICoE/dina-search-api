@@ -1,0 +1,24 @@
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match_phrase": {
+            "included.id.keyword": "@documentId@"
+          }
+        },
+        {
+          "match_phrase": {
+            "included.type.keyword": "@documentType@"
+          }
+        }
+
+      ]
+    }
+  },
+  "fields": [
+    "data.id",
+    "data.type"
+  ],
+  "_source": false
+}
