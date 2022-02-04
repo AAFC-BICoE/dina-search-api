@@ -1,6 +1,5 @@
 package ca.gc.aafc.dina.search.cli.commands.messaging;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,7 +11,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -40,8 +38,9 @@ public class DocumentProcessor implements IMessageProcessor {
   private final IndexableDocumentHandler indexableDocumentHandler;
   private final ElasticSearchDocumentIndexer indexer;
   private final ObjectMapper objectMapper;
+  private final String indexList;
   private String searchEmbeddedTemplate;
-
+  
   public DocumentProcessor(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
       IndexableDocumentHandler indexableDocumentHandler, ElasticSearchDocumentIndexer indexer) {
     this.aClient = aClient;
@@ -55,6 +54,13 @@ public class DocumentProcessor implements IMessageProcessor {
     } catch (IOException ioEx) {
       log.error("Search embedded template file could not be read", ioEx);
     }
+
+    List<String> indexNames = new ArrayList<>();
+    svcEndpointProps.getEndpoints().values().forEach(desc -> {
+      indexNames.add(desc.getIndexName());
+    });
+    indexList = String.join(",", indexNames);
+    
   }
 
   /**
@@ -176,16 +182,6 @@ public class DocumentProcessor implements IMessageProcessor {
    */
   public void processEmbeddedDocument(String documentType, String documentId) throws SearchApiException {
 
-    EndpointDescriptor descriptor = svcEndpointProps.getEndpoints().get(documentType);
-
-    // Check if we need to process embedded
-    if (descriptor == null || descriptor.getEmbedded() == null || descriptor.getEmbedded().isEmpty()) {
-      return;
-    }
-
-    // Build index names to visit...
-    String indexList = getIndexList(descriptor);
-
     // Search Query
     String searchQuery = searchEmbeddedTemplate
                             .replace(DOCUMENT_ID_TOKEN, documentId)
@@ -255,18 +251,6 @@ public class DocumentProcessor implements IMessageProcessor {
         }
       });       
     });
-  }
-
-  public String getIndexList(EndpointDescriptor descriptor) {
-    List<String> indexNames = new ArrayList<>();
-    descriptor.getEmbedded().forEach(curType -> {
-        if (svcEndpointProps.getEndpoints().containsKey(curType)) {
-          if (StringUtils.isNotBlank(svcEndpointProps.getEndpoints().get(curType).getIndexName())) {
-            indexNames.add(svcEndpointProps.getEndpoints().get(curType).getIndexName());
-          }
-        }
-    });
-    return String.join(",", indexNames);
   }
 
 }

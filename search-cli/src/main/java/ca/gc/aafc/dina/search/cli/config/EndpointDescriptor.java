@@ -11,6 +11,4 @@ public class EndpointDescriptor {
   private String targetUrl;
   private String indexName;
   private List<String> relationships;
-  private List<String> embedded;
-
 }
