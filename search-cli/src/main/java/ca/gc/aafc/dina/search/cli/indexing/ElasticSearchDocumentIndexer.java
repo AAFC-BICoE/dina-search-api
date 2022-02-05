@@ -1,25 +1,15 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
 import java.io.IOException;
-import java.net.URI;
-import java.util.Collections;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.DefaultUriBuilderFactory;
-import org.springframework.web.util.UriBuilder;
 
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.common.config.YAMLConfigProperties;
@@ -28,19 +18,18 @@ import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.ShardFailure;
 import co.elastic.clients.elasticsearch._types.ShardStatistics;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchPhraseQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Service
 public class ElasticSearchDocumentIndexer implements DocumentIndexer {
-
-  private static final ObjectMapper OM = new ObjectMapper();
-  private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
-
-  private final RestTemplate restTemplate;
-  private final UriBuilder searchUriBuilder;
 
   @Autowired
   private ElasticsearchClient client;
@@ -49,26 +38,8 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
                   @Autowired RestTemplateBuilder builder, 
                   @Autowired ElasticsearchClient client,
                   YAMLConfigProperties yamlConfigProperties) {
-    this.restTemplate = builder.build();
     this.client = client;
 
-    // Create a URIBuilder that will be used as part of the search for documents
-    // within a specific index.
-    searchUriBuilder =
-        new DefaultUriBuilderFactory().builder()
-        .scheme(yamlConfigProperties.getElasticsearch().get("protocol"))
-        .host(yamlConfigProperties.getElasticsearch().get("server_address"))
-        .port(yamlConfigProperties.getElasticsearch().get("port_1"))
-        .path("{indexName}/_search");
-
-  }
-
-  private static HttpHeaders buildJsonHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
   }
 
   @Override
@@ -154,19 +125,31 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
     return OperationStatus.FAILED;
   }
 
-  public JsonNode search(String indexNames, String query) throws SearchApiException {
+  public SearchResponse<JsonNode> search(List<String> indexNames, String documentType, String documentId) throws SearchApiException {
 
     try {
-      JsonNode jsonNode = OM.readTree(query);
-      URI uri = searchUriBuilder.build(Map.of("indexName", indexNames));
 
-      HttpEntity<?> entity = new HttpEntity<>(jsonNode, JSON_HEADERS);
-      ResponseEntity<JsonNode> searchResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, JsonNode.class);
-  
-      return searchResponse.getBody();
-  
-    } catch (Exception e) {
-      throw new SearchApiException("Error during search processing", e);
+      List<String> fieldsToReturn = new ArrayList<>();
+      fieldsToReturn.add("data.id");
+      fieldsToReturn.add("data.type");
+      
+      // Match phrase query
+      MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id.keyword").query(documentId);
+      MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type.keyword").query(documentType);
+      
+      List<Query> matchPhraseQueries = new ArrayList<>(); 
+      matchPhraseQueries.add(documentIdMatchPhrase.build()._toQuery());
+      matchPhraseQueries.add(documentTypeMatchPhrase.build()._toQuery());
+
+      SearchResponse<JsonNode> searchResponse = client.search(searchBuilder -> searchBuilder
+          .index(indexNames)
+          .query(QueryBuilders.bool()
+                    .must(matchPhraseQueries).build()._toQuery())
+          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
+
+      return searchResponse;
+    } catch (IOException ex) {
+      throw new SearchApiException("Error during search processing", ex);
     }
   }
 

@@ -3,19 +3,17 @@ package ca.gc.aafc.dina.search.cli.messaging;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.junit.BeforeClass;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,11 +24,21 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
+import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
 
 @SpringBootTest(properties = { "spring.shell.interactive.enabled=false" })
 public class DocumentProcessorTest {
 
-  private static final Path SEARCH_RESULTS_RESPONSE_PATH = Path.of("src/test/resources/search_embedded_doc_results.json");
+  @MockBean
+  private SearchResponse<JsonNode> mockResponse;
+
+  @MockBean
+  private HitsMetadata<JsonNode> mockHitsMetaData;
+
+  @MockBean
+  private List<Hit<JsonNode>> mockListHitsJson;
 
   @SpyBean
   @Autowired
@@ -38,15 +46,7 @@ public class DocumentProcessorTest {
   
   @MockBean
   private ElasticSearchDocumentIndexer indexer;
-
-  @Autowired
-  private ObjectMapper objectMapper;
   
-  @BeforeClass
-  void setupClass() {
-    this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-  }
-
   
   @DisplayName("Test processEmbedded invalid document type")
   @Test
@@ -95,7 +95,7 @@ public class DocumentProcessorTest {
     assertNotNull(documentProcessor);
     try {
 
-      when(indexer.search(any(String.class), any(String.class))).thenReturn(null);
+      when(indexer.search(anyList(), any(String.class), any(String.class))).thenReturn(null);
 
       documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
       
@@ -111,13 +111,12 @@ public class DocumentProcessorTest {
 
   @DisplayName("Test processEmbedded empty search results")
   @Test
-  public void processEmbeddedDocumentInvalidEmptyJsonNodeSearchResults() {
+  public void processEmbeddedDocumentInvalidHits() {
 
     assertNotNull(documentProcessor);
     try {
 
-      JsonNode searchResults = objectMapper.createObjectNode();
-      when(indexer.search(any(String.class), any(String.class))).thenReturn(searchResults);
+      when(indexer.search(anyList(), any(String.class), any(String.class))).thenReturn(mockResponse);
 
       documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
       
@@ -137,9 +136,17 @@ public class DocumentProcessorTest {
     assertNotNull(documentProcessor);
     try {
 
-      JsonNode searchResults = objectMapper.readTree(Files.readString(SEARCH_RESULTS_RESPONSE_PATH));
-      when(indexer.search(any(String.class), any(String.class))).thenReturn(searchResults);
+
+      when(indexer.search(anyList(), any(String.class), any(String.class))).thenReturn(mockResponse);
       when(documentProcessor.indexDocument(any(String.class), any(String.class))).thenReturn("Processing...");
+ 
+      Map<String, Map<String, String>> mapOfDocToReIndex = new HashMap<>();
+      Map<String, String> innerMap = new HashMap<>();
+      innerMap.put("test-id1", "collecting-event");
+      innerMap.put("test-id2", "collecting-event");
+      innerMap.put("test-id3", "collecting-event");
+      mapOfDocToReIndex.put("parent", innerMap);
+      when(documentProcessor.processSearchResults(any())).thenReturn(mapOfDocToReIndex);
 
       documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
       
@@ -147,7 +154,7 @@ public class DocumentProcessorTest {
       verify(documentProcessor, times(1)).reIndexDocuments(any(String.class), any(String.class), any());
       verify(documentProcessor, times(3)).indexDocument(any(String.class), any(String.class));
 
-    } catch (SearchApiException | IOException e) {
+    } catch (SearchApiException e) {
       fail();
     }
     

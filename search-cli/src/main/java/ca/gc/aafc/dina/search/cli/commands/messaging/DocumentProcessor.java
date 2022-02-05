@@ -1,6 +1,5 @@
 package ca.gc.aafc.dina.search.cli.commands.messaging;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,7 +11,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
@@ -23,6 +21,8 @@ import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
 import ca.gc.aafc.dina.search.cli.json.IndexableDocumentHandler;
 import ca.gc.aafc.dina.search.messaging.consumer.IMessageProcessor;
 import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.core.search.Hit;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 
@@ -30,16 +30,12 @@ import lombok.extern.log4j.Log4j2;
 @Service
 public class DocumentProcessor implements IMessageProcessor {
 
-  private static final String DOCUMENT_TYPE_TOKEN = "@documentType@";
-  private static final String DOCUMENT_ID_TOKEN = "@documentId@";
-  
   private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
   private final IndexableDocumentHandler indexableDocumentHandler;
   private final ElasticSearchDocumentIndexer indexer;
   private final ObjectMapper objectMapper;
-  private final String indexList;
-  private String searchEmbeddedTemplate;
+  private final List<String> indexList;
   
   public DocumentProcessor(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
       IndexableDocumentHandler indexableDocumentHandler, ElasticSearchDocumentIndexer indexer) {
@@ -49,17 +45,10 @@ public class DocumentProcessor implements IMessageProcessor {
     this.indexer = indexer;
     this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-    try {
-      searchEmbeddedTemplate = new String(new ClassPathResource("search_embedded.template").getInputStream().readAllBytes());
-    } catch (IOException ioEx) {
-      log.error("Search embedded template file could not be read", ioEx);
-    }
-
-    List<String> indexNames = new ArrayList<>();
+    this.indexList = new ArrayList<>();
     svcEndpointProps.getEndpoints().values().forEach(desc -> {
-      indexNames.add(desc.getIndexName());
+      indexList.add(desc.getIndexName());
     });
-    indexList = String.join(",", indexNames);
     
   }
 
@@ -182,17 +171,8 @@ public class DocumentProcessor implements IMessageProcessor {
    */
   public void processEmbeddedDocument(String documentType, String documentId) throws SearchApiException {
 
-    // Search Query
-    String searchQuery = searchEmbeddedTemplate
-                            .replace(DOCUMENT_ID_TOKEN, documentId)
-                            .replace(DOCUMENT_TYPE_TOKEN, documentType);
-                            
-    log.debug("===========================================");     
-    log.debug(searchQuery);
-    log.debug("===========================================");
-
     try {
-      JsonNode embeddedDocuments = indexer.search(indexList, searchQuery);
+      SearchResponse<JsonNode> embeddedDocuments = indexer.search(indexList, documentType, documentId);
 
       Map<String, Map<String, String>> mapTypeToId = processSearchResults(embeddedDocuments);
 
@@ -212,17 +192,17 @@ public class DocumentProcessor implements IMessageProcessor {
     }
   }
 
-  public Map<String, Map<String, String>> processSearchResults(JsonNode embeddedDocuments) {
+  public Map<String, Map<String, String>> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
 
     Map<String, Map<String, String>> mapTypeToId = new HashMap<>();
-    if (embeddedDocuments != null && embeddedDocuments.get("hits") != null) {
-      JsonNode results = embeddedDocuments.get("hits").get("hits");
-      if (results.isArray()) {
+    if (embeddedDocuments != null && embeddedDocuments.hits() != null) {
+      List<Hit<JsonNode>> results = embeddedDocuments.hits().hits();
+      if (!results.isEmpty()) {
 
-        results.forEach(curNode -> {
-            String indexName = curNode.get("_index").asText();
-            String docId = curNode.get("_id").asText();
-            String docType = curNode.get("fields").get("data.type").get(0).asText();
+        results.forEach(curHit -> {
+            String indexName = curHit.index();
+            String docId = curHit.id();
+            String docType = curHit.fields().get("data.type").toJson().asJsonArray().getString(0);
           
             Map<String, String> innerMap = mapTypeToId.get(indexName);
             if (innerMap == null) {
@@ -240,7 +220,6 @@ public class DocumentProcessor implements IMessageProcessor {
     
     mapTypeToId.entrySet().forEach(ndx -> {
       ndx.getValue().entrySet().forEach(entry -> {
-
         //re-index the document.
         try {
           log.debug("re-indexing document type:{} id:{} triggered by document type:{}, id:{} update", 
