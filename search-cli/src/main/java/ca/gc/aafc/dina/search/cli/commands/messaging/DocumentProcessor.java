@@ -187,7 +187,7 @@ public class DocumentProcessor implements IMessageProcessor {
       }
 
     } catch (SearchApiException e) {
-      log.error("Error during re-indexing from embedded document id {} of type {}", documentId, documentType, e.getMessage());
+      log.error("Error during re-indexing from embedded document id {} of type {}: {}", documentId, documentType, e.getMessage());
       throw e;
     }
   }
@@ -203,13 +203,10 @@ public class DocumentProcessor implements IMessageProcessor {
             String indexName = curHit.index();
             String docId = curHit.id();
             String docType = curHit.fields().get("data.type").toJson().asJsonArray().getString(0);
-          
-            Map<String, String> innerMap = mapTypeToId.get(indexName);
-            if (innerMap == null) {
-              innerMap = new HashMap<>();
-              mapTypeToId.put(indexName, innerMap);
-            }
-            innerMap.put(docId, docType);
+
+          Map<String, String> innerMap = mapTypeToId
+              .computeIfAbsent(indexName, k -> new HashMap<>());
+          innerMap.put(docId, docType);
         });
       }
     }
@@ -217,18 +214,18 @@ public class DocumentProcessor implements IMessageProcessor {
   }
 
   public void reIndexDocuments(String documentType, String documentId, Map<String, Map<String, String>> mapTypeToId) {
-    
+
     mapTypeToId.entrySet().forEach(ndx -> {
       ndx.getValue().entrySet().forEach(entry -> {
         //re-index the document.
         try {
-          log.debug("re-indexing document type:{} id:{} triggered by document type:{}, id:{} update", 
+          log.debug("re-indexing document type:{} id:{} triggered by document type:{}, id:{} update",
                         entry.getValue(), entry.getKey(), documentType, documentId);
           indexDocument(entry.getValue(), entry.getKey());
         } catch (SearchApiException e) {
           log.error("Document id {} of type {} could not be re-indexed. (Reason:{})", entry.getKey(), entry.getValue(), e.getMessage());
         }
-      });       
+      });
     });
   }
 
