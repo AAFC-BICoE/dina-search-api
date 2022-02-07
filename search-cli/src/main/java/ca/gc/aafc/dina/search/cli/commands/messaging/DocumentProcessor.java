@@ -177,7 +177,7 @@ public class DocumentProcessor implements IMessageProcessor {
       Map<String, Map<String, String>> mapTypeToId = processSearchResults(embeddedDocuments);
 
       log.debug("===========================================");
-      log.debug("mapTypeToId:" +mapTypeToId.toString());
+      log.debug("mapTypeToId:" + mapTypeToId.toString());
       log.debug("===========================================");
 
       // mapTypeToId, contains the list of documents for reindexing.
@@ -200,9 +200,9 @@ public class DocumentProcessor implements IMessageProcessor {
       if (!results.isEmpty()) {
 
         results.forEach(curHit -> {
-            String indexName = curHit.index();
-            String docId = curHit.id();
-            String docType = curHit.fields().get("data.type").toJson().asJsonArray().getString(0);
+          String indexName = curHit.index();
+          String docId = curHit.id();
+          String docType = curHit.fields().get("data.type").toJson().asJsonArray().getString(0);
 
           Map<String, String> innerMap = mapTypeToId
               .computeIfAbsent(indexName, k -> new HashMap<>());
