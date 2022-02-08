@@ -121,6 +121,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
       fieldsToReturn.add("data.id");
       fieldsToReturn.add("data.type");
       
+
       // Match phrase query
       MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id.keyword").query(documentId);
       MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type.keyword").query(documentType);
@@ -129,11 +130,15 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
       matchPhraseQueries.add(documentIdMatchPhrase.build()._toQuery());
       matchPhraseQueries.add(documentTypeMatchPhrase.build()._toQuery());
 
-      return client.search(searchBuilder -> searchBuilder
+      SearchResponse<JsonNode> response = client.search(searchBuilder -> searchBuilder
           .index(indexNames)
           .query(QueryBuilders.bool()
                     .must(matchPhraseQueries).build()._toQuery())
+          .storedFields(fieldsToReturn)
           .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
+      
+      return response;
+
     } catch (IOException ex) {
       throw new SearchApiException("Error during search processing", ex);
     }

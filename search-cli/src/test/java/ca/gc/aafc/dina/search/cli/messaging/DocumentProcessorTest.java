@@ -140,13 +140,11 @@ public class DocumentProcessorTest {
       when(indexer.search(anyList(), any(String.class), any(String.class))).thenReturn(mockResponse);
       when(documentProcessor.indexDocument(any(String.class), any(String.class))).thenReturn("Processing...");
  
-      Map<String, Map<String, String>> mapOfDocToReIndex = new HashMap<>();
       Map<String, String> innerMap = new HashMap<>();
       innerMap.put("test-id1", "collecting-event");
       innerMap.put("test-id2", "collecting-event");
       innerMap.put("test-id3", "collecting-event");
-      mapOfDocToReIndex.put("parent", innerMap);
-      when(documentProcessor.processSearchResults(any())).thenReturn(mapOfDocToReIndex);
+      when(documentProcessor.processSearchResults(any())).thenReturn(innerMap);
 
       documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
       

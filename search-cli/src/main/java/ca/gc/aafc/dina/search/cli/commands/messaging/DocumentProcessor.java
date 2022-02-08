@@ -35,7 +35,6 @@ public class DocumentProcessor implements IMessageProcessor {
   private final IndexableDocumentHandler indexableDocumentHandler;
   private final ElasticSearchDocumentIndexer indexer;
   private final ObjectMapper objectMapper;
-  private final List<String> indexList;
   
   public DocumentProcessor(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
       IndexableDocumentHandler indexableDocumentHandler, ElasticSearchDocumentIndexer indexer) {
@@ -44,11 +43,6 @@ public class DocumentProcessor implements IMessageProcessor {
     this.indexableDocumentHandler = indexableDocumentHandler;
     this.indexer = indexer;
     this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-    this.indexList = new ArrayList<>();
-    svcEndpointProps.getEndpoints().values().forEach(desc -> {
-      indexList.add(desc.getIndexName());
-    });
     
   }
 
@@ -172,18 +166,25 @@ public class DocumentProcessor implements IMessageProcessor {
   public void processEmbeddedDocument(String documentType, String documentId) throws SearchApiException {
 
     try {
+      List<String> indexList = new ArrayList<>(1);
+      if (svcEndpointProps.getEndpoints().containsKey(documentType)) {
+        indexList.add(svcEndpointProps.getEndpoints().get(documentType).getIndexName());
+      } else {
+        return;
+      }
+
       SearchResponse<JsonNode> embeddedDocuments = indexer.search(indexList, documentType, documentId);
 
-      Map<String, Map<String, String>> mapTypeToId = processSearchResults(embeddedDocuments);
+      Map<String, String> mapIdToType = processSearchResults(embeddedDocuments);
 
       log.debug("===========================================");
-      log.debug("mapTypeToId:" + mapTypeToId.toString());
+      log.debug("mapTypeToId:" + mapIdToType.toString());
       log.debug("===========================================");
 
       // mapTypeToId, contains the list of documents for reindexing.
       //
-      if (!mapTypeToId.isEmpty()) {
-        reIndexDocuments(documentType, documentId, mapTypeToId);
+      if (!mapIdToType.isEmpty()) {
+        reIndexDocuments(documentType, documentId, mapIdToType);
       }
 
     } catch (SearchApiException e) {
@@ -192,40 +193,34 @@ public class DocumentProcessor implements IMessageProcessor {
     }
   }
 
-  public Map<String, Map<String, String>> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
+  public Map<String, String> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
 
-    Map<String, Map<String, String>> mapTypeToId = new HashMap<>();
+    Map<String, String> mapIdToType = new HashMap<>();
     if (embeddedDocuments != null && embeddedDocuments.hits() != null) {
       List<Hit<JsonNode>> results = embeddedDocuments.hits().hits();
       if (!results.isEmpty()) {
-
         results.forEach(curHit -> {
-          String indexName = curHit.index();
-          String docId = curHit.id();
-          String docType = curHit.fields().get("data.type").toJson().asJsonArray().getString(0);
-
-          Map<String, String> innerMap = mapTypeToId
-              .computeIfAbsent(indexName, k -> new HashMap<>());
-          innerMap.put(docId, docType);
+          mapIdToType.put(
+            curHit.source().get("data").get("id").asText(), 
+            curHit.source().get("data").get("type").asText());
         });
       }
     }
-    return mapTypeToId;
+    return mapIdToType;
   }
 
-  public void reIndexDocuments(String documentType, String documentId, Map<String, Map<String, String>> mapTypeToId) {
+  public void reIndexDocuments(String documentType, String documentId, Map<String, String> mapIdToType) {
 
-    mapTypeToId.entrySet().forEach(ndx -> {
-      ndx.getValue().entrySet().forEach(entry -> {
-        //re-index the document.
-        try {
-          log.debug("re-indexing document type:{} id:{} triggered by document type:{}, id:{} update",
-                        entry.getValue(), entry.getKey(), documentType, documentId);
-          indexDocument(entry.getValue(), entry.getKey());
-        } catch (SearchApiException e) {
-          log.error("Document id {} of type {} could not be re-indexed. (Reason:{})", entry.getKey(), entry.getValue(), e.getMessage());
-        }
-      });
+    mapIdToType.entrySet().forEach(entry -> {
+      // re-index the document.
+      try {
+        log.debug("re-indexing document type:{} id:{} triggered by document type:{}, id:{} update",
+            entry.getValue(), entry.getKey(), documentType, documentId);
+        indexDocument(entry.getValue(), entry.getKey());
+      } catch (SearchApiException e) {
+        log.error("Document id {} of type {} could not be re-indexed. (Reason:{})", entry.getKey(), entry.getValue(),
+            e.getMessage());
+      }
     });
   }
 

@@ -24,8 +24,12 @@ endpoints:
     indexName: dina_material_sample_index
   collecting-event: 
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/collecting-event}
+    indexName: dina_material_sample_index
+
   preparation-type: 
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/preparation-type}
+    indexName: dina_material_sample_index
+
   metadata: 
     targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
     indexName: dina_object_store_index
