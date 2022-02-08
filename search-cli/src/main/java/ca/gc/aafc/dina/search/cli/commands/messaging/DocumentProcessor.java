@@ -35,7 +35,8 @@ public class DocumentProcessor implements IMessageProcessor {
   private final IndexableDocumentHandler indexableDocumentHandler;
   private final ElasticSearchDocumentIndexer indexer;
   private final ObjectMapper objectMapper;
-  
+  private final List<String> indexList;
+
   public DocumentProcessor(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
       IndexableDocumentHandler indexableDocumentHandler, ElasticSearchDocumentIndexer indexer) {
     this.aClient = aClient;
@@ -43,7 +44,14 @@ public class DocumentProcessor implements IMessageProcessor {
     this.indexableDocumentHandler = indexableDocumentHandler;
     this.indexer = indexer;
     this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    
+
+    indexList = new ArrayList<>();
+    svcEndpointProps.getEndpoints().values().forEach(desc -> {
+      if (StringUtils.isNotBlank(desc.getIndexName())) {
+        indexList.add(desc.getIndexName());
+      }
+    });
+
   }
 
   /**
@@ -82,6 +90,9 @@ public class DocumentProcessor implements IMessageProcessor {
     switch (docOpMessage.getOperationType()) {
 
       case ADD:
+        indexDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());
+        break;
+
       case UPDATE: 
         indexDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());
 
@@ -166,16 +177,10 @@ public class DocumentProcessor implements IMessageProcessor {
   public void processEmbeddedDocument(String documentType, String documentId) throws SearchApiException {
 
     try {
-      List<String> indexList = new ArrayList<>(1);
-      if (svcEndpointProps.getEndpoints().containsKey(documentType)) {
-        indexList.add(svcEndpointProps.getEndpoints().get(documentType).getIndexName());
-      } else {
-        return;
-      }
 
       SearchResponse<JsonNode> embeddedDocuments = indexer.search(indexList, documentType, documentId);
 
-      Map<String, String> mapIdToType = processSearchResults(embeddedDocuments);
+      Map<String, DocumentInfo> mapIdToType = processSearchResults(embeddedDocuments);
 
       log.debug("===========================================");
       log.debug("mapTypeToId:" + mapIdToType.toString());
@@ -193,30 +198,32 @@ public class DocumentProcessor implements IMessageProcessor {
     }
   }
 
-  public Map<String, String> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
+  public Map<String, DocumentInfo> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
 
-    Map<String, String> mapIdToType = new HashMap<>();
+    Map<String, DocumentInfo> mapIdToType = new HashMap<>();
     if (embeddedDocuments != null && embeddedDocuments.hits() != null) {
       List<Hit<JsonNode>> results = embeddedDocuments.hits().hits();
       if (!results.isEmpty()) {
         results.forEach(curHit -> {
           mapIdToType.put(
             curHit.source().get("data").get("id").asText(), 
-            curHit.source().get("data").get("type").asText());
+            new DocumentInfo(
+              curHit.source().get("data").get("type").asText(),
+              curHit.index()));
         });
       }
     }
     return mapIdToType;
   }
 
-  public void reIndexDocuments(String documentType, String documentId, Map<String, String> mapIdToType) {
+  public void reIndexDocuments(String documentType, String documentId, Map<String, DocumentInfo> mapIdToType) {
 
     mapIdToType.entrySet().forEach(entry -> {
       // re-index the document.
       try {
         log.debug("re-indexing document type:{} id:{} triggered by document type:{}, id:{} update",
-            entry.getValue(), entry.getKey(), documentType, documentId);
-        indexDocument(entry.getValue(), entry.getKey());
+            entry.getValue().getType(), entry.getKey(), documentType, documentId);
+        indexDocument(entry.getValue().getType(), entry.getKey());
       } catch (SearchApiException e) {
         log.error("Document id {} of type {} could not be re-indexed. (Reason:{})", entry.getKey(), entry.getValue(),
             e.getMessage());

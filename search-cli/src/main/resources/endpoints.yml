@@ -21,15 +21,11 @@ endpoints:
       - collectingEvent
       - attachment
       - storageUnit
-    indexName: dina_material_sample_index
+    indexName: dina_material_sample_index       
   collecting-event: 
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/collecting-event}
-    indexName: dina_material_sample_index
-
   preparation-type: 
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/preparation-type}
-    indexName: dina_material_sample_index
-
   metadata: 
     targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
     indexName: dina_object_store_index
@@ -38,7 +34,6 @@ endpoints:
       - dcCreator
   organization: 
     targetUrl: ${ORGANIZATION_URL:http://localhost:8082/api/v1/organization}
-    indexName: dina_agent_index
   person: 
     targetUrl: ${PERSON_URL:http://localhost:8082/api/v1/person}
     indexName: dina_agent_index

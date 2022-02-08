@@ -21,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 
+import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentInfo;
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
@@ -140,10 +141,10 @@ public class DocumentProcessorTest {
       when(indexer.search(anyList(), any(String.class), any(String.class))).thenReturn(mockResponse);
       when(documentProcessor.indexDocument(any(String.class), any(String.class))).thenReturn("Processing...");
  
-      Map<String, String> innerMap = new HashMap<>();
-      innerMap.put("test-id1", "collecting-event");
-      innerMap.put("test-id2", "collecting-event");
-      innerMap.put("test-id3", "collecting-event");
+      Map<String, DocumentInfo> innerMap = new HashMap<>();
+      innerMap.put("test-id1", new DocumentInfo("collecting-event", "test-index"));
+      innerMap.put("test-id2", new DocumentInfo("collecting-event", "test-index"));
+      innerMap.put("test-id3", new DocumentInfo("collecting-event", "test-index"));
       when(documentProcessor.processSearchResults(any())).thenReturn(innerMap);
 
       documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
