@@ -102,7 +102,7 @@ public class DocumentProcessorTest {
       
       verify(documentProcessor, times(1)).processSearchResults(any());
       verify(documentProcessor, times(0)).indexDocument(any(String.class), any(String.class));
-      verify(documentProcessor, times(0)).reIndexDocuments(any(String.class), any(String.class), any());
+      verify(documentProcessor, times(0)).reIndexDocuments(any());
 
     } catch (SearchApiException e) {
       fail();
@@ -123,7 +123,7 @@ public class DocumentProcessorTest {
       
       verify(documentProcessor, times(1)).processSearchResults(any());
       verify(documentProcessor, times(0)).indexDocument(any(String.class), any(String.class));
-      verify(documentProcessor, times(0)).reIndexDocuments(any(String.class), any(String.class), any());
+      verify(documentProcessor, times(0)).reIndexDocuments(any());
 
     } catch (SearchApiException e) {
       fail();
@@ -150,7 +150,7 @@ public class DocumentProcessorTest {
       documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
       
       verify(documentProcessor, times(1)).processSearchResults(any());
-      verify(documentProcessor, times(1)).reIndexDocuments(any(String.class), any(String.class), any());
+      verify(documentProcessor, times(1)).reIndexDocuments(any());
       verify(documentProcessor, times(3)).indexDocument(any(String.class), any(String.class));
 
     } catch (SearchApiException e) {

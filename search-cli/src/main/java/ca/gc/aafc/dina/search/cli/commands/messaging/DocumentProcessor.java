@@ -187,9 +187,10 @@ public class DocumentProcessor implements IMessageProcessor {
       log.debug("===========================================");
 
       // mapTypeToId, contains the list of documents for reindexing.
-      //
       if (!mapIdToType.isEmpty()) {
-        reIndexDocuments(documentType, documentId, mapIdToType);
+        log.debug("re-indexing document triggered by document type:{}, id:{} update",
+            documentType, documentId);
+        reIndexDocuments(mapIdToType);
       }
 
     } catch (SearchApiException e) {
@@ -199,7 +200,6 @@ public class DocumentProcessor implements IMessageProcessor {
   }
 
   public Map<String, DocumentInfo> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
-
     Map<String, DocumentInfo> mapIdToType = new HashMap<>();
     if (embeddedDocuments != null && embeddedDocuments.hits() != null) {
       List<Hit<JsonNode>> results = embeddedDocuments.hits().hits();
@@ -216,16 +216,18 @@ public class DocumentProcessor implements IMessageProcessor {
     return mapIdToType;
   }
 
-  public void reIndexDocuments(String documentType, String documentId, Map<String, DocumentInfo> mapIdToType) {
-
-    mapIdToType.entrySet().forEach(entry -> {
+  /**
+   * Triggers an indexDocument for the provided type/uuid
+   * @param mapIdToType document type as key and DocumentInfo as value
+   */
+  public void reIndexDocuments(Map<String, DocumentInfo> mapIdToType) {
+    mapIdToType.forEach((key, value) -> {
       // re-index the document.
       try {
-        log.debug("re-indexing document type:{} id:{} triggered by document type:{}, id:{} update",
-            entry.getValue().getType(), entry.getKey(), documentType, documentId);
-        indexDocument(entry.getValue().getType(), entry.getKey());
+        log.debug("re-indexing document type:{} id:{}", value.getType(), key);
+        indexDocument(value.getType(), key);
       } catch (SearchApiException e) {
-        log.error("Document id {} of type {} could not be re-indexed. (Reason:{})", entry.getKey(), entry.getValue(),
+        log.error("Document id {} of type {} could not be re-indexed. (Reason:{})", key, value,
             e.getMessage());
       }
     });
