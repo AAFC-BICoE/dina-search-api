@@ -20,7 +20,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @RestController
-@RequestMapping(value = "/search", produces = "application/json")
+@RequestMapping(value = "/search-ws", produces = "application/json")
 public class SearchController {
   
   private final SearchService searchService;
@@ -47,8 +47,8 @@ public class SearchController {
     }
   }
     
-  @PostMapping(path = "/text", consumes = "application/json")
-  public ResponseEntity<String> query(@RequestBody String query, @RequestParam String indexName) {
+  @PostMapping(path = "/search", consumes = "application/json")
+  public ResponseEntity<String> search(@RequestBody String query, @RequestParam String indexName) {
 
     log.info("indexName={}, query={}", indexName, query);
 
