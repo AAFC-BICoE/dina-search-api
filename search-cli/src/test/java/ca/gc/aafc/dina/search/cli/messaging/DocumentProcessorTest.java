@@ -8,9 +8,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -21,7 +19,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 
-import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentInfo;
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
@@ -40,6 +37,12 @@ public class DocumentProcessorTest {
 
   @MockBean
   private List<Hit<JsonNode>> mockListHitsJson;
+  
+  @MockBean
+  private Hit<JsonNode> mockEntry;
+
+  @MockBean
+  private JsonNode mockJsonNode;
 
   @SpyBean
   @Autowired
@@ -100,7 +103,6 @@ public class DocumentProcessorTest {
 
       documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
       
-      verify(documentProcessor, times(1)).processSearchResults(any());
       verify(documentProcessor, times(0)).indexDocument(any(String.class), any(String.class));
       verify(documentProcessor, times(0)).reIndexDocuments(any());
 
@@ -117,46 +119,18 @@ public class DocumentProcessorTest {
     assertNotNull(documentProcessor);
     try {
 
+      
       when(indexer.search(anyList(), any(String.class), any(String.class))).thenReturn(mockResponse);
+      when(mockListHitsJson.isEmpty()).thenReturn(true);
 
       documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
       
-      verify(documentProcessor, times(1)).processSearchResults(any());
       verify(documentProcessor, times(0)).indexDocument(any(String.class), any(String.class));
       verify(documentProcessor, times(0)).reIndexDocuments(any());
 
     } catch (SearchApiException e) {
       fail();
     }
-  }
-
-  @DisplayName("Test processEmbedded valid search results")
-  @Test
-  public void processEmbeddedDocumentValidSearchResults() {
-
-    assertNotNull(documentProcessor);
-    try {
-
-
-      when(indexer.search(anyList(), any(String.class), any(String.class))).thenReturn(mockResponse);
-      when(documentProcessor.indexDocument(any(String.class), any(String.class))).thenReturn("Processing...");
- 
-      Map<String, DocumentInfo> innerMap = new HashMap<>();
-      innerMap.put("test-id1", new DocumentInfo("collecting-event", "test-index"));
-      innerMap.put("test-id2", new DocumentInfo("collecting-event", "test-index"));
-      innerMap.put("test-id3", new DocumentInfo("collecting-event", "test-index"));
-      when(documentProcessor.processSearchResults(any())).thenReturn(innerMap);
-
-      documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
-      
-      verify(documentProcessor, times(1)).processSearchResults(any());
-      verify(documentProcessor, times(1)).reIndexDocuments(any());
-      verify(documentProcessor, times(3)).indexDocument(any(String.class), any(String.class));
-
-    } catch (SearchApiException e) {
-      fail();
-    }
-    
   }
 
 }

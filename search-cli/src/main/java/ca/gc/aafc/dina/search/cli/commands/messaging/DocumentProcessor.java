@@ -182,10 +182,6 @@ public class DocumentProcessor implements IMessageProcessor {
 
       Map<String, DocumentInfo> mapIdToType = processSearchResults(embeddedDocuments);
 
-      log.debug("===========================================");
-      log.debug("mapTypeToId:" + mapIdToType.toString());
-      log.debug("===========================================");
-
       // mapTypeToId, contains the list of documents for reindexing.
       if (!mapIdToType.isEmpty()) {
         log.debug("re-indexing document triggered by document type:{}, id:{} update",
@@ -199,7 +195,7 @@ public class DocumentProcessor implements IMessageProcessor {
     }
   }
 
-  public Map<String, DocumentInfo> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
+  private Map<String, DocumentInfo> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
     Map<String, DocumentInfo> mapIdToType = new HashMap<>();
     if (embeddedDocuments != null && embeddedDocuments.hits() != null) {
       List<Hit<JsonNode>> results = embeddedDocuments.hits().hits();
@@ -224,7 +220,6 @@ public class DocumentProcessor implements IMessageProcessor {
     mapIdToType.forEach((key, value) -> {
       // re-index the document.
       try {
-        log.debug("re-indexing document type:{} id:{}", value.getType(), key);
         indexDocument(value.getType(), key);
       } catch (SearchApiException e) {
         log.error("Document id {} of type {} could not be re-indexed. (Reason:{})", key, value,
