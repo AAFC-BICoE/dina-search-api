@@ -1,0 +1,324 @@
+[
+  {
+    "httpRequest" : {
+      "method" : "GET",
+      "path" : "/person/899a6de1-4baa-4032-815d-12f50b8516ff"
+    },
+    "httpResponse" : {
+      "body": {
+        "data": {
+          "id": "899a6de1-4baa-4032-815d-12f50b8516ff",
+          "type": "person",
+          "attributes": {
+            "displayName": "aaa",
+            "email": "a@a.com",
+            "createdBy": "cnc-cm",
+            "createdOn": "2021-09-28T14:18:01.549267Z",
+            "givenNames": "ada",
+            "familyNames": "a",
+            "aliases": null,
+            "identifiers": [],
+            "webpage": null,
+            "remarks": null
+          }
+        },
+        "meta": {
+          "totalResourceCount": 1,
+          "moduleVersion": "0.20"
+        }
+      },
+      "statusCode": 200
+    }
+  },
+  {
+    "httpRequest" : {
+      "method" : "GET",
+      "path" : "/material-sample/65214cb9-88ea-4aa2-a1a8-259751df3d9b",
+      "queryStringParameters": {
+        "include": ["preparedBy"]
+      }
+    },
+    "httpResponse" : {
+      "body": {
+        "data": {
+          "id": "65214cb9-88ea-4aa2-a1a8-259751df3d9b",
+          "type": "material-sample",
+          "attributes": {
+            "version": 0,
+            "group": "cnc",
+            "createdOn": "2021-11-24T16:35:41.801122Z",
+            "createdBy": "cnc-cm",
+            "dwcCatalogNumber": null,
+            "dwcOtherCatalogNumbers": null,
+            "materialSampleName": "CNC_Diptera44524",
+            "materialSampleChildren": [],
+            "preparationDate": null,
+            "managedAttributes": {},
+            "determination": [
+              {
+                "verbatimScientificName": "Anasimyia orion (Hull 1943)",
+                "verbatimDeterminer": "[from unit tray]",
+                "verbatimDate": null,
+                "scientificName": "Lejops orion Hull, 1943",
+                "transcriberRemarks": null,
+                "verbatimRemarks": null,
+                "determinationRemarks": null,
+                "typeStatus": "Syntype",
+                "typeStatusEvidence": null,
+                "determiner": null,
+                "determinedOn": null,
+                "qualifier": null,
+                "scientificNameSource": "COLPLUS",
+                "scientificNameDetails": {
+                  "labelHtml": "<i>Lejops orion</i> Hull, 1943",
+                  "classificationPath": null,
+                  "classificationRanks": null,
+                  "sourceUrl": "https://data.catalogueoflife.org/dataset/2328/name/1003a897-a3d7-454f-8b44-d95385292bd7",
+                  "recordedOn": "2021-11-24",
+                  "currentName": null,
+                  "isSynonym": null
+                },
+                "isPrimary": true,
+                "isFileAs": true,
+                "managedAttributes": null
+              }
+            ],
+            "organism": {
+              "lifeStage": "adult",
+              "sex": "male",
+              "substrate": null,
+              "remarks": null
+            },
+            "preparationRemarks": null,
+            "dwcDegreeOfEstablishment": null,
+            "hierarchy": [
+              {
+                "uuid": "65214cb9-88ea-4aa2-a1a8-259751df3d9b",
+                "name": "CNC_Diptera44524",
+                "rank": 1
+              }
+            ],
+            "host": null,
+            "barcode": null,
+            "publiclyReleasable": true,
+            "notPubliclyReleasableReason": null,
+            "tags": null,
+            "materialSampleState": null,
+            "materialSampleRemarks": null,
+            "stateChangedOn": null,
+            "stateChangeRemarks": null,
+            "preparationMethod": null,
+            "associations": [],
+            "allowDuplicateName": false
+          },
+          "relationships": {
+            "parentMaterialSample": {
+              "data": null
+            },
+            "materialSampleType": {
+              "data": {
+                "id": "3a001690-7008-45be-b6a8-cc1808eefbc6",
+                "type": "material-sample-type"
+              }
+            },
+            "collectingEvent": {
+              "data": {
+                "id": "20b06444-c596-404a-9e88-44995dab4563",
+                "type": "collecting-event"
+              }
+            },
+            "preparedBy": {
+              "data": {
+                "id": "899a6de1-4baa-4032-815d-12f50b8516ff",
+                "type": "person"
+              }
+            },
+            "storageUnit": {
+              "data": null
+            },
+            "projects": {
+              "data": []
+            },
+            "attachment": {
+              "data": []
+            },
+            "acquisitionEvent": {
+              "data": null
+            },
+            "preparationAttachment": {
+              "data": []
+            },
+            "collection": {
+              "data": {
+                "id": "ce41fd72-054f-451c-8a42-37c75b221837",
+                "type": "collection"
+              }
+            },
+            "preparationType": {
+              "data": {
+                "id": "f944f7af-bb35-494c-a1a8-5dfb7dcef09c",
+                "type": "preparation-type"
+              }
+            }
+          }
+        },
+        "included": [
+          {
+            "id": "20b06444-c596-404a-9e88-44995dab4563",
+            "type": "collecting-event",
+            "attributes": {
+              "version": 0,
+              "group": "cnc",
+              "createdBy": "cnc-cm",
+              "createdOn": "2021-11-24T16:34:59.188516Z",
+              "geoReferenceAssertions": [
+                {
+                  "dwcDecimalLatitude": 34.366497,
+                  "dwcDecimalLongitude": -89.51925,
+                  "dwcCoordinateUncertaintyInMeters": null,
+                  "createdOn": "2021-11-24T16:34:59.10679Z",
+                  "dwcGeoreferencedDate": null,
+                  "georeferencedBy": null,
+                  "literalGeoreferencedBy": null,
+                  "dwcGeoreferenceProtocol": null,
+                  "dwcGeoreferenceSources": null,
+                  "dwcGeoreferenceRemarks": "geocoded from label data",
+                  "dwcGeodeticDatum": null,
+                  "isPrimary": true,
+                  "dwcGeoreferenceVerificationStatus": null
+                }
+              ],
+              "dwcVerbatimCoordinates": null,
+              "dwcRecordedBy": null,
+              "startEventDateTime": "1935-07-21",
+              "endEventDateTime": null,
+              "verbatimEventDateTime": "21.vii.1935",
+              "dwcVerbatimLocality": "Oxford, Miss.",
+              "host": null,
+              "managedAttributes": {},
+              "dwcVerbatimLatitude": "",
+              "dwcVerbatimLongitude": "",
+              "dwcVerbatimCoordinateSystem": "decimal degrees",
+              "dwcVerbatimSRS": "WGS84 (EPSG:4326)",
+              "dwcVerbatimElevation": null,
+              "dwcVerbatimDepth": null,
+              "dwcOtherRecordNumbers": null,
+              "dwcRecordNumber": null,
+              "dwcCountry": null,
+              "dwcCountryCode": null,
+              "dwcStateProvince": null,
+              "habitat": null,
+              "dwcMinimumElevationInMeters": null,
+              "dwcMinimumDepthInMeters": null,
+              "dwcMaximumElevationInMeters": null,
+              "dwcMaximumDepthInMeters": null,
+              "substrate": null,
+              "remarks": null,
+              "publiclyReleasable": true,
+              "notPubliclyReleasableReason": null,
+              "tags": null,
+              "geographicPlaceNameSource": "OSM",
+              "geographicPlaceNameSourceDetail": {
+                "sourceUrl": "https://nominatim.openstreetmap.org/ui/details.html?osmtype=R&osmid=109850",
+                "customGeographicPlace": null,
+                "selectedGeographicPlace": {
+                  "id": "109850",
+                  "element": "R",
+                  "placeType": "town",
+                  "name": "Oxford"
+                },
+                "higherGeographicPlaces": [
+                  {
+                    "id": "1833631",
+                    "element": "R",
+                    "placeType": "county",
+                    "name": "Lafayette County"
+                  }
+                ],
+                "stateProvince": {
+                  "id": "109850",
+                  "element": "relation",
+                  "placeType": "state",
+                  "name": "Mississippi"
+                },
+                "country": {
+                  "code": "us",
+                  "name": "United States"
+                },
+                "recordedOn": "2021-11-24T16:34:59.106535Z"
+              },
+              "extensionValues": null
+            }
+          },
+          {
+            "id": "ce41fd72-054f-451c-8a42-37c75b221837",
+            "type": "collection",
+            "attributes": {
+              "createdOn": "2021-09-17T17:24:05.204399Z",
+              "createdBy": "dina-admin",
+              "group": "cnc",
+              "name": "CNC",
+              "code": "CNC",
+              "multilingualDescription": {
+                "descriptions": []
+              }
+            }
+          },
+          {
+            "id": "3a001690-7008-45be-b6a8-cc1808eefbc6",
+            "type": "material-sample-type",
+            "attributes": {
+              "createdOn": "2021-09-20T18:11:41.480424Z",
+              "createdBy": "cnc-cm",
+              "name": "Whole organism"
+            }
+          },
+          {
+            "id": "f944f7af-bb35-494c-a1a8-5dfb7dcef09c",
+            "type": "preparation-type",
+            "attributes": {
+              "createdOn": "2021-10-13T19:16:47.442997Z",
+              "createdBy": "cnc-cm",
+              "group": "cnc",
+              "name": "pinned",
+              "multilingualDescription": {
+                "descriptions": []
+              }
+            }
+          },
+          {
+            "id": "899a6de1-4baa-4032-815d-12f50b8516ff",
+            "type": "person",
+            "attributes": {
+              "displayName": "bbb",
+              "email": "a@a.com",
+              "createdBy": "cnc-cm",
+              "createdOn": "2021-09-28T14:18:01.549267Z",
+              "givenNames": "ada",
+              "familyNames": "a",
+              "aliases": null,
+              "identifiers": [],
+              "webpage": null,
+              "remarks": null
+            }
+          }
+        ],
+        "meta": {
+          "totalResourceCount": 1,
+          "external": [
+            {
+              "href": "objectstore/api/v1/metadata",
+              "type": "metadata"
+            },
+            {
+              "href": "agent/api/v1/person",
+              "type": "person"
+            }
+          ],
+          "moduleVersion": "0.47"
+        }
+      },
+      "statusCode": 200
+    }
+  }
+]

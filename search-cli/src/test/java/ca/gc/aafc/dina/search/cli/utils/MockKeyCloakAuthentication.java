@@ -19,7 +19,7 @@ public class MockKeyCloakAuthentication {
 
   private static final ObjectMapper OM = new ObjectMapper();
 
-  private KeyCloakAuthentication fakeKeyCloakPayload;
+  private final KeyCloakAuthentication fakeKeyCloakPayload;
 
   /**
    * This constructor will setup the authentication token request with the client as well
