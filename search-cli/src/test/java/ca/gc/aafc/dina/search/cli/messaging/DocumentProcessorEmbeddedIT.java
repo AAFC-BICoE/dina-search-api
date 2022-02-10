@@ -180,7 +180,11 @@ public class DocumentProcessorEmbeddedIT {
     // search cluster
     // re-index
     //
-    Thread.sleep(1000 * 20);
+
+    // Retrieve the document from elasticsearch
+    foundDocument = ElasticSearchTestUtils
+          .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "included.attributes.names.name", EMBEDDED_ORG_NAME_AFTER_UPDATE, 1);
+    assertEquals(1, foundDocument);
 
     // Get the document straight from Elastic search, we should have the 
     // embedded organization updated
