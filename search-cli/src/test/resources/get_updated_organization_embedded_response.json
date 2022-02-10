@@ -1,0 +1,23 @@
+{
+  "data": {
+    "id": "f9e10a21-d8b6-4d9b-8c99-953bdc940862",
+    "type": "organization",
+    "attributes": {
+        "aliases": [
+          "Integration Updated"
+        ],
+        "createdBy": "test-user",
+        "createdOn": "2022-02-09T17:52:07.620982Z",
+        "names": [
+        {
+          "languageCode": "EN",
+          "name": "Integration Updated"
+        },
+        {
+          "languageCode": "FR",
+          "name": "Integration Updated"
+        }
+      ]
+    }
+  }
+}
