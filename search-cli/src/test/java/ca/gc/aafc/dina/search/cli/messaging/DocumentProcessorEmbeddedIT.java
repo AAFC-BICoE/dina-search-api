@@ -7,10 +7,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
+import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,8 +60,6 @@ public class DocumentProcessorEmbeddedIT {
 
   @Autowired
   private DocumentIndexer documentIndexer;
-  
-  private static final ObjectMapper OM = new ObjectMapper();
 
   // Process Embedded
   private static final String EMBEDDED_DOCUMENT_TYPE = "person";
@@ -125,17 +124,11 @@ public class DocumentProcessorEmbeddedIT {
         .withDelay(TimeUnit.SECONDS, 1));
 
     // Index the document within elastic search. The initial document is an assembled 
-    // person document witht he orginal organization name set to "Integration"
-    //
-    JsonNode docToIndex = null;
-    try {
-      docToIndex = OM.readTree(Files.readString(EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH));
-    } catch (JsonProcessingException ex) {
-    }
+    // person document with he original organization name set to "Integration"
+    JsonNode docToIndex = JsonTestUtils.readJson(Files.readString(EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH));
     assertNotNull(docToIndex);
 
     // Create indices as supported by the dina project
-    //
     elasticSearchClient.indices().create(c -> c.index(DINA_AGENT_INDEX));
     elasticSearchClient.indices().create(c -> c.index(DINA_MATERIAL_SAMPLE_INDEX));
     elasticSearchClient.indices().create(c -> c.index(DINA_OBJECT_STORE_INDEX));
@@ -144,11 +137,12 @@ public class DocumentProcessorEmbeddedIT {
     // Index the original document with organization ame set to "Integration"
     OperationStatus result = documentIndexer.indexDocument(EMBEDDED_DOCUMENT_ID, docToIndex, DINA_AGENT_INDEX);
 
-    // Give time to time....(It is needed because the embedded elastic is quite slow)
-    Thread.sleep(1000 * 5);
-
     assertNotNull(result);
     assertEquals(OperationStatus.SUCCEEDED, result);
+
+    int foundDocument = ElasticSearchTestUtils
+        .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id.keyword", EMBEDDED_DOCUMENT_ID, 1);
+    Assert.assertEquals(1, foundDocument);
 
     SearchResponse<JsonNode> searchResponse = elasticSearchClient.search(s -> s
         .index(DINA_AGENT_INDEX)
