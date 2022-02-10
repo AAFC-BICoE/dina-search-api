@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
+import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,8 +42,6 @@ public class DocumentProcessorIT {
 
   @Autowired
   private DocumentProcessor documentProcessor;
-
-  private static final ObjectMapper OM = new ObjectMapper();
 
   private static final String DOCUMENT_TYPE = "person";
   private static final String DOCUMENT_ID = "9df388de-71b5-45be-9613-b70674439773";
@@ -99,7 +98,7 @@ public class DocumentProcessorIT {
             .withDelay(TimeUnit.SECONDS, 1));
 
     // Create a request for the document processor.
-    JsonNode jsonMessage = OM.readTree(documentProcessor.indexDocument(DOCUMENT_TYPE, DOCUMENT_ID));
+    JsonNode jsonMessage = JsonTestUtils.readJson(documentProcessor.indexDocument(DOCUMENT_TYPE, DOCUMENT_ID));
 
     // Test to ensure the person message was properly assembled.
     assertEquals(DOCUMENT_ID, jsonMessage.at("/data/id").asText());
