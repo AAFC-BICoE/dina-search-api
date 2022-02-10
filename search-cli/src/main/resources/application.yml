@@ -1,4 +1,6 @@
 spring:
+  main:
+    web-application-type: none
   shell.command.history.enabled: false
   rabbitmq.listener.simple.default-requeue-rejected: false
 keycloak:

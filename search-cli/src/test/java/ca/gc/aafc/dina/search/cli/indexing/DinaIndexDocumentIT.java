@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
+import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -13,8 +14,6 @@ import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.FieldValue;
-import co.elastic.clients.elasticsearch.core.CountResponse;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -62,7 +61,8 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = searchAndWait(INITIAL_MSG, 1);
+      int foundDocument = ElasticSearchTestUtils
+          .searchForCount(client, INDEX_NAME, "name", INITIAL_MSG, 1);
       assertEquals(1, foundDocument);
 
     } catch (SearchApiException e) {
@@ -79,7 +79,8 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = searchAndWait(INITIAL_MSG, 1);
+      int foundDocument = ElasticSearchTestUtils
+          .searchForCount(client, INDEX_NAME, "name", INITIAL_MSG, 1);
       assertEquals(1, foundDocument);
 
       result = documentIndexer.indexDocument(DOCUMENT_ID, TEST_DOCUMENT_UPDATED, INDEX_NAME);
@@ -87,7 +88,8 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve updated document from elasticsearch
-      foundDocument = searchAndWait(UPDATED_MSG, 1);
+      foundDocument = ElasticSearchTestUtils
+          .searchForCount(client, INDEX_NAME, "name", UPDATED_MSG, 1);
       assertEquals(1, foundDocument);
 
     } catch (SearchApiException e) {
@@ -107,7 +109,8 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = searchAndWait(INITIAL_MSG, 1);
+      int foundDocument = ElasticSearchTestUtils
+          .searchForCount(client, INDEX_NAME, "name", INITIAL_MSG, 1);
       assertEquals(1, foundDocument);
 
       // Delete the document
@@ -116,38 +119,13 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve deleted document from elasticsearch
-      foundDocument = searchAndWait(INITIAL_MSG, 0);
+      foundDocument = ElasticSearchTestUtils
+          .searchForCount(client, INDEX_NAME, "name", INITIAL_MSG, 0);
       assertEquals(0, foundDocument);
 
     } catch (SearchApiException e) {
       fail(e.getMessage());
     }
-  }
-
-  private int search(String searchValue) throws Exception {
-    // Count the total number of search results.
-    CountResponse countResponse = client.count(builder -> builder
-      .query(queryBuilder -> queryBuilder
-        .match(matchBuilder -> matchBuilder
-          .query(FieldValue.of(searchValue))
-          .field("name")
-        )
-      )
-      .index(INDEX_NAME)
-    );
-
-    return (int) countResponse.count();
-  }
-
-  private int searchAndWait(String searchValue, int foundCondition) throws InterruptedException, Exception {
-    int foundDocument = -1;
-    int nCount = 0;
-    while (foundDocument != foundCondition && nCount < 10) {
-      Thread.sleep(1000 * 5);
-      foundDocument = search(searchValue);
-      nCount++;
-    }
-    return foundDocument;
   }
 
   @AllArgsConstructor
