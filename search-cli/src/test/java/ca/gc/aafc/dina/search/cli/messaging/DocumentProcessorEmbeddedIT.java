@@ -2,7 +2,9 @@ package ca.gc.aafc.dina.search.cli.messaging;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
@@ -11,6 +13,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,11 +29,13 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
+import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.indexing.DocumentIndexer;
 import ca.gc.aafc.dina.search.cli.indexing.OperationStatus;
 import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import lombok.SneakyThrows;
 
@@ -39,9 +44,6 @@ import lombok.SneakyThrows;
 @MockServerSettings(ports = {1080, 8081, 8082})
 public class DocumentProcessorEmbeddedIT {
 
-  private static final String DINA_STORAGE_INDEX = "dina_storage_index";
-  private static final String DINA_OBJECT_STORE_INDEX = "dina_object_store_index";
-  private static final String DINA_MATERIAL_SAMPLE_INDEX = "dina_material_sample_index";
   private static final String DINA_AGENT_INDEX = "dina_agent_index";
   private static final String EMBEDDED_ORG_NAME = "Integration";
   private static final String EMBEDDED_ORG_NAME_AFTER_UPDATE = "Integration Updated";
@@ -53,6 +55,9 @@ public class DocumentProcessorEmbeddedIT {
 
   @Container
   private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+
+  @Autowired
+  private ServiceEndpointProperties serviceEndpointProperties;
 
   @Autowired
   private DocumentProcessor documentProcessor;
@@ -136,10 +141,18 @@ public class DocumentProcessorEmbeddedIT {
 
     // Create indices as supported by the dina project
     //
-    elasticSearchClient.indices().create(c -> c.index(DINA_AGENT_INDEX));
-    elasticSearchClient.indices().create(c -> c.index(DINA_MATERIAL_SAMPLE_INDEX));
-    elasticSearchClient.indices().create(c -> c.index(DINA_OBJECT_STORE_INDEX));
-    elasticSearchClient.indices().create(c -> c.index(DINA_STORAGE_INDEX));
+    serviceEndpointProperties.getEndpoints().values().forEach(desc -> {
+      if (StringUtils.isNotBlank (desc.getIndexName())) {
+        try {
+          elasticSearchClient.indices().create(c -> c.index(desc.getIndexName().trim()));
+        } catch (ElasticsearchException e) {
+          fail(e);
+          e.printStackTrace();
+        } catch (IOException e) {
+          fail(e);
+        }
+      }
+    });
 
     // Index the original document with organization ame set to "Integration"
     OperationStatus result = documentIndexer.indexDocument(EMBEDDED_DOCUMENT_ID, docToIndex, DINA_AGENT_INDEX);
