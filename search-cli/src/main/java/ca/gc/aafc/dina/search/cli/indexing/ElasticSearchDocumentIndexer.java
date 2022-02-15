@@ -1,28 +1,35 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
-import java.io.IOException;
-
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
-
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.ShardFailure;
 import co.elastic.clients.elasticsearch._types.ShardStatistics;
+import co.elastic.clients.elasticsearch._types.query_dsl.MatchPhraseQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Log4j2
 @Service
 public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
-  @Autowired
-  private ElasticsearchClient client;
+  private final ElasticsearchClient client;
+
+  public ElasticSearchDocumentIndexer(ElasticsearchClient client) {
+    this.client = client;
+  }
 
   @Override
   public OperationStatus indexDocument(String documentId, Object payload, String indexName) throws SearchApiException {
@@ -106,4 +113,35 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
     return OperationStatus.FAILED;
   }
+
+  public SearchResponse<JsonNode> search(List<String> indexNames, String documentType, String documentId) throws SearchApiException {
+
+    try {
+      List<String> fieldsToReturn = new ArrayList<>();
+      fieldsToReturn.add("data.id");
+      fieldsToReturn.add("data.type");
+      
+
+      // Match phrase query
+      MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id.keyword").query(documentId);
+      MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type.keyword").query(documentType);
+      
+      List<Query> matchPhraseQueries = new ArrayList<>(2);
+      matchPhraseQueries.add(documentIdMatchPhrase.build()._toQuery());
+      matchPhraseQueries.add(documentTypeMatchPhrase.build()._toQuery());
+
+      SearchResponse<JsonNode> response = client.search(searchBuilder -> searchBuilder
+          .index(indexNames)
+          .query(QueryBuilders.bool()
+                    .must(matchPhraseQueries).build()._toQuery())
+          .storedFields(fieldsToReturn)
+          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
+      
+      return response;
+
+    } catch (IOException ex) {
+      throw new SearchApiException("Error during search processing", ex);
+    }
+  }
+
 }

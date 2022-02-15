@@ -3,12 +3,16 @@
 # Endpoints are closely related to the JSONSpec DINA objects defined in
 # DINA schemas.
 #
-# Objects declared in the relationships section correspond to navigation
+# Entries declared in the relationships section correspond to navigation
 # links that may be exercised when augmenting the parent object.
 #
 # For example in the material-sample example, without an entry for collectingEvent
 # or preparationType these objects will not be automatically included and augmented
 # during the creation of the augmented parent object (material-sample).
+#
+# Entries defined under the 'embedded' section correspond to parent document type.
+# For example the entry 'person' under the organization embedded section denotes that
+# 'organization' is embedded under a 'person' document when pushed into elasticsearch.
 #
 endpoints:
   material-sample: 
@@ -17,7 +21,9 @@ endpoints:
       - collectingEvent
       - attachment
       - storageUnit
-    indexName: dina_material_sample_index
+    indexName: dina_material_sample_index       
+  collecting-event: 
+    targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/collecting-event}
   preparation-type: 
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/preparation-type}
   metadata: 
@@ -28,7 +34,6 @@ endpoints:
       - dcCreator
   organization: 
     targetUrl: ${ORGANIZATION_URL:http://localhost:8082/api/v1/organization}
-    indexName: dina_agent_index
   person: 
     targetUrl: ${PERSON_URL:http://localhost:8082/api/v1/person}
     indexName: dina_agent_index
