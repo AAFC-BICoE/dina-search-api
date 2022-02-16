@@ -10,6 +10,10 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -23,21 +27,18 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
-
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
+import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery.Builder;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
-import lombok.extern.log4j.Log4j2;
 
-@Log4j2
 @Service
 public class ESSearchService implements SearchService {
 
@@ -74,9 +75,10 @@ public class ESSearchService implements SearchService {
     return headers;
   }
 
+
   @Override
-  public SearchResponse<JsonNode> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
-    
+  public SearchResponse<JsonNode> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String restrictedField, String restrictedFieldValue) throws SearchApiException {
+
     // Based on our naming convention, we will create the expected fields to search for:
     //
     // autoCompleteField + .autocomplete
@@ -101,21 +103,47 @@ public class ESSearchService implements SearchService {
     fields.toArray(arrayFields);
 
     try {
-      // Create the search response using the multi match query.
-      SearchResponse<JsonNode> searchResponse = client.search(searchBuilder -> searchBuilder
+
+      TermQuery.Builder restrictedTermQuery = null;
+      boolean isRestrictedQuery = false;
+      final Query autoCompleteQuery;
+
+      // Multimatch for the search_as_you_type field
+      Builder multiMatchQuery = QueryBuilders.multiMatch().fields(fields).query(textToMatch)
+          .type(TextQueryType.BoolPrefix);
+
+      if (StringUtils.hasText(restrictedField) && StringUtils.hasText(restrictedFieldValue)) {
+        
+        // Term query for the restricted field
+        restrictedTermQuery = QueryBuilders.term()
+          .field(restrictedField)
+          .value(v -> v.stringValue(restrictedFieldValue));
+        isRestrictedQuery = true;
+      }
+
+      if (isRestrictedQuery) {
+        autoCompleteQuery = QueryBuilders.bool()
+            .must(multiMatchQuery.build()._toQuery())
+            .filter(restrictedTermQuery.build()._toQuery())
+            .build()._toQuery();
+
+      } else {
+        autoCompleteQuery = QueryBuilders.bool()
+            .must(multiMatchQuery.build()._toQuery())
+            .build()._toQuery();
+      }
+
+      SearchResponse<JsonNode> response = client.search(searchBuilder -> searchBuilder
           .index(indexName)
-          .query(queryBuilder -> queryBuilder.multiMatch(multiMatchQuery -> multiMatchQuery
-              .fields(fields)
-              .query(textToMatch)
-              .type(TextQueryType.BoolPrefix)))
+          .query(autoCompleteQuery)
+          .storedFields(fieldsToReturn)
           .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
 
-      return searchResponse;
-    } catch (IOException ex) {
-      log.error("Error in autocomplete search", ex);
-    }
+      return response;
 
-    return null;
+    } catch (IOException ex) {
+      throw new SearchApiException("Error during search processing", ex);
+    }
   }
 
   @Override
