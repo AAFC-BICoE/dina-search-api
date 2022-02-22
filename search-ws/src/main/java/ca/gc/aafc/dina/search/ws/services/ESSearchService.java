@@ -8,13 +8,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -23,18 +32,16 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
-
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
+import co.elastic.clients.elasticsearch._types.mapping.PropertyVariant;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
+import jakarta.json.JsonValue;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -137,27 +144,78 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
-  public Map<String, String> getIndexMapping(String indexName) throws SearchApiException {
-    Map<String, String> mapping = new HashMap<>();
+  public ResponseEntity<JsonNode> getIndexMapping(String indexName) throws SearchApiException {
+
+    Map<String, String> data = new HashMap<>();
+    Map<String, String> included = new HashMap<>();
+    Map<String, String> relationships = new HashMap<>();
+
+    ObjectNode indexMappingNode = OM.createObjectNode();
+    indexMappingNode.put("indexName", indexName);
 
     try {
+
       // Retrieve the index mapping.
       GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
 
       // First level is always "properties".
       mappingResponse.result().get(indexName).mappings().properties().forEach((propertyName, property) -> {
+
         Stack<String> pathStack = new Stack<>();
         pathStack.push(propertyName);
+        log.info("@@@@@@@ Value={}", propertyName);
         Map<String, String> pathType = new HashMap<>();
-        crawlMapping(pathStack, property, pathType);
-        mapping.putAll(pathType);
+
+        crawlMapping(pathStack, property, pathType, data, included, relationships);
+
+        // Add all document attributes
+        ArrayNode documentAttributes = indexMappingNode.putArray("attributes");
+        data.entrySet().forEach(curEntry -> {
+          ObjectNode curJsonAttribute = setJsonNode(curEntry);
+          documentAttributes.add(curJsonAttribute);
+        });
+
+        // Attributes from included relationships
+        //
+        ObjectNode relationshipsNode = OM.createObjectNode();
+        relationships.entrySet().forEach(curKey -> {
+          log.info("relationships attributes:{}", curKey);
+
+          if (curKey.getKey().endsWith("data.type")) {
+            // Extract the type
+            relationshipsNode.put("type", curKey.getValue());  
+          }
+
+          if (curKey.getKey().endsWith("data.type.value")) {
+            // Extract the value
+            relationshipsNode.put("name",curKey.getValue());
+          }
+        });
+        // Add all included attributes
+        ArrayNode attributes = relationshipsNode.putArray("attributes");
+        included.entrySet().forEach(curEntry -> {
+          ObjectNode curJsonAttribute = setJsonNode(curEntry);
+          attributes.add(curJsonAttribute);
+        });
+
+        indexMappingNode.set("relationships", relationshipsNode);
+
       });
 
-    } catch (IOException e) {
-      throw new SearchApiException("Error during index-mapping processing", e);
+    } catch (IOException | ElasticsearchException e) {
+      log.error("Error during index-mapping processing", e);
+      return new ResponseEntity<>(indexMappingNode, HttpStatus.BAD_REQUEST);
     }
 
-    return mapping;
+    return new ResponseEntity<>(indexMappingNode, HttpStatus.OK);
+  }
+
+  private ObjectNode setJsonNode(Entry<String, String> curEntry) {
+    ObjectNode curJsonAttribute = OM.createObjectNode();
+    curJsonAttribute.put("name", curEntry.getKey().substring(curEntry.getKey().lastIndexOf(".") + 1));
+    curJsonAttribute.put("type", curEntry.getValue());
+    curJsonAttribute.put("path", curEntry.getKey().substring(0, curEntry.getKey().lastIndexOf(".")));
+    return curJsonAttribute;
   }
 
   /**
@@ -166,20 +224,41 @@ public class ESSearchService implements SearchService {
    * @param esMappingStructure structure returned by the ElasticSearch client
    * @param mappingDefinition result containing the mapping and its type
    */
-  private static void crawlMapping(Stack<String> path, Property propertyToCrawl, Map<String, String> mappingDefinition) {
+  private static void crawlMapping(Stack<String> path, Property propertyToCrawl, 
+                          Map<String, String> mappingDefinition,
+                          Map<String, String> data,
+                          Map<String, String> included,
+                          Map<String, String> relationships) {
 
     propertyToCrawl.object().properties().forEach((propertyName, property) -> {
       // Add path to path stack.
       path.push(propertyName);
 
       if (property.isObject()) {
-        crawlMapping(path, property, mappingDefinition);
+        crawlMapping(path, property, mappingDefinition, data, included, relationships);
       } else {
-        mappingDefinition.put(
-            path.stream().collect(Collectors.joining(".")),
-            property._kind().jsonValue());
-      }
 
+        String attributeName = path.stream().collect(Collectors.joining("."));
+        String type = property._kind().jsonValue();
+        PropertyVariant theProperty = property._get();
+
+        // Single Attribute
+        //
+        if (attributeName.startsWith("data")) {
+          if (attributeName.startsWith("data.relationships")) {
+            relationships.put(attributeName, type);
+            if (theProperty._toProperty().isConstantKeyword()) {
+              JsonValue value = theProperty._toProperty().constantKeyword().value().toJson();
+              relationships.put(attributeName + ".value", value.toString().replace("\"", ""));
+              log.info("all attributes name:{}, fdn:{}, type:{}",theProperty._toProperty().constantKeyword().value(), attributeName, type);
+            }
+          } else {
+            data.put(attributeName, type);
+          }
+        } else if (attributeName.startsWith("included")) {
+          included.put(attributeName, type);
+        }
+      }
       path.pop();
     });
   }

@@ -167,6 +167,37 @@
               }
             }
           },
+          "relationships": {
+            "properties": {
+              "attachment": {
+                "type": "object"
+              },
+              "collectingEvent": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "id": {
+                        "type": "text",
+                        "fields": {
+                          "keyword": {
+                            "type": "keyword",
+                            "ignore_above": 256
+                          }
+                        }
+                      },
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "collecting-event"
+                      }
+                    }
+                  }
+                }
+              },
+              "storageUnit": {
+                "type": "object"
+              }
+            }
+          },
           "id": {
             "type": "text",
             "fields": {
@@ -175,7 +206,7 @@
                 "ignore_above": 256
               }
             }
-          },
+          },          
           "type": {
             "type": "text",
             "fields": {

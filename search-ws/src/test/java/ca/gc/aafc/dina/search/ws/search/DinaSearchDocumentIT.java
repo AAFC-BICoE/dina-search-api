@@ -12,6 +12,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
@@ -129,13 +131,23 @@ public class DinaSearchDocumentIT {
   public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
     indexDocumentForIT(DINA_AGENT_INDEX, "test-document-1", retrieveJSONObject("person-1.json"));
 
-    Map<String, String> result = searchService.getIndexMapping(DINA_AGENT_INDEX);
+    ResponseEntity<JsonNode> response = searchService.getIndexMapping(DINA_AGENT_INDEX);
+    JsonNode result = response.getBody();
 
-    assertTrue(result.containsKey("data.attributes.createdOn"));
-    assertEquals("date", result.get("data.attributes.createdOn"));
+    assertEquals("dina_agent_index", result.get("indexName").asText());    
+    JsonNode attributes = result.get("attributes");
+    boolean found = false;
+    for (JsonNode curNode: attributes) {
+      if (curNode.get("name").asText().equals("createdOn") && "date".equals(curNode.get("type").asText()))  {
+        found = true;
+        break;
+      }
+    }
+    assertTrue(found);
 
     // test behavior of non-existing index
-    assertThrows(ElasticsearchException.class, () -> searchService.getIndexMapping("abcd"));
+    response = searchService.getIndexMapping("abcd");
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
   }
 
   @SuppressWarnings("unchecked")
