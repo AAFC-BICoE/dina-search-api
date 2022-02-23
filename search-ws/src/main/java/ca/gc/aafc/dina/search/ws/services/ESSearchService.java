@@ -163,7 +163,6 @@ public class ESSearchService implements SearchService {
 
         Stack<String> pathStack = new Stack<>();
         pathStack.push(propertyName);
-        log.info("@@@@@@@ Value={}", propertyName);
         Map<String, String> pathType = new HashMap<>();
 
         crawlMapping(pathStack, property, pathType, data, included, relationships);
@@ -179,7 +178,6 @@ public class ESSearchService implements SearchService {
         //
         ObjectNode relationshipsNode = OM.createObjectNode();
         relationships.entrySet().forEach(curKey -> {
-          log.info("relationships attributes:{}", curKey);
 
           if (curKey.getKey().endsWith("data.type")) {
             // Extract the type
@@ -187,10 +185,16 @@ public class ESSearchService implements SearchService {
           }
 
           if (curKey.getKey().endsWith("data.type.value")) {
-            // Extract the value
-            relationshipsNode.put("name",curKey.getValue());
+
+            relationshipsNode.put("name", "type");
+            relationshipsNode.put("value",curKey.getValue());
+           
+            relationshipsNode.put(
+                    "path", 
+                    curKey.getKey().substring(0, curKey.getKey().lastIndexOf(".")));
           }
         });
+
         // Add all included attributes
         ArrayNode attributes = relationshipsNode.putArray("attributes");
         included.entrySet().forEach(curEntry -> {
