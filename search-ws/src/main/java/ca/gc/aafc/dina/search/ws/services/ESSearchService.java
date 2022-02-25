@@ -37,10 +37,8 @@ import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
-import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery.Builder;
-import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
@@ -113,43 +111,30 @@ public class ESSearchService implements SearchService {
     fields.toArray(arrayFields);
 
     try {
-
-      TermQuery.Builder restrictedTermQuery = null;
-      boolean isRestrictedQuery = false;
-      final Query autoCompleteQuery;
-
-      // Multimatch for the search_as_you_type field
-      Builder multiMatchQuery = QueryBuilders.multiMatch().fields(fields).query(textToMatch)
-          .type(TextQueryType.BoolPrefix);
+      // Query builder with Multimatch for the search_as_you_type field
+      BoolQuery.Builder autoCompleteQueryBuilder = QueryBuilders.bool().must(
+          QueryBuilders.multiMatch()
+              .fields(fields)
+              .query(textToMatch)
+              .type(TextQueryType.BoolPrefix)
+              .build()._toQuery()
+      );
 
       if (StringUtils.hasText(restrictedField) && StringUtils.hasText(restrictedFieldValue)) {
-        
-        // Term query for the restricted field
-        restrictedTermQuery = QueryBuilders.term()
-          .field(restrictedField)
-          .value(v -> v.stringValue(restrictedFieldValue));
-        isRestrictedQuery = true;
+        // Add restricted query filter to query builder.
+        autoCompleteQueryBuilder.filter(
+            QueryBuilders.term()
+                .field(restrictedField)
+                .value(v -> v.stringValue(restrictedFieldValue))
+                .build()._toQuery()
+        );
       }
 
-      if (isRestrictedQuery) {
-        autoCompleteQuery = QueryBuilders.bool()
-            .must(multiMatchQuery.build()._toQuery())
-            .filter(restrictedTermQuery.build()._toQuery())
-            .build()._toQuery();
-
-      } else {
-        autoCompleteQuery = QueryBuilders.bool()
-            .must(multiMatchQuery.build()._toQuery())
-            .build()._toQuery();
-      }
-
-      SearchResponse<JsonNode> response = client.search(searchBuilder -> searchBuilder
+      return client.search(searchBuilder -> searchBuilder
           .index(indexName)
-          .query(autoCompleteQuery)
+          .query(autoCompleteQueryBuilder.build()._toQuery())
           .storedFields(fieldsToReturn)
           .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
-
-      return response;
 
     } catch (IOException ex) {
       throw new SearchApiException("Error during search processing", ex);
