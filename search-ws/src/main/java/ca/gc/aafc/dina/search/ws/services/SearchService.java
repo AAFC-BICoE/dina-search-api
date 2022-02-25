@@ -1,11 +1,10 @@
 package ca.gc.aafc.dina.search.ws.services;
 
-import java.util.Map;
-
 import com.fasterxml.jackson.databind.JsonNode;
 
-import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
+import org.springframework.http.ResponseEntity;
 
+import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 
 public interface SearchService {
@@ -70,6 +69,6 @@ public interface SearchService {
    * @return mapping of the index
    * @throws SearchApiException if something goes wrong with the request
    */
-  Map<String, String> getIndexMapping(String indexName) throws SearchApiException;
+  ResponseEntity<JsonNode> getIndexMapping(String indexName) throws SearchApiException;
 
 }
