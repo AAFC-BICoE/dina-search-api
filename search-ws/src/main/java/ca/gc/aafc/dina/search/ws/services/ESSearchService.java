@@ -187,11 +187,8 @@ public class ESSearchService implements SearchService {
           if (curKey.getKey().endsWith("data.type.value")) {
 
             relationshipsNode.put("name", "type");
-            relationshipsNode.put("value",curKey.getValue());
-           
-            relationshipsNode.put(
-                    "path", 
-                    curKey.getKey().substring(0, curKey.getKey().lastIndexOf(".")));
+            relationshipsNode.put("value",curKey.getValue());           
+            relationshipsNode.put("path", "data.included");
           }
         });
 

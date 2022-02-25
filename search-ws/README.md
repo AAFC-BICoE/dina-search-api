@@ -88,7 +88,7 @@ Response: The structure contained in the body section of the payload is made up 
             "type": "constant_keyword",
             "name": "type",
             "value": "collecting-event",
-            "path": "data.relationships.collectingEvent.data.type",
+            "path": "data.included",
             "attributes": [
                 {
                     "name": "createdOn",
@@ -110,9 +110,10 @@ Response: The structure contained in the body section of the payload is made up 
 Relationship section is made of the following fields
 
 - `type` = Elasticsearch type of the attribute
-- `name` = Elasticsearch filed name
+- `name` = Elasticsearch field name
 - `value` = Elasticsearch field value for the relationship (collecting-event...)
-- `path` = Fully qualified path to get to the attribute value within a document
+- `path` = Path within the included section of the document. (path + name) == (value) can be used to
+           scope the request to only matching relationship type value.
 
 
 Attributes section is made of the following fields
