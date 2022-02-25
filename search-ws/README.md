@@ -71,10 +71,56 @@ Content-Type: `application-json`
 ```
 GET http://<target-server>:8085/search-ws/mapping?indexName=<target-index-name>
 ```
-Response:
+Response: The structure contained in the body section of the payload is made up of three logical sections presented in the following extract:
 ```
-{"data.id":"text","data.attributes.createdOn":"date"}
+    "body": {
+        "indexName": "dina_material_sample_index",
+        "attributes": [
+            {
+                "name": "verbatimDeterminer",
+                "type": "text",
+                "path": "data.attributes"
+            },
+            :::
+            :::
+        ],
+        "relationships": {
+            "type": "constant_keyword",
+            "name": "type",
+            "value": "collecting-event",
+            "path": "data.relationships.collectingEvent.data.type",
+            "attributes": [
+                {
+                    "name": "createdOn",
+                    "type": "date",
+                    "path": "included.attributes.geoReferenceAssertions"
+                },
+                :::
+                :::
+            ],
+        },
+      }
+    },
+    "statusCode": "OK",
+    "statusCodeValue": 200
+}
+
 ```
+
+Relationship section is made of the following fields
+
+- `type` = Elasticsearch type of the attribute
+- `name` = Elasticsearch filed name
+- `value` = Elasticsearch field value for the relationship (collecting-event...)
+- `path` = Fully qualified path to get to the attribute value within a document
+
+
+Attributes section is made of the following fields
+
+- `name` = name of the attribute
+- `type` = Elasticsearch type of the attribute
+- `path` = Fully qualified path to get to the attribute value within a document
+
 
 
  
