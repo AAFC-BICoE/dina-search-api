@@ -76,7 +76,7 @@ Response: The structure contained in the body section of the payload is made up 
 ```
     "body": {
         "indexName": "dina_material_sample_index",
-        "root": "data",
+        "parent": "data",
         "attributes": [
             {
                 "name": "verbatimDeterminer",
@@ -95,7 +95,7 @@ Response: The structure contained in the body section of the payload is made up 
             "type": "constant_keyword",
             "name": "type",
             "value": "collecting-event",
-            "path": "included",
+            "parent": "included",
             "attributes": [
                 {
                     "name": "createdOn",
@@ -119,7 +119,7 @@ Relationship section is made of the following fields
 - `type` = Elasticsearch type of the attribute
 - `name` = Elasticsearch field name
 - `value` = Elasticsearch field value for the relationship (collecting-event...)
-- `path` = Path within the included section of the document. (root + path + name) == (value) can be used to
+- `path` = Path within the included section of the document. (parent + path + name) == (value) can be used to
            scope the request to only matching relationship type value.
 
 
@@ -128,7 +128,7 @@ Attributes section is made of the following fields
 - `name` = name of the attribute
 - `type` = Elasticsearch type of the attribute
 - `path` = Relative path to get to the attribute value within a document. Fully qualified path is built from 
-           the root + path + path of all parents.... 
+           the parent + path + name 
 
  
 ## Examples

@@ -154,7 +154,7 @@ public class ESSearchService implements SearchService {
     indexMappingNode.put("indexName", indexName);
 
     // Root parewnt node
-    indexMappingNode.put("root", "data");
+    indexMappingNode.put("parent", "data");
 
     try {
 
@@ -190,7 +190,7 @@ public class ESSearchService implements SearchService {
           if (curKey.getKey().endsWith("data.type.value")) {
             relationshipsNode.put("name", "type");
             relationshipsNode.put("value",curKey.getValue());           
-            relationshipsNode.put("path", "included");
+            relationshipsNode.put("parent", "included");
           }
         });
 
