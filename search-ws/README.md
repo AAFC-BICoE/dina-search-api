@@ -76,17 +76,16 @@ Response: The structure contained in the body section of the payload is made up 
 ```
     "body": {
         "indexName": "dina_material_sample_index",
-        "parent": "data",
         "attributes": [
             {
                 "name": "verbatimDeterminer",
                 "type": "text",
-                "path": "attributes.verbatimDeterminer"
+                "path": "attributes"
             },
             {
                 "name": "publiclyReleasable",
                 "type": "boolean",
-                "path": "attributes.publiclyReleasable"
+                "path": "attributes"
             },
             :::
             :::
@@ -95,12 +94,12 @@ Response: The structure contained in the body section of the payload is made up 
             "type": "constant_keyword",
             "name": "type",
             "value": "collecting-event",
-            "parent": "included",
+            "path": "included",
             "attributes": [
                 {
                     "name": "createdOn",
                     "type": "date",
-                    "path": "attributes.geoReferenceAssertions.createdOn"
+                    "path": "attributes.geoReferenceAssertions"
                 },
                 :::
                 :::
@@ -119,7 +118,7 @@ Relationship section is made of the following fields
 - `type` = Elasticsearch type of the attribute
 - `name` = Elasticsearch field name
 - `value` = Elasticsearch field value for the relationship (collecting-event...)
-- `path` = Path within the included section of the document. (parent + path + name) == (value) can be used to
+- `path` = Path within the included section of the document. (path + name) == (value) can be used to
            scope the request to only matching relationship type value.
 
 
@@ -128,7 +127,7 @@ Attributes section is made of the following fields
 - `name` = name of the attribute
 - `type` = Elasticsearch type of the attribute
 - `path` = Relative path to get to the attribute value within a document. Fully qualified path is built from 
-           the parent + path + name 
+           the path + name 
 
  
 ## Examples

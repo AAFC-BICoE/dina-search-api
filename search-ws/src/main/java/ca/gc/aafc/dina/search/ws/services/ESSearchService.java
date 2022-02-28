@@ -153,9 +153,6 @@ public class ESSearchService implements SearchService {
     ObjectNode indexMappingNode = OM.createObjectNode();
     indexMappingNode.put("indexName", indexName);
 
-    // Root parewnt node
-    indexMappingNode.put("parent", "data");
-
     try {
 
       // Retrieve the index mapping.
@@ -190,7 +187,7 @@ public class ESSearchService implements SearchService {
           if (curKey.getKey().endsWith("data.type.value")) {
             relationshipsNode.put("name", "type");
             relationshipsNode.put("value",curKey.getValue());           
-            relationshipsNode.put("parent", "included");
+            relationshipsNode.put("path", "included");
           }
         });
 
@@ -210,7 +207,7 @@ public class ESSearchService implements SearchService {
       return new ResponseEntity<>(indexMappingNode, HttpStatus.BAD_REQUEST);
     }
 
-    return new ResponseEntity<>(indexMappingNode, HttpStatus.OK);
+    return ResponseEntity.ok().body(indexMappingNode);
   }
 
   private ObjectNode setJsonNode(Entry<String, String> curEntry) {
@@ -219,12 +216,13 @@ public class ESSearchService implements SearchService {
     curJsonAttribute.put("type", curEntry.getValue());
 
     int startPos = 0;
-    if (curEntry.getKey().startsWith("data.")) {
-      startPos = "data.".length();
-    } else {
+    if (!curEntry.getKey().startsWith("data.")) {
       startPos = "included.".length();
     }
-    curJsonAttribute.put("path", curEntry.getKey().substring(startPos));
+    if (curEntry.getKey().substring(startPos).contains("attributes")) {
+      curJsonAttribute.put("path", curEntry.getKey().substring(startPos, curEntry.getKey().lastIndexOf(".")));
+    }
+
     return curJsonAttribute;
   }
 
