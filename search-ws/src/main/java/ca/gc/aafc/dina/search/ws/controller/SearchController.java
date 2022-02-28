@@ -30,11 +30,20 @@ public class SearchController {
   }
 
   @GetMapping(path = "/auto-complete")
-  public ResponseEntity<SearchResponse<JsonNode>> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
-      @RequestParam String autoCompleteField, @RequestParam(required = false) String additionalField) {
+  public ResponseEntity<?> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
+      @RequestParam String autoCompleteField, @RequestParam(required = false) String additionalField,
+      @RequestParam(required = false) String restrictedField,
+      @RequestParam(required = false) String restrictedFieldValue) {
 
-    log.info("prefix={}, indexName={}, autoCompleteField={}, additionalField={}", prefix, indexName, autoCompleteField, additionalField);
-    return new ResponseEntity<>(searchService.autoComplete(prefix, indexName, autoCompleteField, additionalField), HttpStatus.ACCEPTED);
+    log.info(
+        "prefix={}, indexName={}, autoCompleteField={}, additionalField={}, restrictedField={}, restrictedFieldValue={}",
+        prefix, indexName, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    try {
+      return new ResponseEntity<SearchResponse<JsonNode>>(searchService.autoComplete(prefix, indexName,
+          autoCompleteField, additionalField, restrictedField, restrictedFieldValue), HttpStatus.ACCEPTED);
+    } catch (SearchApiException e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
   }
 
   @GetMapping(path = "/mapping")

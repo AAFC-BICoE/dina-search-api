@@ -37,10 +37,12 @@ import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
-import co.elastic.clients.elasticsearch._types.mapping.PropertyVariant;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
+import co.elastic.clients.elasticsearch._types.mapping.PropertyVariant;
 import jakarta.json.JsonValue;
 import lombok.extern.log4j.Log4j2;
 
@@ -81,9 +83,10 @@ public class ESSearchService implements SearchService {
     return headers;
   }
 
+
   @Override
-  public SearchResponse<JsonNode> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
-    
+  public SearchResponse<JsonNode> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String restrictedField, String restrictedFieldValue) throws SearchApiException {
+
     // Based on our naming convention, we will create the expected fields to search for:
     //
     // autoCompleteField + .autocomplete
@@ -108,21 +111,34 @@ public class ESSearchService implements SearchService {
     fields.toArray(arrayFields);
 
     try {
-      // Create the search response using the multi match query.
-      SearchResponse<JsonNode> searchResponse = client.search(searchBuilder -> searchBuilder
-          .index(indexName)
-          .query(queryBuilder -> queryBuilder.multiMatch(multiMatchQuery -> multiMatchQuery
+      // Query builder with Multimatch for the search_as_you_type field
+      BoolQuery.Builder autoCompleteQueryBuilder = QueryBuilders.bool().must(
+          QueryBuilders.multiMatch()
               .fields(fields)
               .query(textToMatch)
-              .type(TextQueryType.BoolPrefix)))
+              .type(TextQueryType.BoolPrefix)
+              .build()._toQuery()
+      );
+
+      if (StringUtils.hasText(restrictedField) && StringUtils.hasText(restrictedFieldValue)) {
+        // Add restricted query filter to query builder.
+        autoCompleteQueryBuilder.filter(
+            QueryBuilders.term()
+                .field(restrictedField)
+                .value(v -> v.stringValue(restrictedFieldValue))
+                .build()._toQuery()
+        );
+      }
+
+      return client.search(searchBuilder -> searchBuilder
+          .index(indexName)
+          .query(autoCompleteQueryBuilder.build()._toQuery())
+          .storedFields(fieldsToReturn)
           .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
 
-      return searchResponse;
     } catch (IOException ex) {
-      log.error("Error in autocomplete search", ex);
+      throw new SearchApiException("Error during search processing", ex);
     }
-
-    return null;
   }
 
   @Override

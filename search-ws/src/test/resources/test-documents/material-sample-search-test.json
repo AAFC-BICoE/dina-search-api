@@ -1,0 +1,68 @@
+{
+    "data" : {
+      "id" : "2e5eab9e-1d75-4a26-997e-34362d6b4585",
+      "type" : "material-sample",
+      "attributes" : {
+        "version" : 3,
+        "group" : "cnc",
+        "createdOn" : "2022-02-11T21:50:15.325043Z",
+        "createdBy" : "cnc-cm",
+        "dwcCatalogNumber" : null,
+        "dwcOtherCatalogNumbers" : null,
+        "materialSampleName" : "Yves",
+        "materialSampleChildren" : [ ],
+        "preparationDate" : null,
+        "managedAttributes" : { },
+        "determination" : [
+          {
+            "verbatimScientificName" : "Yves computer science",
+            "verbatimDeterminer" : "Yves",
+            "verbatimDate" : null,
+            "scientificName" : null,
+            "transcriberRemarks" : null,
+            "verbatimRemarks" : null,
+            "determinationRemarks" : null,
+            "typeStatus" : null,
+            "typeStatusEvidence" : null,
+            "determiner" : null,
+            "determinedOn" : null,
+            "qualifier" : null,
+            "scientificNameSource" : null,
+            "scientificNameDetails" : null,
+            "isPrimary" : true,
+            "isFileAs" : true,
+            "managedAttributes" : null
+          }
+        ],
+        "preparationRemarks" : null,
+        "dwcDegreeOfEstablishment" : null,
+        "host" : null,
+        "barcode" : null,
+        "publiclyReleasable" : true,
+        "notPubliclyReleasableReason" : null,
+        "tags" : null,
+        "materialSampleState" : null,
+        "materialSampleRemarks" : null,
+        "stateChangedOn" : null,
+        "stateChangeRemarks" : null,
+        "preparationMethod" : null,
+        "associations" : [ ],
+        "allowDuplicateName" : false
+      },
+      "relationships" : {
+        "collectingEvent" : {
+          "data" : null
+        },
+        "storageUnit" : {
+          "data" : null
+        },
+        "attachment" : {
+          "data" : [ ]
+        }
+      }
+    },
+    "meta" : {
+      "totalResourceCount" : 1,
+      "moduleVersion" : "0.47"
+    }
+  }
