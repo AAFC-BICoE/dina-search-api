@@ -80,12 +80,12 @@ Response: The structure contained in the body section of the payload is made up 
             {
                 "name": "verbatimDeterminer",
                 "type": "text",
-                "path": "attributes"
+                "path": "data.attributes"
             },
             {
                 "name": "publiclyReleasable",
                 "type": "boolean",
-                "path": "attributes"
+                "path": "data.attributes"
             },
             :::
             :::
