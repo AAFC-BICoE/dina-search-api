@@ -72,6 +72,7 @@ Content-Type: `application-json`
 GET http://<target-server>:8085/search-ws/mapping?indexName=<target-index-name>
 ```
 Response: The structure contained in the body section of the payload is made up of three logical sections presented in the following extract:
+
 ```
     "body": {
         "indexName": "dina_material_sample_index",
@@ -81,6 +82,11 @@ Response: The structure contained in the body section of the payload is made up 
                 "type": "text",
                 "path": "data.attributes"
             },
+            {
+                "name": "publiclyReleasable",
+                "type": "boolean",
+                "path": "data.attributes"
+            },
             :::
             :::
         ],
@@ -88,12 +94,12 @@ Response: The structure contained in the body section of the payload is made up 
             "type": "constant_keyword",
             "name": "type",
             "value": "collecting-event",
-            "path": "data.included",
+            "path": "included",
             "attributes": [
                 {
                     "name": "createdOn",
                     "type": "date",
-                    "path": "included.attributes.geoReferenceAssertions"
+                    "path": "attributes.geoReferenceAssertions"
                 },
                 :::
                 :::
@@ -120,9 +126,8 @@ Attributes section is made of the following fields
 
 - `name` = name of the attribute
 - `type` = Elasticsearch type of the attribute
-- `path` = Fully qualified path to get to the attribute value within a document
-
-
+- `path` = Relative path to get to the attribute value within a document. Fully qualified path is built from 
+           the path + name 
 
  
 ## Examples

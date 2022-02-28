@@ -201,10 +201,9 @@ public class ESSearchService implements SearchService {
           }
 
           if (curKey.getKey().endsWith("data.type.value")) {
-
             relationshipsNode.put("name", "type");
             relationshipsNode.put("value",curKey.getValue());           
-            relationshipsNode.put("path", "data.included");
+            relationshipsNode.put("path", "included");
           }
         });
 
@@ -224,14 +223,22 @@ public class ESSearchService implements SearchService {
       return new ResponseEntity<>(indexMappingNode, HttpStatus.BAD_REQUEST);
     }
 
-    return new ResponseEntity<>(indexMappingNode, HttpStatus.OK);
+    return ResponseEntity.ok().body(indexMappingNode);
   }
 
   private ObjectNode setJsonNode(Entry<String, String> curEntry) {
     ObjectNode curJsonAttribute = OM.createObjectNode();
     curJsonAttribute.put("name", curEntry.getKey().substring(curEntry.getKey().lastIndexOf(".") + 1));
     curJsonAttribute.put("type", curEntry.getValue());
-    curJsonAttribute.put("path", curEntry.getKey().substring(0, curEntry.getKey().lastIndexOf(".")));
+
+    int startPos = 0;
+    if (!curEntry.getKey().startsWith("data.")) {
+      startPos = "included.".length();
+    }
+    if (curEntry.getKey().substring(startPos).contains("attributes")) {
+      curJsonAttribute.put("path", curEntry.getKey().substring(startPos, curEntry.getKey().lastIndexOf(".")));
+    }
+
     return curJsonAttribute;
   }
 
@@ -267,7 +274,6 @@ public class ESSearchService implements SearchService {
             if (theProperty._toProperty().isConstantKeyword()) {
               JsonValue value = theProperty._toProperty().constantKeyword().value().toJson();
               relationships.put(attributeName + ".value", value.toString().replace("\"", ""));
-              log.info("all attributes name:{}, fdn:{}, type:{}",theProperty._toProperty().constantKeyword().value(), attributeName, type);
             }
           } else {
             data.put(attributeName, type);
