@@ -1,9 +1,20 @@
 package ca.gc.aafc.dina.search.ws.search;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -12,17 +23,18 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import ca.gc.aafc.dina.search.ws.services.SearchService;
-
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.FieldValue;
@@ -30,12 +42,6 @@ import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @SpringBootTest
 public class DinaSearchDocumentIT {
@@ -47,6 +53,16 @@ public class DinaSearchDocumentIT {
   private static final String DINA_AGENT_SEARCH_FIELD = "name";
   private static final String DOCUMENT_ID = "test-document";
 
+  // Nested searches
+  //
+  private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT1_ID = "94c97f20-3481-4a44-ba64-3a1351051a76";
+  private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT2_ID = "6149d5da-ae6d-4f61-8ed1-b24511698a76";
+  private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT3_ID = "f9a8bcab-ebd1-4222-8892-3f83416455fc";
+  private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT4_ID = "123aa518-fa60-4390-aaa3-82a0b4f3668d";
+
+  @Autowired 
+  private RestTemplateBuilder builder;
+
   @Autowired
   private SearchService searchService;
 
@@ -57,7 +73,9 @@ public class DinaSearchDocumentIT {
   private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
 
   private static ObjectMapper objectMapper;
+  private RestTemplate restTemplate;
 
+  
   @BeforeAll
   static void beforeAll() {
     objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -76,6 +94,89 @@ public class DinaSearchDocumentIT {
   @AfterEach
   private void afterEach() {
     ELASTICSEARCH_CONTAINER.stop();
+  }
+
+  @DisplayName("Integration Test search nested objects")
+  @Test
+  public void testSearchNestedObjects() throws Exception { 
+
+    JsonNode jsonNode;
+    try {
+
+      restTemplate = builder.build();
+
+      // Retrieve raw JSON.
+      String path = "src/test/resources/elastic-configurator-settings/collection-index";
+      Path filename = Path.of(path + "/dina_material_sample_index_settings.json");
+      String documentContent = Files.readString(filename);
+
+      jsonNode = objectMapper.readTree(documentContent);
+      URI uri = new URI("http://localhost:9200/" + DINA_MATERIAL_SAMPLE_INDEX);
+
+      HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), buildJsonHeaders());
+      restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
+
+      // Let's add a document into the elasticsearch cluster
+      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+          retrieveJSONObject("nested_document1.json"));
+      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT2_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+          retrieveJSONObject("nested_document2.json"));
+      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT3_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+          retrieveJSONObject("nested_document3.json"));
+      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT4_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+          retrieveJSONObject("nested_document4.json"));
+
+      // Get All search, there should be 0 search results.
+      String queryFile = "sample-nested-request-template.json";
+      path = "src/test/resources/test-documents/nested-tests";
+      filename = Path.of(path + "/" + queryFile);
+
+      String queryStringTemplate = Files.readString(filename);
+
+      // storage-unit and Gatineau
+      String noResultsQuery = queryStringTemplate
+                                .replace("@type@", "storage-unit")
+                                .replace("@locality@", "Gatineau"); 
+
+      String result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, noResultsQuery);
+
+      assertNotNull(result);
+      assertTrue(result.contains("\"total\":{\"value\":0,\"relation\":\"eq\"}"));
+
+      // collecting-event and Ottawa
+      String threeResultsQuery = queryStringTemplate
+                                .replace("@type@", "collecting-event")
+                                .replace("@locality@", "Ottawa"); 
+
+      result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, threeResultsQuery);
+
+      assertNotNull(result);
+      assertTrue(result.contains("\"total\":{\"value\":3,\"relation\":\"eq\"}"));
+
+      // collecting-event and Gatineau
+      String oneResultQuery = queryStringTemplate
+                                .replace("@type@", "collecting-event")
+                                .replace("@locality@", "Gatineau"); 
+
+      result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, oneResultQuery);
+
+      assertNotNull(result);
+      assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
+
+      // storage-unit and Ottawa
+      noResultsQuery = queryStringTemplate
+          .replace("@type@", "storage-unit")
+          .replace("@locality@", "Ottawa");
+
+      result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, noResultsQuery);
+
+      assertNotNull(result);
+      assertTrue(result.contains("\"total\":{\"value\":0,\"relation\":\"eq\"}"));
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      fail();
+    }
   }
 
   @DisplayName("Integration Test search autocomplete document")
@@ -276,6 +377,14 @@ public class DinaSearchDocumentIT {
       nCount++;
     }
     return foundDocument;
+  }
+
+  private HttpHeaders buildJsonHeaders() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    return headers;
   }
 
 }
