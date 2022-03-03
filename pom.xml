@@ -30,7 +30,7 @@
 
     <elasticsearch.version>7.16.2</elasticsearch.version>
     <jakarta.json.version>2.0.1</jakarta.json.version>
-    <dina-base-api.version>0.83</dina-base-api.version>
+    <dina-base-api.version>0.79</dina-base-api.version>
     <log4j2.version>2.17.2</log4j2.version>
 
     <!-- Build plugin properties -->
