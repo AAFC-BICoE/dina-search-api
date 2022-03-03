@@ -83,7 +83,7 @@
                     "properties": {
                       "type": {
                         "type": "constant_keyword",
-                        "value": "metadata"
+                        "value": "derivative"
                       }
                     }
                   }
