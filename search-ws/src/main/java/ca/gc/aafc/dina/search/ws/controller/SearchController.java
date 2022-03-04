@@ -39,7 +39,7 @@ public class SearchController {
         "prefix={}, indexName={}, autoCompleteField={}, additionalField={}, restrictedField={}, restrictedFieldValue={}",
         prefix, indexName, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
     try {
-      return new ResponseEntity<SearchResponse<JsonNode>>(searchService.autoComplete(prefix, indexName,
+      return new ResponseEntity<>(searchService.autoComplete(prefix, indexName,
           autoCompleteField, additionalField, restrictedField, restrictedFieldValue), HttpStatus.OK);
     } catch (SearchApiException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);

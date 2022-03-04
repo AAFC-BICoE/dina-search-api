@@ -85,7 +85,7 @@ public class ESSearchService implements SearchService {
 
 
   @Override
-  public SearchResponse<JsonNode> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String restrictedField, String restrictedFieldValue) throws SearchApiException {
+  public AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String restrictedField, String restrictedFieldValue) throws SearchApiException {
 
     // Based on our naming convention, we will create the expected fields to search for:
     //
@@ -130,11 +130,12 @@ public class ESSearchService implements SearchService {
         );
       }
 
-      return client.search(searchBuilder -> searchBuilder
+      return AutocompleteResponse.fromSearchResponse(
+          client.search(searchBuilder -> searchBuilder
           .index(indexName)
           .query(autoCompleteQueryBuilder.build()._toQuery())
           .storedFields(fieldsToReturn)
-          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
+          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class));
 
     } catch (IOException ex) {
       throw new SearchApiException("Error during search processing", ex);

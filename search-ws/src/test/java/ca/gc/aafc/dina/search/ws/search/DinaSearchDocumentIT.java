@@ -6,8 +6,8 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import ca.gc.aafc.dina.search.ws.controller.SearchController;
+import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,6 @@ import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -59,12 +58,7 @@ public class DinaSearchDocumentIT {
   @Container
   private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
 
-  private static ObjectMapper objectMapper;
-
-  @BeforeAll
-  static void beforeAll() {
-    objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-  }
+  private static ObjectMapper OM = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   @BeforeEach
   private void beforeEach() {
@@ -90,13 +84,13 @@ public class DinaSearchDocumentIT {
     String textToMatch = "joh";
     String autoCompleteField = "data.attributes.displayName";
     String additionalField = "";
-    SearchResponse<JsonNode> searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField, null, null);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField, null, null);
 
-    assertNotNull(searchResponse.hits());
-    assertNotNull(searchResponse.hits().hits());
-    assertEquals(1, searchResponse.hits().hits().size());
+    assertNotNull(searchResponse.getHits());
+    assertEquals(1, searchResponse.getHits().size());
 
-    assertTrue(objectMapper.writeValueAsString(searchResponse).contains(autoCompleteField));
+    // Make sure we can serialize the response
+    assertTrue(OM.writeValueAsString(searchResponse).contains("displayName"));
   }
 
   @DisplayName("Integration Test search autocomplete document autocomplete field")
@@ -110,11 +104,10 @@ public class DinaSearchDocumentIT {
     String additionalField = "";
     String restrictedField = "";
     String restrictedFieldValue = "";
-    SearchResponse<JsonNode> searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
 
-    assertNotNull(searchResponse.hits());
-    assertNotNull(searchResponse.hits().hits());
-    assertEquals(1, searchResponse.hits().hits().size());
+    assertNotNull(searchResponse.getHits());
+    assertEquals(1, searchResponse.getHits().size());
   }
 
 
@@ -129,11 +122,10 @@ public class DinaSearchDocumentIT {
     String additionalField = "";
     String restrictedField = "data.attributes.group.keyword";
     String restrictedFieldValue = "cnc";
-    SearchResponse<JsonNode> searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
 
-    assertNotNull(searchResponse.hits());
-    assertNotNull(searchResponse.hits().hits());
-    assertEquals(1, searchResponse.hits().hits().size());
+    assertNotNull(searchResponse.getHits());
+    assertEquals(1, searchResponse.getHits().size());
   }
 
   @DisplayName("Integration Test search autocomplete document restricted no match")
@@ -147,11 +139,10 @@ public class DinaSearchDocumentIT {
     String additionalField = "";
     String restrictedField = "data.attributes.group.keyword";
     String restrictedFieldValue = "cnc-no-match";
-    SearchResponse<JsonNode> searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
 
-    assertNotNull(searchResponse.hits());
-    assertNotNull(searchResponse.hits().hits());
-    assertEquals(0, searchResponse.hits().hits().size());
+    assertNotNull(searchResponse.getHits());
+    assertEquals(0, searchResponse.getHits().size());
   }
  
   @DisplayName("Integration Test search autocomplete text document")
@@ -223,7 +214,7 @@ public class DinaSearchDocumentIT {
       String documentContent = Files.readString(filename);
 
       // Convert raw JSON into JSON map.
-      return objectMapper.readValue(documentContent, Map.class);
+      return OM.readValue(documentContent, Map.class);
 
     } catch (IOException ex) {
       fail("Unable to parse JSON into map object: " + ex.getMessage());
