@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.ResponseEntity;
 
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
 
 public interface SearchService {
 
