@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
+import ca.gc.aafc.dina.search.ws.controller.SearchController;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,6 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SpringBootTest
@@ -49,6 +49,9 @@ public class DinaSearchDocumentIT {
 
   @Autowired
   private SearchService searchService;
+
+  @Autowired
+  private SearchController searchController;
 
   @Autowired
   private ElasticsearchClient client;
@@ -87,13 +90,13 @@ public class DinaSearchDocumentIT {
     String textToMatch = "joh";
     String autoCompleteField = "data.attributes.displayName";
     String additionalField = "";
-    String restrictedField = "";
-    String restrictedFieldValue = "";
-    SearchResponse<JsonNode> searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    SearchResponse<JsonNode> searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField, null, null);
 
     assertNotNull(searchResponse.hits());
     assertNotNull(searchResponse.hits().hits());
     assertEquals(1, searchResponse.hits().hits().size());
+
+    assertTrue(objectMapper.writeValueAsString(searchResponse).contains(autoCompleteField));
   }
 
   @DisplayName("Integration Test search autocomplete document autocomplete field")
