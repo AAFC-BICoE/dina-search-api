@@ -10,12 +10,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 
-import co.elastic.clients.elasticsearch.core.SearchResponse;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -39,8 +36,8 @@ public class SearchController {
         "prefix={}, indexName={}, autoCompleteField={}, additionalField={}, restrictedField={}, restrictedFieldValue={}",
         prefix, indexName, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
     try {
-      return new ResponseEntity<SearchResponse<JsonNode>>(searchService.autoComplete(prefix, indexName,
-          autoCompleteField, additionalField, restrictedField, restrictedFieldValue), HttpStatus.ACCEPTED);
+      return new ResponseEntity<>(searchService.autoComplete(prefix, indexName,
+          autoCompleteField, additionalField, restrictedField, restrictedFieldValue), HttpStatus.OK);
     } catch (SearchApiException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
@@ -50,7 +47,7 @@ public class SearchController {
   public ResponseEntity<?> mapping(@RequestParam String indexName) {
     log.info("indexName={}", indexName);
     try {
-      return new ResponseEntity<>(searchService.getIndexMapping(indexName), HttpStatus.ACCEPTED);
+      return new ResponseEntity<>(searchService.getIndexMapping(indexName), HttpStatus.OK);
     } catch (SearchApiException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
