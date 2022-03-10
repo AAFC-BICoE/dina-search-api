@@ -179,9 +179,6 @@
                   }
                 }
               },
-              "organism": {
-                "type": "object"
-              },
               "determination": {
                 "type": "object"
               }
@@ -199,6 +196,18 @@
                       "type": {
                         "type": "constant_keyword",
                         "value": "collecting-event"
+                      }
+                    }
+                  }
+                }
+              },
+              "organism": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "organism"
                       }
                     }
                   }
