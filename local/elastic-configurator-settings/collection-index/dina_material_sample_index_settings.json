@@ -214,7 +214,28 @@
                 }
               },
               "storageUnit": {
-                "type": "object"
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "storage-unit"
+                      }
+                    }
+                  }
+                }
+              },
+              "collection": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "collection"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
