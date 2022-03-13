@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.ShardFailure;
 import co.elastic.clients.elasticsearch._types.ShardStatistics;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchPhraseQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
@@ -123,17 +124,22 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
       
 
       // Match phrase query
-      MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id.keyword").query(documentId);
-      MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type.keyword").query(documentType);
+      MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id").query(documentId);
+      MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type").query(documentType);
       
       List<Query> matchPhraseQueries = new ArrayList<>(2);
       matchPhraseQueries.add(documentIdMatchPhrase.build()._toQuery());
       matchPhraseQueries.add(documentTypeMatchPhrase.build()._toQuery());
 
+      // Nested query
+      NestedQuery.Builder nestedIncluded = QueryBuilders.nested()
+                                                          .path("included")
+                                                          .query(QueryBuilders.bool()
+                                                          .must(matchPhraseQueries).build()._toQuery()); 
+
       SearchResponse<JsonNode> response = client.search(searchBuilder -> searchBuilder
           .index(indexNames)
-          .query(QueryBuilders.bool()
-                    .must(matchPhraseQueries).build()._toQuery())
+          .query(nestedIncluded.build()._toQuery())
           .storedFields(fieldsToReturn)
           .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
       

@@ -21,6 +21,7 @@ endpoints:
       - collectingEvent
       - attachment
       - storageUnit
+      - preparedBy
     indexName: dina_material_sample_index       
   collecting-event: 
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/collecting-event}

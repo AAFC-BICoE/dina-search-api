@@ -1,0 +1,245 @@
+package ca.gc.aafc.dina.search.cli.commands;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.json.Json;
+import javax.json.JsonPatch;
+import javax.json.JsonValue;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.flipkart.zjsonpatch.JsonDiff;
+
+import org.apache.commons.io.FileUtils;
+import org.springframework.shell.standard.ShellComponent;
+import org.springframework.shell.standard.ShellMethod;
+import org.springframework.shell.standard.ShellOption;
+import org.springframework.stereotype.Component;
+
+import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
+import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
+import ca.gc.aafc.dina.search.cli.json.IndexableDocumentHandler;
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
+@Component
+@ShellComponent
+public class TestUpdateByQuery {
+
+  private final ElasticSearchDocumentIndexer indexer;
+
+  private final OpenIDHttpClient aClient;
+  private final ServiceEndpointProperties svcEndpointProps;
+  private final IndexableDocumentHandler indexableDocumentHandler;
+  private final ObjectMapper objectMapper;
+  
+  public TestUpdateByQuery(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
+  IndexableDocumentHandler indexableDocumentHandler,
+    ElasticSearchDocumentIndexer indexer) {
+      this.aClient = aClient;
+      this.svcEndpointProps = svcEndpointProps;
+      this.indexableDocumentHandler = indexableDocumentHandler;     
+      this.indexer = indexer;
+      this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  }
+
+  @ShellMethod(value = "Test update by query", key = "test-update-by-query")
+  public String testUpdateByQuery(
+                  @ShellOption(help = "Document type", value = { "-t", "--type" }) String type,
+                  @ShellOption(help = "Unique object identifier", value = { "-i", "--documentId" }) String documentId) {
+
+    try {
+
+      ClassLoader classLoader = getClass().getClassLoader();
+      ObjectMapper mapper = new ObjectMapper();
+
+      File originalFile = new File(classLoader.getResource("collecting-event-orig.json").getFile());
+      String originalPayload =  FileUtils.readFileToString(originalFile, "UTF-8");
+
+      File updatedFile = new File(classLoader.getResource("material-sample-updated.json").getFile());
+      String updatedPayload =  FileUtils.readFileToString(updatedFile, "UTF-8");
+
+      File updateQueryFile = new File(classLoader.getResource("update_by_query.json").getFile());
+      String updateQueryPayload =  FileUtils.readFileToString(updateQueryFile, "UTF-8");
+
+      try {
+
+        // Get object from dina endpoint
+        //
+        String msg = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type), documentId);
+
+        // Step #2: Only process the attributes section
+        //
+        log.info("Get attributes section document id:{}", documentId);
+        JsonNode jsonNode = indexableDocumentHandler.getDocumentAttributesSection(msg);
+        log.info("------ Attributes Section ---------");
+        log.info(jsonNode.toString());
+        log.info("-----------------------------------");
+
+        // Step #3: Generate the painless script and query
+        //
+        JsonNode original = mapper.readTree(originalPayload);
+        JsonNode updated = mapper.readTree(jsonNode.toString());
+              
+        //JSON-P
+        //
+        JsonNode patch = JsonDiff.asJson(original, updated);
+        log.info("===== Json Patch ======");
+        log.info(" -->" + patch.toString());        
+        log.info("=====");
+        
+        JsonValue source = Json.createReader(new StringReader(originalPayload)).readValue();
+        JsonValue target = Json.createReader(new StringReader(updated.toString())).readValue();
+        
+        JsonPatch diff = Json.createDiff(source.asJsonObject(), target.asJsonObject());
+
+        log.info("===== JSON-P Diff ====");
+        log.info(diff.toJsonArray().toString());
+        log.info("===============================");
+  
+        log.info("");
+
+        log.info("===== Genrated Script ====");
+        JsonNode script = generateScriptOperations(diff);
+        log.info(script.toString());
+        log.info("===============================");        
+
+        // Step #4: Trigger update by query on the elasticsearch cluster
+        //
+        String resultsFromES = null; //indexer.updateEmbeddedDocuments(documentId, "dina_material_sample_index", updateQueryPayload);
+        try {
+          jsonNode = objectMapper.readTree(resultsFromES);
+        } catch (JsonProcessingException ex) {
+          throw new SearchApiException("Unable to parse result from update by query '" + type + "' with the id '" + documentId + "'", ex);
+        }
+     
+        log.info("---------------");
+        log.info(jsonNode.toString());
+        log.info("---------------");
+
+      } catch (SearchApiException e) {
+        log.error(e);
+      }      
+
+    } catch (IOException e) {
+      log.error(e);
+    }
+ 
+    return "error";
+  }
+
+
+  /**
+   * Method to generate the list of document attributes to be updated.
+   * 
+   * @throws SearchApiException
+   * 
+   */
+  private JsonNode generateScriptOperations(JsonPatch diffPatch) throws SearchApiException {
+
+    Pattern p = Pattern.compile("\\d+");
+    String theString = ".string1234more567st.0.ring890";
+    Matcher m = p.matcher(theString);
+    while(m.find()) {
+      String curString = m.group();
+      System.out.println(curString);
+      if (theString.contains("." + curString + ".")) {
+        theString = theString.replace("." + curString + ".", "[" + curString + "]");
+      }
+    }
+    log.info(theString);
+
+    String attributePrefix = "ctx._source.included[0].attributes";
+
+    if (diffPatch == null || diffPatch.toJsonArray() == null || diffPatch.toJsonArray().isEmpty()) {
+      // Nothing to do 
+      return null;
+    }
+
+    String diffInString = diffPatch.toString();
+    JsonNode jsonNode = null;
+    try {
+      jsonNode = objectMapper.readTree(diffInString);
+    } catch (JsonProcessingException ex) {
+      throw new SearchApiException("Unable to parse diff object", ex);
+    }
+
+    StringBuilder sourceAttributes = new StringBuilder();    
+    ObjectNode paramsNode = objectMapper.createObjectNode();
+
+    jsonNode.forEach(curNode -> {
+
+      Long valueLong = null;
+      String valueString = null;
+
+      String operation = curNode.get("op").asText();
+      String attributePath = curNode.get("path").asText();
+      
+      JsonNode valueObject = ((ObjectNode) curNode).get("value");
+      if (valueObject.canConvertToLong()) {
+        valueLong = valueObject.asLong();
+      } else {
+        valueString = valueObject.asText();
+      }
+
+      switch (operation) {
+        case "replace" : {
+
+          // Source
+          //
+          String formattedAttribute = attributePath.replace("/", ".");
+
+          // Special case for array field.
+          //
+          Matcher matcher = p.matcher(formattedAttribute);
+          while(matcher.find()) {
+            String curString = matcher.group();
+            log.info(curString);
+            if (formattedAttribute.contains("." + curString + ".")) {
+              formattedAttribute = formattedAttribute.replace("." + curString + ".", "[" + curString + "].");
+            }      
+          }          
+          
+          if (!"null".equals(valueString)) {
+
+            sourceAttributes.append(attributePrefix + formattedAttribute);
+
+            // Params does not support efficiently dot representation
+            //
+            String formattedAttributeParam = "." + formattedAttribute.substring(1).replace(".", "_"); 
+            formattedAttributeParam = formattedAttributeParam.replace("[", "_");
+            formattedAttributeParam = formattedAttributeParam.replace("]", "_");
+            sourceAttributes.append(" = params" + formattedAttributeParam + ";");
+
+            // Params
+            //
+            if (valueObject.canConvertToLong()) {
+              paramsNode.put(formattedAttributeParam.substring(1), valueLong);
+            } else {
+              paramsNode.put(formattedAttributeParam.substring(1), valueString);
+            }
+          }
+        }
+      }
+    });
+
+    ObjectNode scriptNode = objectMapper.createObjectNode();
+
+    scriptNode.set("script", scriptNode.objectNode());
+    ((ObjectNode) scriptNode.get("script")).put("lang", "painless");
+    ((ObjectNode) scriptNode.get("script")).put("source", sourceAttributes.toString());
+    ((ObjectNode) scriptNode.get("script")).set("params", paramsNode);
+    
+
+    return scriptNode;
+  }
+}
