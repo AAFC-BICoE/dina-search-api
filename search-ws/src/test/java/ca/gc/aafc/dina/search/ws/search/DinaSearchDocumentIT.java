@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,14 +71,7 @@ public class DinaSearchDocumentIT {
   @Container
   private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
 
-  private static ObjectMapper objectMapper;
-  private RestTemplate restTemplate;
-
-  
-  @BeforeAll
-  static void beforeAll() {
-    objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-  }
+  private static final ObjectMapper OM = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   @BeforeEach
   private void beforeEach() {
@@ -100,18 +92,18 @@ public class DinaSearchDocumentIT {
   @Test
   public void testSearchNestedObjects() throws Exception { 
 
-    JsonNode jsonNode;
     try {
 
-      restTemplate = builder.build();
+      RestTemplate restTemplate = builder.build();
 
       // Retrieve raw JSON.
-      String path = "src/test/resources/elastic-configurator-settings/collection-index";
-      Path filename = Path.of(path + "/dina_material_sample_index_settings.json");
-      String documentContent = Files.readString(filename);
+      String documentContent = Files.readString(
+          Path.of("src/test/resources/elastic-configurator-settings/collection-index")
+              .resolve("dina_material_sample_index_settings.json"));
 
-      jsonNode = objectMapper.readTree(documentContent);
-      URI uri = new URI("http://localhost:9200/" + DINA_MATERIAL_SAMPLE_INDEX);
+      JsonNode jsonNode = OM.readTree(documentContent);
+
+      URI uri = new URI("http://" + ELASTICSEARCH_CONTAINER.getHttpHostAddress() + "/" + DINA_MATERIAL_SAMPLE_INDEX);
 
       HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), buildJsonHeaders());
       restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
@@ -127,11 +119,9 @@ public class DinaSearchDocumentIT {
           retrieveJSONObject("nested_document4.json"));
 
       // Get All search, there should be 0 search results.
-      String queryFile = "sample-nested-request-template.json";
-      path = "src/test/resources/test-documents/nested-tests";
-      filename = Path.of(path + "/" + queryFile);
-
-      String queryStringTemplate = Files.readString(filename);
+      String queryStringTemplate = Files.readString(
+          Path.of("src/test/resources/test-documents/nested-tests")
+              .resolve("sample-nested-request-template.json"));
 
       // storage-unit and Gatineau
       String noResultsQuery = queryStringTemplate
@@ -321,7 +311,7 @@ public class DinaSearchDocumentIT {
       String documentContent = Files.readString(filename);
 
       // Convert raw JSON into JSON map.
-      return objectMapper.readValue(documentContent, Map.class);
+      return OM.readValue(documentContent, Map.class);
 
     } catch (IOException ex) {
       fail("Unable to parse JSON into map object: " + ex.getMessage());
