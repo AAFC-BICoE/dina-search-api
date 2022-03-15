@@ -191,30 +191,20 @@ public class ESSearchService implements SearchService {
 
         // Attributes from included relationships
         //
-        ObjectNode relationshipsNode = OM.createObjectNode();
+        ArrayNode relationshipContainer = indexMappingNode.putArray("relationships");
         relationships.entrySet().forEach(curKey -> {
 
-          if (curKey.getKey().endsWith("data.type")) {
-            // Extract the type
-            relationshipsNode.put("type", curKey.getValue());  
-          }
-
           if (curKey.getKey().endsWith("data.type.value")) {
-            relationshipsNode.put("name", "type");
-            relationshipsNode.put("value",curKey.getValue());           
-            relationshipsNode.put("path", "included");
+
+            ObjectNode curRelationship = OM.createObjectNode();
+
+            curRelationship.put("name", "type");
+            curRelationship.put("value",curKey.getValue());           
+            curRelationship.put("path", "included");
+            relationshipContainer.add(curRelationship);
+
           }
         });
-
-        // Add all included attributes
-        ArrayNode attributes = relationshipsNode.putArray("attributes");
-        included.entrySet().forEach(curEntry -> {
-          ObjectNode curJsonAttribute = setJsonNode(curEntry);
-          attributes.add(curJsonAttribute);
-        });
-
-        indexMappingNode.set("relationships", relationshipsNode);
-
       });
 
     } catch (IOException | ElasticsearchException e) {
@@ -234,6 +224,7 @@ public class ESSearchService implements SearchService {
     if (!curEntry.getKey().startsWith("data.")) {
       startPos = "included.".length();
     }
+
     if (curEntry.getKey().substring(startPos).contains("attributes")) {
       curJsonAttribute.put("path", curEntry.getKey().substring(startPos, curEntry.getKey().lastIndexOf(".")));
     }
@@ -243,21 +234,30 @@ public class ESSearchService implements SearchService {
 
   /**
    * Crawl ElasticSearch mapping until we find the "type".
-   * @param path current path expressed as a Stack
+   * 
+   * @param path               current path expressed as a Stack
    * @param esMappingStructure structure returned by the ElasticSearch client
-   * @param mappingDefinition result containing the mapping and its type
+   * @param mappingDefinition  result containing the mapping and its type
    */
-  private static void crawlMapping(Stack<String> path, Property propertyToCrawl, 
-                          Map<String, String> mappingDefinition,
-                          Map<String, String> data,
-                          Map<String, String> included,
-                          Map<String, String> relationships) {
+  private static void crawlMapping(Stack<String> path, Property propertyToCrawl,
+      Map<String, String> mappingDefinition,
+      Map<String, String> data,
+      Map<String, String> included,
+      Map<String, String> relationships) {
 
-    propertyToCrawl.object().properties().forEach((propertyName, property) -> {
+    Map<String, Property> propertiesToProcess = null;
+    if (propertyToCrawl.isNested()) {
+      propertiesToProcess = propertyToCrawl.nested().properties();
+    } else {
+      propertiesToProcess = propertyToCrawl.object().properties();
+    }
+
+    propertiesToProcess.forEach((propertyName, property) -> {
+
       // Add path to path stack.
       path.push(propertyName);
 
-      if (property.isObject()) {
+      if (property.isObject() && !property.isNested()) {
         crawlMapping(path, property, mappingDefinition, data, included, relationships);
       } else {
 
@@ -269,10 +269,23 @@ public class ESSearchService implements SearchService {
         //
         if (attributeName.startsWith("data")) {
           if (attributeName.startsWith("data.relationships")) {
-            relationships.put(attributeName, type);
+            
+            log.debug("Attribute: {}", attributeName);
+            String valueString = "";
             if (theProperty._toProperty().isConstantKeyword()) {
               JsonValue value = theProperty._toProperty().constantKeyword().value().toJson();
-              relationships.put(attributeName + ".value", value.toString().replace("\"", ""));
+              valueString = value.toString().replace("\"", "");
+            } else if (theProperty._toProperty().isKeyword()) {
+              valueString = theProperty._toProperty().keyword().name();
+            } else if (theProperty._toProperty().isText()) {
+              valueString = theProperty._toProperty().text().name();
+            } else {
+              valueString = theProperty._toProperty().toString();
+            }
+            
+            if (valueString != null) {
+              relationships.put(attributeName, type);
+              relationships.put(attributeName + ".value", valueString);
             }
           } else {
             data.put(attributeName, type);
