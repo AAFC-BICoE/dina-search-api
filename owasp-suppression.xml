@@ -4,4 +4,8 @@
         <notes>The bug is present only in Spring Framework 5.0.5.RELEASE but creates false positive with other versions</notes>
         <cve>CVE-2018-1258</cve>
     </suppress>
+    <suppress>
+        <notes>CVE about Keycloak Server</notes>
+        <cve>CVE-2021-4133</cve>
+    </suppress>
 </suppressions>

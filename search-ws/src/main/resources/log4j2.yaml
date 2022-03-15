@@ -1,6 +1,6 @@
 
 Configuration:
-  name: search-cli
+  name: search-ws
 
   Appenders:
     Console:

@@ -1,21 +1,17 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.Map;
-
+import ca.gc.aafc.dina.search.ws.controller.SearchController;
+import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
+import ca.gc.aafc.dina.search.ws.services.SearchService;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.Result;
+import co.elastic.clients.elasticsearch.core.CountResponse;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,14 +29,17 @@ import org.springframework.web.client.RestTemplate;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import ca.gc.aafc.dina.search.ws.services.SearchService;
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import co.elastic.clients.elasticsearch._types.FieldValue;
-import co.elastic.clients.elasticsearch._types.Result;
-import co.elastic.clients.elasticsearch.core.CountResponse;
-import co.elastic.clients.elasticsearch.core.IndexResponse;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @SpringBootTest
 public class DinaSearchDocumentIT {
@@ -64,6 +63,9 @@ public class DinaSearchDocumentIT {
 
   @Autowired
   private SearchService searchService;
+
+  @Autowired
+  private SearchController searchController;
 
   @Autowired
   private ElasticsearchClient client;
@@ -178,13 +180,13 @@ public class DinaSearchDocumentIT {
     String textToMatch = "joh";
     String autoCompleteField = "data.attributes.displayName";
     String additionalField = "";
-    String restrictedField = "";
-    String restrictedFieldValue = "";
-    SearchResponse<JsonNode> searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField, null, null);
 
-    assertNotNull(searchResponse.hits());
-    assertNotNull(searchResponse.hits().hits());
-    assertEquals(1, searchResponse.hits().hits().size());
+    assertNotNull(searchResponse.getHits());
+    assertEquals(1, searchResponse.getHits().size());
+
+    // Make sure we can serialize the response
+    assertTrue(OM.writeValueAsString(searchResponse).contains("displayName"));
   }
 
   @DisplayName("Integration Test search autocomplete document autocomplete field")
@@ -198,11 +200,10 @@ public class DinaSearchDocumentIT {
     String additionalField = "";
     String restrictedField = "";
     String restrictedFieldValue = "";
-    SearchResponse<JsonNode> searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
 
-    assertNotNull(searchResponse.hits());
-    assertNotNull(searchResponse.hits().hits());
-    assertEquals(1, searchResponse.hits().hits().size());
+    assertNotNull(searchResponse.getHits());
+    assertEquals(1, searchResponse.getHits().size());
   }
 
 
@@ -217,11 +218,10 @@ public class DinaSearchDocumentIT {
     String additionalField = "";
     String restrictedField = "data.attributes.group.keyword";
     String restrictedFieldValue = "cnc";
-    SearchResponse<JsonNode> searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
 
-    assertNotNull(searchResponse.hits());
-    assertNotNull(searchResponse.hits().hits());
-    assertEquals(1, searchResponse.hits().hits().size());
+    assertNotNull(searchResponse.getHits());
+    assertEquals(1, searchResponse.getHits().size());
   }
 
   @DisplayName("Integration Test search autocomplete document restricted no match")
@@ -235,11 +235,10 @@ public class DinaSearchDocumentIT {
     String additionalField = "";
     String restrictedField = "data.attributes.group.keyword";
     String restrictedFieldValue = "cnc-no-match";
-    SearchResponse<JsonNode> searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
 
-    assertNotNull(searchResponse.hits());
-    assertNotNull(searchResponse.hits().hits());
-    assertEquals(0, searchResponse.hits().hits().size());
+    assertNotNull(searchResponse.getHits());
+    assertEquals(0, searchResponse.getHits().size());
   }
  
   @DisplayName("Integration Test search autocomplete text document")

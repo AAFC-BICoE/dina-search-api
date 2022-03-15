@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.http.ResponseEntity;
 
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
 
 public interface SearchService {
 
@@ -47,7 +46,7 @@ public interface SearchService {
    * 
    * @return
    */
-  SearchResponse<JsonNode> autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String restrictedField, String restrictedFieldValue) throws SearchApiException;
+  AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String restrictedField, String restrictedFieldValue) throws SearchApiException;
 
   /**
    * Search will take the provided json text query and forward it to the configured
