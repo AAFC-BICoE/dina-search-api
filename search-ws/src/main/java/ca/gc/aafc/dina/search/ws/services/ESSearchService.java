@@ -191,8 +191,7 @@ public class ESSearchService implements SearchService {
 
         // Attributes from included relationships
         //
-        ObjectNode relationshipsNode = OM.createObjectNode();
-        ArrayNode relationshipContainer = relationshipsNode.putArray("relationship");
+        ArrayNode relationshipContainer = indexMappingNode.putArray("relationships");
         relationships.entrySet().forEach(curKey -> {
 
           if (curKey.getKey().endsWith("data.type.value")) {
@@ -206,9 +205,6 @@ public class ESSearchService implements SearchService {
 
           }
         });
-
-        indexMappingNode.set("relationships", relationshipsNode);
-
       });
 
     } catch (IOException | ElasticsearchException e) {
