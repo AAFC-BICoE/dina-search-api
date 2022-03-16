@@ -1,18 +1,8 @@
-# Default service endpoints
+# Default attributes mappings for object relationships
 #
-# Endpoints are closely related to the JSONSpec DINA objects defined in
-# DINA schemas.
 #
-# Entries declared in the relationships section correspond to navigation
-# links that may be exercised when augmenting the parent object.
-#
-# For example in the material-sample example, without an entry for collectingEvent
-# or preparationType these objects will not be automatically included and augmented
-# during the creation of the augmented parent object (material-sample).
-#
-# Entries defined under the 'embedded' section correspond to parent document type.
-# For example the entry 'person' under the organization embedded section denotes that
-# 'organization' is embedded under a 'person' document when pushed into elasticsearch.
+# Attributes defined will be added to the list of attributes of the matching
+# relationship when an index mapping is request from a REST client.
 #
 mappings:
   collecting-event: 
