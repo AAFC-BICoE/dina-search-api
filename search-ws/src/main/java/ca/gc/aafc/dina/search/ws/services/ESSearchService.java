@@ -31,6 +31,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
 
+import ca.gc.aafc.dina.search.ws.config.MappingAttribute;
+import ca.gc.aafc.dina.search.ws.config.MappingObjectAttributes;
 import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
@@ -54,6 +56,9 @@ public class ESSearchService implements SearchService {
   private final ElasticsearchClient client;
   private final RestTemplate restTemplate;
   private final UriBuilder searchUriBuilder;
+
+  @Autowired
+  private MappingObjectAttributes mappingObjectAttributes;
   
   public ESSearchService(
                   @Autowired RestTemplateBuilder builder, 
@@ -185,7 +190,7 @@ public class ESSearchService implements SearchService {
         // Add all document attributes
         ArrayNode documentAttributes = indexMappingNode.putArray("attributes");
         data.entrySet().forEach(curEntry -> {
-          ObjectNode curJsonAttribute = setJsonNode(curEntry);
+          ObjectNode curJsonAttribute = setJsonNode(curEntry.getKey(), curEntry.getValue(), false);
           documentAttributes.add(curJsonAttribute);
         });
 
@@ -203,6 +208,19 @@ public class ESSearchService implements SearchService {
             curRelationship.put("path", "included");
             relationshipContainer.add(curRelationship);
 
+            // Add attributes for the relationship
+            //
+            List<MappingAttribute> attributes  = mappingObjectAttributes.getMappings().get(curKey.getValue());
+            
+            if (attributes != null) {
+              ArrayNode relationShipAttributes = curRelationship.putArray("attributes");
+
+              attributes.forEach(curEntry -> {
+                ObjectNode curJsonAttribute = setJsonNode(curEntry.getName(), curEntry.getType(), true);
+                relationShipAttributes.add(curJsonAttribute);     
+              });
+            }
+
           }
         });
       });
@@ -215,19 +233,28 @@ public class ESSearchService implements SearchService {
     return ResponseEntity.ok().body(indexMappingNode);
   }
 
-  private ObjectNode setJsonNode(Entry<String, String> curEntry) {
+  private ObjectNode setJsonNode(String key, String value, boolean isIncludedSection) {
+
     ObjectNode curJsonAttribute = OM.createObjectNode();
-    curJsonAttribute.put("name", curEntry.getKey().substring(curEntry.getKey().lastIndexOf(".") + 1));
-    curJsonAttribute.put("type", curEntry.getValue());
+
+    curJsonAttribute.put("name", key.substring(key.lastIndexOf(".") + 1));
+    curJsonAttribute.put("type", value);
 
     int startPos = 0;
-    if (!curEntry.getKey().startsWith("data.")) {
+    if (key.startsWith("included.")) {
       startPos = "included.".length();
     }
 
-    if (curEntry.getKey().substring(startPos).contains("attributes")) {
-      curJsonAttribute.put("path", curEntry.getKey().substring(startPos, curEntry.getKey().lastIndexOf(".")));
+    String path = "";
+    if (key.substring(startPos).contains(".")) {
+      path = key.substring(startPos, key.lastIndexOf("."));
     }
+
+    if (isIncludedSection) {
+      path = "attributes" + (!path.isEmpty() ? "." + path : path); 
+    }
+
+    curJsonAttribute.put("path", path);
 
     return curJsonAttribute;
   }
