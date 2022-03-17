@@ -19,13 +19,17 @@ endpoints:
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
     relationships:
       - collectingEvent
+      - organism
       - attachment
       - storageUnit
+      - collection
     indexName: dina_material_sample_index       
   collecting-event: 
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/collecting-event}
   preparation-type: 
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/preparation-type}
+  organism:
+    targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/organism}
   metadata: 
     targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
     indexName: dina_object_store_index

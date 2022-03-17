@@ -188,9 +188,6 @@
                   }
                 }
               },
-              "organism": {
-                "type": "object"
-              },
               "determination": {
                 "type": "object"
               }
@@ -213,8 +210,41 @@
                   }
                 }
               },
+              "organism": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "organism"
+                      }
+                    }
+                  }
+                }
+              },
               "storageUnit": {
-                "type": "object"
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "storage-unit"
+                      }
+                    }
+                  }
+                }
+              },
+              "collection": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "collection"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
