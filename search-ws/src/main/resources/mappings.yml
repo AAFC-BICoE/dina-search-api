@@ -1,0 +1,25 @@
+# Default attributes mappings for object relationships
+#
+#
+# Attributes defined will be added to the list of attributes of the matching
+# relationship when an index mapping is request from a REST client.
+#
+mappings:
+  collecting-event: 
+    -
+      name: createdOn
+      type: date
+    -
+      name: createdBy
+      type: date
+  organism:
+    -
+      name: createdOn
+      type: date
+    -
+      name: createdBy
+      type: text
+    -
+      name: geoReferenceAssertions.createdOn
+      type: date
+      
