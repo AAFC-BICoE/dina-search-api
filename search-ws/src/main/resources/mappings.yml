@@ -36,3 +36,14 @@ mappings:
       type: text
     - name: typeStatus
       type: text
+
+  collection:
+    - name: name
+      type: text
+    - name: code
+      type: text
+
+  storage-unit:
+    - name: name
+      type: text
+      
