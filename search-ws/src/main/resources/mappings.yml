@@ -5,21 +5,45 @@
 # relationship when an index mapping is request from a REST client.
 #
 mappings:
-  collecting-event: 
-    -
-      name: createdOn
-      type: date
-    -
-      name: createdBy
-      type: date
-  organism:
-    -
-      name: createdOn
-      type: date
-    -
-      name: createdBy
+  collecting-event:
+    - name: createdBy
       type: text
-    -
-      name: geoReferenceAssertions.createdOn
+    - name: createdOn
       type: date
+    - name: tags
+      type: text
+    - name: habitat
+      type: text
+    - name: substrate
+      type: text
+    - name: dwcOtherRecordNumbers
+      type: text
+    - name: dwcRecordNumber
+      type: text
+    - name: startEventDateTime
+      type: date
+    - name: endEventDateTime
+      type: date
+    - name: dwcRecordNumber
+      type: text
+    - name: dwcOtherRecordNumbers
+      type: text
+
+  organism:
+    - name: determination.verbatimScientificName
+      type: text
+    - name: determination.scientificName
+      type: text
+    - name: typeStatus
+      type: text
+
+  collection:
+    - name: name
+      type: text
+    - name: code
+      type: text
+
+  storage-unit:
+    - name: name
+      type: text
       
