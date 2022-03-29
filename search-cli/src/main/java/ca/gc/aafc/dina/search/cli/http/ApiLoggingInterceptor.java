@@ -10,12 +10,11 @@ import okhttp3.Response;
 @Log4j2
 public class ApiLoggingInterceptor implements Interceptor {
 
-    @Override
-    public Response intercept(Chain chain) throws IOException {
-        Request request = chain.request();
-        log.info("Operation:{} onto API url: {}", request.method(),  request.url());
+  @Override
+  public Response intercept(Chain chain) throws IOException {
+    Request request = chain.request();
+    log.info("Operation:{} onto API url: {}", request.method(), request.url());
 
-        return chain.proceed(request);
-    }
-    
+    return chain.proceed(request);
+  }
 }
