@@ -180,6 +180,7 @@ public class DocumentProcessorEmbeddedIT {
     // search cluster
     // re-index
     //
+    Thread.currentThread().sleep(1000);
 
     // Retrieve the document from elasticsearch
     foundDocument = ElasticSearchTestUtils
