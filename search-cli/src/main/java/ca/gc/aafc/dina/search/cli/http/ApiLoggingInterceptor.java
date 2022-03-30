@@ -7,14 +7,16 @@ import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
 
+/**
+ * okhttp {@link Interceptor} implementation that will log calls (info level) using log4j2.
+ */
 @Log4j2
 public class ApiLoggingInterceptor implements Interceptor {
 
   @Override
   public Response intercept(Chain chain) throws IOException {
     Request request = chain.request();
-    log.info("Operation:{} onto API url: {}", request.method(), request.url());
-
+    log.info("Operation: {} onto API url: {}", request.method(), request.url());
     return chain.proceed(request);
   }
 }
