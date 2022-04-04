@@ -24,10 +24,6 @@ mappings:
       type: date
     - name: endEventDateTime
       type: date
-    - name: dwcRecordNumber
-      type: text
-    - name: dwcOtherRecordNumbers
-      type: text
 
   organism:
     - name: determination.verbatimScientificName
