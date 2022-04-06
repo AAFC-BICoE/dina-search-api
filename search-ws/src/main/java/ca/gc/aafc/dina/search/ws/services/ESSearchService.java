@@ -13,22 +13,15 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.GetMappingsRequest;
-import org.elasticsearch.client.indices.GetMappingsResponse;
-import org.elasticsearch.cluster.metadata.MappingMetadata;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -37,8 +30,19 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
 
+import ca.gc.aafc.dina.search.ws.config.MappingAttribute;
+import ca.gc.aafc.dina.search.ws.config.MappingObjectAttributes;
 import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.mapping.Property;
+import co.elastic.clients.elasticsearch._types.mapping.PropertyVariant;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
+import jakarta.json.JsonValue;
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
@@ -47,20 +51,20 @@ public class ESSearchService implements SearchService {
 
   private static final ObjectMapper OM = new ObjectMapper();
   private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
-  private static final String ES_MAPPING_PROPERTIES = "properties";
-  private static final String ES_MAPPING_TYPE = "type";
-  private static final String ES_MAPPING_FIELDS = "fields";
 
-  private final RestHighLevelClient esClient;
+  private final ElasticsearchClient client;
   private final RestTemplate restTemplate;
   private final UriBuilder searchUriBuilder;
+
+  @Autowired
+  private MappingObjectAttributes mappingObjectAttributes;
   
   public ESSearchService(
                   @Autowired RestTemplateBuilder builder, 
-                  @Autowired RestHighLevelClient esClient,
+                  @Autowired ElasticsearchClient client,
                   YAMLConfigProperties yamlConfigProperties) {
     this.restTemplate = builder.build();
-    this.esClient = esClient;
+    this.client = client;
 
     // Create a URIBuilder that will be used as part of the search for documents
     // within a specific index.
@@ -81,9 +85,10 @@ public class ESSearchService implements SearchService {
     return headers;
   }
 
+
   @Override
-  public SearchResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField) {
-    
+  public AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String restrictedField, String restrictedFieldValue) throws SearchApiException {
+
     // Based on our naming convention, we will create the expected fields to search for:
     //
     // autoCompleteField + .autocomplete
@@ -107,29 +112,36 @@ public class ESSearchService implements SearchService {
     String[] arrayFields = new String[fields.size()];
     fields.toArray(arrayFields);
 
-    MultiMatchQueryBuilder multiMatchQueryBuilder = new MultiMatchQueryBuilder(textToMatch, arrayFields);
-
-    // Boolean Prefix based request...
-    multiMatchQueryBuilder.type(MultiMatchQueryBuilder.Type.BOOL_PREFIX);
-
-    SearchRequest searchRequest = new SearchRequest(indexName);
-
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-
-    // Select fields to return
-    searchSourceBuilder.fetchSource(fieldsToReturn.toArray(String[]::new), null);
-
-    searchSourceBuilder.query(multiMatchQueryBuilder);
-    searchRequest.source(searchSourceBuilder);
-
-    SearchResponse searchResponse = null;
     try {
-      searchResponse = esClient.search(searchRequest, RequestOptions.DEFAULT);
-    } catch (IOException ex) {
-      log.error("Error in autocomplete search", ex);
-    }
+      // Query builder with Multimatch for the search_as_you_type field
+      BoolQuery.Builder autoCompleteQueryBuilder = QueryBuilders.bool().must(
+          QueryBuilders.multiMatch()
+              .fields(fields)
+              .query(textToMatch)
+              .type(TextQueryType.BoolPrefix)
+              .build()._toQuery()
+      );
 
-    return searchResponse;
+      if (StringUtils.hasText(restrictedField) && StringUtils.hasText(restrictedFieldValue)) {
+        // Add restricted query filter to query builder.
+        autoCompleteQueryBuilder.filter(
+            QueryBuilders.term()
+                .field(restrictedField)
+                .value(v -> v.stringValue(restrictedFieldValue))
+                .build()._toQuery()
+        );
+      }
+
+      return AutocompleteResponse.fromSearchResponse(
+          client.search(searchBuilder -> searchBuilder
+          .index(indexName)
+          .query(autoCompleteQueryBuilder.build()._toQuery())
+          .storedFields(fieldsToReturn)
+          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class));
+
+    } catch (IOException ex) {
+      throw new SearchApiException("Error during search processing", ex);
+    }
   }
 
   @Override
@@ -151,57 +163,165 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public Map<String, String> getIndexMapping(String indexName) throws SearchApiException {
-    Map<String, String> mapping = new HashMap<>();
-    GetMappingsRequest mappingRequest = new GetMappingsRequest().indices(indexName);
+  public ResponseEntity<JsonNode> getIndexMapping(String indexName) throws SearchApiException {
+
+    Map<String, String> data = new HashMap<>();
+    Map<String, String> included = new HashMap<>();
+    Map<String, String> relationships = new HashMap<>();
+
+    ObjectNode indexMappingNode = OM.createObjectNode();
+    indexMappingNode.put("indexName", indexName);
+
     try {
-      GetMappingsResponse getMappingResponse = esClient.indices().getMapping(mappingRequest, RequestOptions.DEFAULT);
-      // since we only asked for a single index we can get it from the result
-      MappingMetadata mappingMetadata = getMappingResponse.mappings().get(indexName);
 
-      Map<String, Object> esMapping = mappingMetadata.getSourceAsMap();
+      // Retrieve the index mapping.
+      GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
 
-      // First level is always "properties"
-      Map<String, Object> properties = (Map<String, Object>) esMapping.get(ES_MAPPING_PROPERTIES);
-      for (Map.Entry<String, Object> entry : properties.entrySet()) {
+      // First level is always "properties".
+      mappingResponse.result().get(indexName).mappings().properties().forEach((propertyName, property) -> {
+
         Stack<String> pathStack = new Stack<>();
-        pathStack.push(entry.getKey());
+        pathStack.push(propertyName);
         Map<String, String> pathType = new HashMap<>();
-        crawlMapping(pathStack, (Map<String, Object>) entry.getValue(), pathType);
-        mapping.putAll(pathType);
-      }
-    } catch (IOException | ElasticsearchStatusException e) {
-      throw new SearchApiException("Error during index-mapping processing", e);
-    }
-    return mapping;
 
+        crawlMapping(pathStack, property, pathType, data, included, relationships);
+
+        // Add all document attributes
+        ArrayNode documentAttributes = indexMappingNode.putArray("attributes");
+        data.entrySet().forEach(curEntry -> {
+          ObjectNode curJsonAttribute = setJsonNode(curEntry.getKey(), curEntry.getValue(), false);
+          documentAttributes.add(curJsonAttribute);
+        });
+
+        // Attributes from included relationships
+        //
+        ArrayNode relationshipContainer = indexMappingNode.putArray("relationships");
+        relationships.entrySet().forEach(curKey -> {
+
+          if (curKey.getKey().endsWith("data.type.value")) {
+
+            ObjectNode curRelationship = OM.createObjectNode();
+
+            curRelationship.put("name", "type");
+            curRelationship.put("value",curKey.getValue());           
+            curRelationship.put("path", "included");
+            relationshipContainer.add(curRelationship);
+
+            // Add attributes for the relationship
+            //
+            List<MappingAttribute> attributes  = mappingObjectAttributes.getMappings().get(curKey.getValue());
+            
+            if (attributes != null) {
+              ArrayNode relationShipAttributes = curRelationship.putArray("attributes");
+
+              attributes.forEach(curEntry -> {
+                ObjectNode curJsonAttribute = setJsonNode(curEntry.getName(), curEntry.getType(), true);
+                relationShipAttributes.add(curJsonAttribute);     
+              });
+            }
+
+          }
+        });
+      });
+
+    } catch (IOException | ElasticsearchException e) {
+      log.error("Error during index-mapping processing", e);
+      return new ResponseEntity<>(indexMappingNode, HttpStatus.BAD_REQUEST);
+    }
+
+    return ResponseEntity.ok().body(indexMappingNode);
+  }
+
+  private ObjectNode setJsonNode(String key, String value, boolean isIncludedSection) {
+
+    ObjectNode curJsonAttribute = OM.createObjectNode();
+
+    curJsonAttribute.put("name", key.substring(key.lastIndexOf(".") + 1));
+    curJsonAttribute.put("type", value);
+
+    int startPos = 0;
+    if (key.startsWith("included.")) {
+      startPos = "included.".length();
+    }
+
+    String path = "";
+    if (key.substring(startPos).contains(".")) {
+      path = key.substring(startPos, key.lastIndexOf("."));
+    }
+
+    if (isIncludedSection) {
+      path = "attributes" + (!path.isEmpty() ? "." + path : path); 
+    }
+
+    curJsonAttribute.put("path", path);
+
+    return curJsonAttribute;
   }
 
   /**
    * Crawl ElasticSearch mapping until we find the "type".
-   * @param path current path expressed as a Stack
+   * 
+   * @param path               current path expressed as a Stack
    * @param esMappingStructure structure returned by the ElasticSearch client
-   * @param mappingDefinition result containing the mapping and its type
+   * @param mappingDefinition  result containing the mapping and its type
    */
-  @SuppressWarnings("unchecked")
-  private static void crawlMapping(Stack<String> path, Map<String, Object> esMappingStructure, Map<String, String> mappingDefinition) {
-    for (Map.Entry<String, Object> propEntry : esMappingStructure.entrySet()) {
-      // skip "fields" for now
-      if (!ES_MAPPING_FIELDS.equals(propEntry.getKey())) {
-        path.push(propEntry.getKey());
-        if (propEntry.getValue() instanceof Map) {
-          crawlMapping(path, (Map<String, Object>) propEntry.getValue(), mappingDefinition);
-        } else {
-          // we only record leaf "type"
-          if (ES_MAPPING_TYPE.equals(propEntry.getKey())) {
-            mappingDefinition.put(path.stream().filter(s -> !s.equals(ES_MAPPING_PROPERTIES))
-                .collect(Collectors.joining(".")), propEntry.getValue().toString());
-          }
-        }
-        path.pop();
-      }
+  private static void crawlMapping(Stack<String> path, Property propertyToCrawl,
+      Map<String, String> mappingDefinition,
+      Map<String, String> data,
+      Map<String, String> included,
+      Map<String, String> relationships) {
+
+    Map<String, Property> propertiesToProcess = null;
+    if (propertyToCrawl.isNested()) {
+      propertiesToProcess = propertyToCrawl.nested().properties();
+    } else {
+      propertiesToProcess = propertyToCrawl.object().properties();
     }
+
+    propertiesToProcess.forEach((propertyName, property) -> {
+
+      // Add path to path stack.
+      path.push(propertyName);
+
+      if (property.isObject() && !property.isNested()) {
+        crawlMapping(path, property, mappingDefinition, data, included, relationships);
+      } else {
+
+        String attributeName = path.stream().collect(Collectors.joining("."));
+        String type = property._kind().jsonValue();
+        PropertyVariant theProperty = property._get();
+
+        // Single Attribute
+        //
+        if (attributeName.startsWith("data")) {
+          if (attributeName.startsWith("data.relationships")) {
+            
+            log.debug("Attribute: {}", attributeName);
+            String valueString = "";
+            if (theProperty._toProperty().isConstantKeyword()) {
+              JsonValue value = theProperty._toProperty().constantKeyword().value().toJson();
+              valueString = value.toString().replace("\"", "");
+            } else if (theProperty._toProperty().isKeyword()) {
+              valueString = theProperty._toProperty().keyword().name();
+            } else if (theProperty._toProperty().isText()) {
+              valueString = theProperty._toProperty().text().name();
+            } else {
+              valueString = theProperty._toProperty().toString();
+            }
+            
+            if (valueString != null) {
+              relationships.put(attributeName, type);
+              relationships.put(attributeName + ".value", valueString);
+            }
+          } else {
+            data.put(attributeName, type);
+          }
+        } else if (attributeName.startsWith("included")) {
+          included.put(attributeName, type);
+        }
+      }
+      path.pop();
+    });
   }
 
 }

@@ -64,11 +64,17 @@ Index Document
 Quit Exit Cli
         exit, quit: Exit/Quit the cli
 
+Send MQ Message
+        send-message: Send Message through RabbitMQ
+		
 Show Endpoint Config
         show-endpoints: Show service endpoint configuration
 
 Test Get Endpoint
         test-get-endpoint: Test Get Endpoint
+
+Trigger Embedded Document Update
+        trigger-embedded-update: Trigger embedded document processing
 ```
 
 You can have more contextual help by typing the following: `help <command name>` the following show an example for the `get-document` command:

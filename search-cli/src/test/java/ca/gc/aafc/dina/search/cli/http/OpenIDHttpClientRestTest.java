@@ -1,13 +1,6 @@
 package ca.gc.aafc.dina.search.cli.http;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
-
 import java.util.concurrent.TimeUnit;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,18 +9,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
-import org.mockserver.model.Header;
-import org.mockserver.model.Parameter;
-import org.mockserver.model.ParameterBody;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
+import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
 import ca.gc.aafc.dina.search.common.config.YAMLConfigProperties;
 
-@SpringBootTest(properties = { "spring.shell.interactive.enabled=false" })
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @ExtendWith(MockServerExtension.class)
 @MockServerSettings(ports = {1080, 8081, 8082})
 @AutoConfigureMockMvc
@@ -37,7 +31,6 @@ import ca.gc.aafc.dina.search.common.config.YAMLConfigProperties;
 public class OpenIDHttpClientRestTest {
 
   private static final String FAKE_RESPONSE_FAKE_RESPONSE = "{fakeResponse: 'fakeResponse'}";
-  private static final ObjectMapper OM = new ObjectMapper();
 
   private ClientAndServer client;
 
@@ -48,67 +41,27 @@ public class OpenIDHttpClientRestTest {
   private ServiceEndpointProperties serviceEndpointProperties;
 
   @BeforeEach
-  public void beforeEachLifecycleMethod(ClientAndServer client) {
-    this.client = client;
+  public void beforeEachLifecycleMethod(ClientAndServer clientAndServer) {
+    this.client = clientAndServer;
   }
 
   @DisplayName("Test Valid Registration with Authentication Token")
   @Test
   public void validateAuthenticationTokenRedirection() throws Exception {
 
-    // Fake Keycloak Authentication
-    KeyCloakAuthentication fakeKeyCloakPayload = new KeyCloakAuthentication();
-    fakeKeyCloakPayload.setAccessToken("accessToken");
-    fakeKeyCloakPayload.setExpiresIn(10);
-    fakeKeyCloakPayload.setIdToken("aToken");
-    fakeKeyCloakPayload.setNotBeforePolicy(10);
-    fakeKeyCloakPayload.setRefreshExpiresIn(10);
-    fakeKeyCloakPayload.setRefreshToken("aRefresh");
-    fakeKeyCloakPayload.setScope("aScope");
-    fakeKeyCloakPayload.setSessionState("sessionState");
-    fakeKeyCloakPayload.setTokenType("authentication");
-
-    ParameterBody params = new ParameterBody();
-    Parameter clientId = new Parameter("client_id", "objectstore");
-    Parameter username = new Parameter("username", "cnc-cm");
-    Parameter password = new Parameter("password", "cnc-cm");
-    Parameter grantType = new Parameter("grant_type", "password");
-    ParameterBody.params(clientId, username, password, grantType);
-
-    // Expectation for Authentication Token
-    //
-    client
-        .when(
-          request()
-            .withMethod("POST")
-            .withPath("/auth/realms/dina/protocol/openid-connect/token")
-            .withHeader("Content-type", "application/x-www-form-urlencoded")
-            .withHeader("Connection", "Keep-Alive")
-            .withHeader("Accept-Encoding", "application/json")
-            .withBody(params))
-          .respond(response().withStatusCode(200)
-            .withHeaders(
-                new Header("Content-Type", "application/json; charset=utf-8"),
-                new Header("Cache-Control", "public, max-age=86400"))
-            .withBody(OM.writeValueAsString(fakeKeyCloakPayload))
-            .withDelay(TimeUnit.SECONDS, 1));
+    MockKeyCloakAuthentication mockKeycloakAuthentication = new MockKeyCloakAuthentication(client);
 
     // Expectation for Person Get Request
-    //
     client
         .when(
-          request()
+          mockKeycloakAuthentication.setupMockRequest()
             .withMethod("GET")
             .withPath("/api/v1/person/")
-            .withQueryStringParameter("include", "organizations")
-            .withHeader("Authorization", "Bearer " + fakeKeyCloakPayload.getAccessToken())
-            .withHeader("crnk-compact", "true").withHeader("Connection", "Keep-Alive")
-            .withHeader("Accept-Encoding", "application/json"))
-          .respond(response().withStatusCode(200)
-            .withHeaders(
-              new Header("Content-Type", "application/json; charset=utf-8"),
-              new Header("Cache-Control", "public, max-age=86400"))
-            .withBody(FAKE_RESPONSE_FAKE_RESPONSE).withDelay(TimeUnit.SECONDS, 1));
+            .withQueryStringParameter("include", "organizations"))
+          .respond(mockKeycloakAuthentication.setupMockResponse()
+            .withStatusCode(200)
+            .withBody(FAKE_RESPONSE_FAKE_RESPONSE)
+            .withDelay(TimeUnit.SECONDS, 1));
 
     assertNotNull(openIdClient);
     assertEquals("http://localhost:8082/api/v1/person",

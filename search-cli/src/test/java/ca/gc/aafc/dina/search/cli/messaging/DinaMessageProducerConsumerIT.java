@@ -1,6 +1,7 @@
 package ca.gc.aafc.dina.search.cli.messaging;
 
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
+import ca.gc.aafc.dina.search.cli.containers.DinaRabbitMQContainer;
 import ca.gc.aafc.dina.search.common.config.RabbitMQConsumerConfiguration;
 import ca.gc.aafc.dina.search.messaging.consumer.DocumentOperationNotificationConsumer;
 import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;

@@ -45,8 +45,15 @@ public class OpenIDHttpClient {
 
   public OpenIDHttpClient(YAMLConfigProperties yamlConfigProps) {
     this.yamlConfigProps = yamlConfigProps;
-    this.clientInstance = new OkHttpClient().newBuilder().connectTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS).build();
+
+    OkHttpClient.Builder builder = new OkHttpClient().newBuilder().connectTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(60, TimeUnit.SECONDS).readTimeout(60, TimeUnit.SECONDS);
+
+    if (log.isInfoEnabled()) {
+      builder.addInterceptor(new ApiLoggingInterceptor());
+    }
+
+    this.clientInstance = builder.build();
     this.mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 

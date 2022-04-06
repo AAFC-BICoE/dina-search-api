@@ -3,23 +3,25 @@
 # Endpoints are closely related to the JSONSpec DINA objects defined in
 # DINA schemas.
 #
-# Objects declared in the relationships section correspond to navigation
-# links that may be exercised when augmenting the parent object.
+# Entries declared in the relationships section correspond to objects to
+# be included during the retrieval of their parent object.
 #
 # For example in the material-sample example, without an entry for collectingEvent
-# or preparationType these objects will not be automatically included and augmented
-# during the creation of the augmented parent object (material-sample).
+# or preparationType these objects will not be automatically included. 
+# Augmmentation of objects is done using the same endpoint when external object references
+# are found during processing of an object.
+#
 #
 endpoints:
   material-sample: 
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
     relationships:
       - collectingEvent
+      - organism
       - attachment
       - storageUnit
-    indexName: dina_material_sample_index
-  preparation-type: 
-    targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/preparation-type}
+      - collection
+    indexName: dina_material_sample_index       
   metadata: 
     targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
     indexName: dina_object_store_index
@@ -28,7 +30,6 @@ endpoints:
       - dcCreator
   organization: 
     targetUrl: ${ORGANIZATION_URL:http://localhost:8082/api/v1/organization}
-    indexName: dina_agent_index
   person: 
     targetUrl: ${PERSON_URL:http://localhost:8082/api/v1/person}
     indexName: dina_agent_index

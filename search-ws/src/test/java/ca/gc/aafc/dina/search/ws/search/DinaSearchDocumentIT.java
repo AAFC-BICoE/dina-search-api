@@ -1,286 +1,379 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
-import org.apache.http.HttpHost;
-import org.elasticsearch.action.DocWriteResponse.Result;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHit;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.elasticsearch.xcontent.XContentType;
+import ca.gc.aafc.dina.search.ws.controller.SearchController;
+import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
+import ca.gc.aafc.dina.search.ws.services.SearchService;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.Result;
+import co.elastic.clients.elasticsearch.core.CountResponse;
+import co.elastic.clients.elasticsearch.core.IndexResponse;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.RestTemplate;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import ca.gc.aafc.dina.search.ws.services.SearchService;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @SpringBootTest
 public class DinaSearchDocumentIT {
   
   private static final String DINA_AGENT_INDEX = "dina_agent_index";
+  private static final String DINA_MATERIAL_SAMPLE_INDEX = "dina_material_sample_index";
+  private static final String MATERIAL_SAMPLE_DOCUMENT_ID = "2e5eab9e-1d75-4a26-997e-34362d6b4585";
+  private static final String MATERIAL_SAMPLE_SEARCH_FIELD = "data.id";
+  private static final String DINA_AGENT_SEARCH_FIELD = "name";
+  private static final String DOCUMENT_ID = "test-document";
+
+  // Nested searches
+  //
+  private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT1_ID = "94c97f20-3481-4a44-ba64-3a1351051a76";
+  private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT2_ID = "6149d5da-ae6d-4f61-8ed1-b24511698a76";
+  private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT3_ID = "f9a8bcab-ebd1-4222-8892-3f83416455fc";
+  private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT4_ID = "123aa518-fa60-4390-aaa3-82a0b4f3668d";
+
+  @Autowired 
+  private RestTemplateBuilder builder;
 
   @Autowired
   private SearchService searchService;
 
+  @Autowired
+  private SearchController searchController;
+
+  @Autowired
+  private ElasticsearchClient client;
+
   @Container
-  private static final ElasticsearchContainer elasticsearchContainer = new DinaElasticSearchContainer();
+  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+
+  private static final ObjectMapper OM = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+  @BeforeEach
+  private void beforeEach() {
+    ELASTICSEARCH_CONTAINER.start();
+
+    assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
+    assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
+
+    assertNotNull(searchService);
+  }
+
+  @AfterEach
+  private void afterEach() {
+    ELASTICSEARCH_CONTAINER.stop();
+  }
+
+  @DisplayName("Integration Test search nested objects")
+  @Test
+  public void testSearchNestedObjects() throws Exception { 
+
+    try {
+
+      RestTemplate restTemplate = builder.build();
+
+      // Retrieve raw JSON.
+      String documentContent = Files.readString(
+          Path.of("src/test/resources/elastic-configurator-settings/collection-index")
+              .resolve("dina_material_sample_index_settings.json"));
+
+      JsonNode jsonNode = OM.readTree(documentContent);
+
+      URI uri = new URI("http://" + ELASTICSEARCH_CONTAINER.getHttpHostAddress() + "/" + DINA_MATERIAL_SAMPLE_INDEX);
+
+      HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), buildJsonHeaders());
+      restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
+
+      // Let's add a document into the elasticsearch cluster
+      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+          retrieveJSONObject("nested_document1.json"));
+      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT2_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+          retrieveJSONObject("nested_document2.json"));
+      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT3_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+          retrieveJSONObject("nested_document3.json"));
+      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT4_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+          retrieveJSONObject("nested_document4.json"));
+
+      // Get All search, there should be 0 search results.
+      String queryStringTemplate = Files.readString(
+          Path.of("src/test/resources/test-documents/nested-tests")
+              .resolve("sample-nested-request-template.json"));
+
+      // storage-unit and Gatineau
+      String noResultsQuery = queryStringTemplate
+                                .replace("@type@", "storage-unit")
+                                .replace("@locality@", "Gatineau"); 
+
+      String result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, noResultsQuery);
+
+      assertNotNull(result);
+      assertTrue(result.contains("\"total\":{\"value\":0,\"relation\":\"eq\"}"));
+
+      // collecting-event and Ottawa
+      String threeResultsQuery = queryStringTemplate
+                                .replace("@type@", "collecting-event")
+                                .replace("@locality@", "Ottawa"); 
+
+      result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, threeResultsQuery);
+
+      assertNotNull(result);
+      assertTrue(result.contains("\"total\":{\"value\":3,\"relation\":\"eq\"}"));
+
+      // collecting-event and Gatineau
+      String oneResultQuery = queryStringTemplate
+                                .replace("@type@", "collecting-event")
+                                .replace("@locality@", "Gatineau"); 
+
+      result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, oneResultQuery);
+
+      assertNotNull(result);
+      assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
+
+      // storage-unit and Ottawa
+      noResultsQuery = queryStringTemplate
+          .replace("@type@", "storage-unit")
+          .replace("@locality@", "Ottawa");
+
+      result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, noResultsQuery);
+
+      assertNotNull(result);
+      assertTrue(result.contains("\"total\":{\"value\":0,\"relation\":\"eq\"}"));
+
+    } catch (Exception e) {
+      e.printStackTrace();
+      fail();
+    }
+  }
 
   @DisplayName("Integration Test search autocomplete document")
   @Test
   public void testSearchAutoCompleteDocument() throws Exception { 
+    // Let's add a document into the elasticsearch cluster 
+    indexDocumentForIT(DINA_AGENT_INDEX, DOCUMENT_ID, DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
 
-    elasticsearchContainer.start();
+    String textToMatch = "joh";
+    String autoCompleteField = "data.attributes.displayName";
+    String additionalField = "";
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField, null, null);
 
-    assertEquals(9200, elasticsearchContainer.getMappedPort(9200).intValue());
-    assertEquals(9300, elasticsearchContainer.getMappedPort(9300).intValue());
+    assertNotNull(searchResponse.getHits());
+    assertEquals(1, searchResponse.getHits().size());
 
-    assertNotNull(searchService);
-    try {
-
-      // Let's add a document into the elasticsearch cluster
-      //
-      RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200)));
-
-      // Read document from test/resources
-      //
-      String documentContentInput = "person-1.json";
-      String path = "src/test/resources/test-documents";
-      Path filename = Path.of(path + "/" + documentContentInput);
-
-      String documentContent = Files.readString(filename);   
-      IndexRequest request = new IndexRequest(DINA_AGENT_INDEX); 
-      request.id("test-document"); 
-      request.source(documentContent, XContentType.JSON);
-
-      IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
-
-      assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(client, "test-document", 1);
-
-      String textToMatch = "joh";
-      String autoCompleteField = "data.attributes.displayName";
-      String additionalField = "";
-      SearchResponse searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField);
-      
-      assertNotNull(searchResponse.getHits());
-      assertNotNull(searchResponse.getHits().getHits());
-      assertEquals(1, searchResponse.getHits().getHits().length);
-      
-    } finally {
-      elasticsearchContainer.stop();
-    }
+    // Make sure we can serialize the response
+    assertTrue(OM.writeValueAsString(searchResponse).contains("displayName"));
   }
 
+  @DisplayName("Integration Test search autocomplete document autocomplete field")
+  @Test
+  public void testSearchAutoCompleteMaterialSampleDocument() throws Exception { 
+    // Let's add a document into the elasticsearch cluster 
+    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
+
+    String textToMatch = "yv";
+    String autoCompleteField = "data.attributes.determination.verbatimDeterminer";
+    String additionalField = "";
+    String restrictedField = "";
+    String restrictedFieldValue = "";
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+
+    assertNotNull(searchResponse.getHits());
+    assertEquals(1, searchResponse.getHits().size());
+  }
+
+
+  @DisplayName("Integration Test search autocomplete document restricted match")
+  @Test
+  public void testSearchAutoCompleteMaterialSampleRestrictedMatch() throws Exception { 
+    // Let's add a document into the elasticsearch cluster 
+    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
+
+    String textToMatch = "yv";
+    String autoCompleteField = "data.attributes.determination.verbatimDeterminer";
+    String additionalField = "";
+    String restrictedField = "data.attributes.group.keyword";
+    String restrictedFieldValue = "cnc";
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+
+    assertNotNull(searchResponse.getHits());
+    assertEquals(1, searchResponse.getHits().size());
+  }
+
+  @DisplayName("Integration Test search autocomplete document restricted no match")
+  @Test
+  public void testSearchAutoCompleteMaterialSampleRestrictedNoMatch() throws Exception { 
+    // Let's add a document into the elasticsearch cluster 
+    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
+
+    String textToMatch = "yv";
+    String autoCompleteField = "data.attributes.determination.verbatimDeterminer";
+    String additionalField = "";
+    String restrictedField = "data.attributes.group.keyword";
+    String restrictedFieldValue = "cnc-no-match";
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+
+    assertNotNull(searchResponse.getHits());
+    assertEquals(0, searchResponse.getHits().size());
+  }
+ 
   @DisplayName("Integration Test search autocomplete text document")
   @Test
   public void testSearchAutoCompleteTextDocument() throws Exception { 
+    // Add document into index.
+    indexDocumentForIT(DINA_AGENT_INDEX, DOCUMENT_ID, DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
 
-    elasticsearchContainer.start();
+    // Auto-Complete search
+    String path = "src/test/resources/test-documents";
+    String queryFile = "autocomplete-search.json";
+    Path filename = Path.of(path + "/" + queryFile);
+    String queryString = Files.readString(filename);
 
-    assertEquals(9200, elasticsearchContainer.getMappedPort(9200).intValue());
-    assertEquals(9300, elasticsearchContainer.getMappedPort(9300).intValue());
-
-    assertNotNull(searchService);
-    try {
-
-      // Let's add a document into the elasticsearch cluster
-      //
-      RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200)));
-
-      // Read document from test/resources
-      //
-      String documentContentInput = "person-1.json";
-      String path = "src/test/resources/test-documents";
-      Path filename = Path.of(path + "/" + documentContentInput);
-
-      String documentContent = Files.readString(filename);   
-      IndexRequest request = new IndexRequest(DINA_AGENT_INDEX); 
-      request.id("test-document"); 
-      request.source(documentContent, XContentType.JSON);
-
-      IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
-
-      assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(client, "test-document", 1);
-
-      // Auto-Complete search
-      String queryFile = "autocomplete-search.json";
-      filename = Path.of(path + "/" + queryFile);
-
-      String queryString = Files.readString(filename);
-      String result = searchService.search(DINA_AGENT_INDEX, queryString);
-      
-      assertNotNull(result);
-      assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
-      
-    } finally {
-      elasticsearchContainer.stop();
-    }
+    String result = searchService.search(DINA_AGENT_INDEX, queryString);
+    
+    assertNotNull(result);
+    assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
   }
 
   @DisplayName("Integration Test search Get All text document")
   @Test
   public void testSearchGetAllTextDocument() throws Exception { 
+    // Let's add documents into the elasticsearch cluster
+    indexDocumentForIT(DINA_AGENT_INDEX, "test-document-1", DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
+    indexDocumentForIT(DINA_AGENT_INDEX, "test-document-2", DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-2.json"));
 
-    elasticsearchContainer.start();
+    // Get All search, there should be 2 search results.
+    String queryFile = "get-all-search.json";
+    String path = "src/test/resources/test-documents";
+    Path filename = Path.of(path + "/" + queryFile);
 
-    assertEquals(9200, elasticsearchContainer.getMappedPort(9200).intValue());
-    assertEquals(9300, elasticsearchContainer.getMappedPort(9300).intValue());
-
-    assertNotNull(searchService);
-
-    try {
-
-      // Let's add a document into the elasticsearch cluster
-      //
-      // Retrieve the document from elasticsearch
-      //
-      RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200)));
-
-      // Get document from test/resources
-      //
-      String documentContentInput = "person-1.json";
-      String path = "src/test/resources/test-documents";
-      Path filename = Path.of(path + "/" + documentContentInput);
-
-      String documentContent = Files.readString(filename);   
-      IndexRequest request = new IndexRequest(DINA_AGENT_INDEX); 
-      request.id("test-document-1"); 
-      request.source(documentContent, XContentType.JSON);
-      IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
-
-      assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(client, "test-document-1", 1);
-
-      documentContentInput = "person-2.json";
-      filename = Path.of(path + "/" + documentContentInput);
-
-      documentContent = Files.readString(filename);   
-      request = new IndexRequest(DINA_AGENT_INDEX); 
-      request.id("test-document-2"); 
-      request.source(documentContent, XContentType.JSON);
-      indexResponse = client.index(request, RequestOptions.DEFAULT);
-
-      assertEquals(Result.CREATED, indexResponse.getResult());
-      searchAndWait(client, "test-document-2", 1);
-
-      // Get All search
-      String queryFile = "get-all-search.json";
-      filename = Path.of(path + "/" + queryFile);
-
-      String queryString = Files.readString(filename);
-      String result = searchService.search(DINA_AGENT_INDEX, queryString);
-      
-      assertNotNull(result);
-      assertTrue(result.contains("\"total\":{\"value\":2,\"relation\":\"eq\"}"));
-     
-    } finally {
-      elasticsearchContainer.stop();
-    }
+    String queryString = Files.readString(filename);
+    String result = searchService.search(DINA_AGENT_INDEX, queryString);
+    
+    assertNotNull(result);
+    assertTrue(result.contains("\"total\":{\"value\":2,\"relation\":\"eq\"}"));
   }
 
   @Test
-  public void onGetMapping_whenMappingSetup_ReturnExpectedResult() {
-    elasticsearchContainer.start();
+  public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
+    indexDocumentForIT(DINA_AGENT_INDEX, "test-document-1", DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
 
-    try {
-      String documentContentInput = "person-1.json";
-      String path = "src/test/resources/test-documents";
-      Path filename = Path.of(path + "/" + documentContentInput);
+    ResponseEntity<JsonNode> response = searchService.getIndexMapping(DINA_AGENT_INDEX);
+    JsonNode result = response.getBody();
 
-      String documentContent = Files.readString(filename);
-      indexDocumentForIT(DINA_AGENT_INDEX,"test-document-1",  documentContent);
-
-      Map<String, String> result = searchService.getIndexMapping(DINA_AGENT_INDEX);
-
-      assertTrue(result.containsKey("data.attributes.createdOn.type"));
-      assertEquals("date", result.get("data.attributes.createdOn.type"));
-
-
-      // test behavior of non-existing index
-      assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
-
-    } catch (Exception e) {
-      fail(e);
-    } finally {
-      elasticsearchContainer.stop();
+    assertEquals("dina_agent_index", result.get("indexName").asText());    
+    JsonNode attributes = result.get("attributes");
+    boolean found = false;
+    for (JsonNode curNode: attributes) {
+      if (curNode.get("name").asText().equals("createdOn") && "date".equals(curNode.get("type").asText()))  {
+        found = true;
+        break;
+      }
     }
+    assertTrue(found);
+
+    // test behavior of non-existing index
+    response = searchService.getIndexMapping("abcd");
+    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+  }
+
+  @SuppressWarnings("unchecked")
+  private Map<String, Object> retrieveJSONObject(String documentName) {
+    try {
+      // Retrieve raw JSON.
+      String path = "src/test/resources/test-documents";
+      Path filename = Path.of(path + "/" + documentName);
+      String documentContent = Files.readString(filename);
+
+      // Convert raw JSON into JSON map.
+      return OM.readValue(documentContent, Map.class);
+
+    } catch (IOException ex) {
+      fail("Unable to parse JSON into map object: " + ex.getMessage());
+    }
+
+    return null;
   }
 
   /**
    * Index a document for integration test purpose and wait until the document is indexed.
+   * @throws IOException
+   * @throws ElasticsearchException
+   * @throws InterruptedException
    */
-  private void indexDocumentForIT(String indexName, String documentId, String documentContent)
-      throws Exception {
+  private void indexDocumentForIT(String indexName, String documentId, String searchField, Object jsonMap) 
+      throws ElasticsearchException, IOException, InterruptedException {
 
-    RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200)));
+    // Make the call to elastic to index the document.
+    IndexResponse response = client.index(builder -> builder
+      .id(documentId)
+      .index(indexName)
+      .document(jsonMap)
+    );
+    Result indexResult = response.result();
 
-    IndexRequest request = new IndexRequest(indexName);
-    request.id(documentId);
-    request.source(documentContent, XContentType.JSON);
-
-    IndexResponse indexResponse = client.index(request, RequestOptions.DEFAULT);
-
-    assertEquals(Result.CREATED, indexResponse.getResult());
-    searchAndWait(client, documentId, 1);
+    assertEquals(Result.Created, indexResult);
+    searchAndWait(documentId, searchField, 1, indexName);
   }
 
-  private int search(RestHighLevelClient client, String searchValue) throws Exception {
+  private int search(String searchValue, String searchField, String indexName) throws ElasticsearchException, IOException {
+    // Count the total number of search results.
+    CountResponse countResponse = client.count(builder -> builder
+      .query(queryBuilder -> queryBuilder
+        .match(matchBuilder -> matchBuilder
+          .query(FieldValue.of(searchValue))
+          .field(searchField)
+        )
+      )
+      .index(indexName)
+    );
 
-    SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-    searchSourceBuilder.from(0);
-    searchSourceBuilder.size(100);
-    searchSourceBuilder.timeout(new TimeValue(60, TimeUnit.SECONDS));
-    searchSourceBuilder.query(QueryBuilders.matchQuery("id", searchValue));
-    SearchRequest searchRequest = new SearchRequest();
-    searchRequest.indices(DINA_AGENT_INDEX);
-    searchRequest.source(searchSourceBuilder);
-    SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
-
-    SearchHits hits = searchResponse.getHits();
-    SearchHit[] searchHits = hits.getHits();
-
-    return searchHits.length;
-
+    return (int) countResponse.count();
   }
 
-  private int searchAndWait(RestHighLevelClient client, String searchValue, int foundCondition)
-      throws Exception {
+  private int searchAndWait(String searchValue, String searchField, int foundCondition, String indexName)
+      throws ElasticsearchException, IOException, InterruptedException {
 
     int foundDocument = -1;
     int nCount = 0;
     while (foundDocument != foundCondition && nCount < 10) {
       Thread.sleep(1000);
-      foundDocument = search(client, searchValue);
+      foundDocument = search(searchValue, searchField, indexName);
       nCount++;
     }
     return foundDocument;
+  }
+
+  private HttpHeaders buildJsonHeaders() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    return headers;
   }
 
 }

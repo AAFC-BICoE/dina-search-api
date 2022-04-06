@@ -64,7 +64,7 @@ services:
   #    - elasticsearch-dina
 
   search-cli:
-    image: aafcbicoe/dina-search-cli:0.10
+    image: aafcbicoe/dina-search-cli:0.13
     stdin_open: true
     tty: true
     environment:
@@ -75,7 +75,7 @@ services:
       - dina_rabbitmq_net
 
   search-ws:
-    image: aafcbicoe/dina-search-ws:0.10
+    image: aafcbicoe/dina-search-ws:0.13
     ports:
       - 8085:8085
 

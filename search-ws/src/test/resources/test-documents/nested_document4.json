@@ -1,0 +1,147 @@
+{
+    "data": {
+      "id": "123aa518-fa60-4390-aaa3-82a0b4f3668d",
+      "type": "material-sample",
+      "attributes": {
+        "version": 1,
+        "group": "cnc",
+        "createdOn": "2022-03-02T17:41:54.098067Z",
+        "createdBy": "cnc-cm",
+        "dwcCatalogNumber": null,
+        "dwcOtherCatalogNumbers": [
+          "404"
+        ],
+        "materialSampleName": "Material Sample #2-bis",
+        "materialSampleChildren": [],
+        "preparationDate": null,
+        "managedAttributes": {},
+        "determination": [],
+        "preparationRemarks": null,
+        "dwcDegreeOfEstablishment": null,
+        "host": null,
+        "barcode": "404",
+        "publiclyReleasable": true,
+        "notPubliclyReleasableReason": null,
+        "tags": null,
+        "materialSampleState": null,
+        "materialSampleRemarks": "404 Sample remarks",
+        "stateChangedOn": null,
+        "stateChangeRemarks": null,
+        "preparationMethod": null,
+        "associations": [],
+        "allowDuplicateName": false
+      },
+      "relationships": {
+        "collectingEvent": {
+          "data": {
+            "id": "6993c972-cd69-4d58-8c0f-163f9bf7a9bc",
+            "type": "collecting-event"
+          }
+        },
+        "storageUnit": {
+          "data": {
+            "id": "98cd58f5-6e95-4599-993c-5e9fa384b346",
+            "type": "storage-unit"
+          }
+        },
+        "attachment": {
+          "data": []
+        }
+      }
+    },
+    "included": [
+      {
+        "id": "6993c972-cd69-4d58-8c0f-163f9bf7a9bc",
+        "type": "collecting-event",
+        "attributes": {
+          "version": 4,
+          "group": "cnc",
+          "createdBy": "cnc-cm",
+          "createdOn": "2022-03-02T17:37:05.066112Z",
+          "geoReferenceAssertions": [
+            {
+              "dwcDecimalLatitude": null,
+              "dwcDecimalLongitude": null,
+              "dwcCoordinateUncertaintyInMeters": null,
+              "createdOn": "2022-03-02T20:20:25.213709Z",
+              "dwcGeoreferencedDate": null,
+              "georeferencedBy": null,
+              "literalGeoreferencedBy": null,
+              "dwcGeoreferenceProtocol": null,
+              "dwcGeoreferenceSources": null,
+              "dwcGeoreferenceRemarks": null,
+              "dwcGeodeticDatum": null,
+              "isPrimary": true,
+              "dwcGeoreferenceVerificationStatus": null
+            }
+          ],
+          "dwcVerbatimCoordinates": null,
+          "dwcRecordedBy": "Christian",
+          "startEventDateTime": null,
+          "endEventDateTime": null,
+          "verbatimEventDateTime": null,
+          "dwcVerbatimLocality": "Gatineau",
+          "host": null,
+          "managedAttributes": {},
+          "dwcVerbatimLatitude": null,
+          "dwcVerbatimLongitude": null,
+          "dwcVerbatimCoordinateSystem": null,
+          "dwcVerbatimSRS": "WGS84 (EPSG:4326)",
+          "dwcVerbatimElevation": null,
+          "dwcVerbatimDepth": null,
+          "dwcOtherRecordNumbers": [
+            "404"
+          ],
+          "dwcRecordNumber": "404",
+          "dwcCountry": null,
+          "dwcCountryCode": null,
+          "dwcStateProvince": null,
+          "habitat": "Ottawa",
+          "dwcMinimumElevationInMeters": null,
+          "dwcMinimumDepthInMeters": null,
+          "dwcMaximumElevationInMeters": null,
+          "dwcMaximumDepthInMeters": null,
+          "substrate": null,
+          "remarks": null,
+          "publiclyReleasable": true,
+          "notPubliclyReleasableReason": null,
+          "tags": null,
+          "geographicPlaceNameSource": "OSM",
+          "geographicPlaceNameSourceDetail": {
+            "sourceUrl": "https://nominatim.openstreetmap.org/ui/details.html?osmtype=R&osmid=5379616",
+            "customGeographicPlace": null,
+            "selectedGeographicPlace": null,
+            "higherGeographicPlaces": null,
+            "stateProvince": {
+              "id": "5379616",
+              "element": "relation",
+              "placeType": "state",
+              "name": "Quebec"
+            },
+            "country": {
+              "code": "ca",
+              "name": "Canada"
+            },
+            "recordedOn": "2022-03-02T20:20:25.213681Z"
+          },
+          "extensionValues": []
+        }
+      },
+      {
+        "id": "98cd58f5-6e95-4599-993c-5e9fa384b346",
+        "type": "storage-unit",
+        "attributes": {
+          "createdOn": "2022-03-02T17:33:47.021804Z",
+          "createdBy": "cnc-cm",
+          "group": "cnc",
+          "name": "Unit Type Number #1",
+          "storageUnitChildren": [],
+          "hierarchy": null
+        }
+      }
+    ],
+    "meta": {
+      "totalResourceCount": 1,
+      "moduleVersion": "0.47"
+    }
+  }

@@ -6,6 +6,35 @@
     }
   },
   "mappings": {
+    "dynamic_templates": [
+      {
+        "includes_as_nested": {
+          "match_mapping_type": "object",
+          "match":   "included",
+          "mapping": {
+            "type": "nested"
+          }
+        }
+      },
+      {
+        "id_as_keywords": {
+          "match_mapping_type": "string",
+          "match":   "id",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      },
+      {
+        "type_as_keywords": {
+          "match_mapping_type": "string",
+          "match":   "type",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      }
+    ],
     "properties": {
       "data": {
         "properties": {
@@ -55,38 +84,15 @@
               }
             }
           },
-          "id": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword",
-                "ignore_above": 256
-              }
-            }
-          },
           "relationships": {
             "properties": {
               "derivatives": {
                 "properties": {
                   "data": {
                     "properties": {
-                      "id": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
-                      },
                       "type": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
+                        "type": "constant_keyword",
+                        "value": "derivative"
                       }
                     }
                   }
@@ -96,23 +102,9 @@
                 "properties": {
                   "data": {
                     "properties": {
-                      "id": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
-                      },
                       "type": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
+                        "type": "constant_keyword",
+                        "value": "person"
                       }
                     }
                   }
@@ -122,36 +114,13 @@
                 "properties": {
                   "data": {
                     "properties": {
-                      "id": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
-                      },
                       "type": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
+                        "type": "constant_keyword",
+                        "value": "person"
                       }
                     }
                   }
                 }
-              }
-            }
-          },
-          "type": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword",
-                "ignore_above": 256
               }
             }
           }

@@ -1,0 +1,57 @@
+{
+    "data": {
+      "id": "bdae3b3a-b5a6-4b36-89dc-52634f9e044f",
+      "type": "person",
+      "attributes": {
+        "displayName": "Integration",
+        "email": "integration@test.com",
+        "createdBy": "cnc-cm",
+        "createdOn": "2022-02-09T17:53:24.263668Z",
+        "givenNames": "Integration",
+        "familyNames": "Integration",
+        "aliases": [
+          "Integration"
+        ],
+        "identifiers": [],
+        "webpage": "http://integration.test",
+        "remarks": null
+      },
+      "relationships": {
+        "organizations": {
+          "data": [
+            {
+              "id": "f9e10a21-d8b6-4d9b-8c99-953bdc940862",
+              "type": "organization"
+            }
+          ]
+        }
+      }
+    },
+    "included": [
+      {
+        "id": "f9e10a21-d8b6-4d9b-8c99-953bdc940862",
+        "type": "organization",
+        "attributes": {
+          "aliases": [
+            "Integration"
+          ],
+          "createdBy": "test-user",
+          "createdOn": "2022-02-09T17:52:07.620982Z",
+          "names": [
+            {
+              "languageCode": "EN",
+              "name": "Integration"
+            },
+            {
+              "languageCode": "FR",
+              "name": "Integration"
+            }
+          ]
+        }
+      }
+    ],
+    "meta": {
+      "totalResourceCount": 1,
+      "moduleVersion": "0.20"
+    }
+  }

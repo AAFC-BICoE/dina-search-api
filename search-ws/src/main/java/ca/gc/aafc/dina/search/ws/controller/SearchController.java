@@ -1,6 +1,5 @@
 package ca.gc.aafc.dina.search.ws.controller;
 
-import org.elasticsearch.action.search.SearchResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,11 +12,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
+
 import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @RestController
-@RequestMapping(value = "/search", produces = "application/json")
+@RequestMapping(value = "/search-ws", produces = "application/json")
 public class SearchController {
   
   private final SearchService searchService;
@@ -27,25 +27,34 @@ public class SearchController {
   }
 
   @GetMapping(path = "/auto-complete")
-  public ResponseEntity<SearchResponse> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
-      @RequestParam String autoCompleteField, @RequestParam(required = false) String additionalField) {
+  public ResponseEntity<?> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
+      @RequestParam String autoCompleteField, @RequestParam(required = false) String additionalField,
+      @RequestParam(required = false) String restrictedField,
+      @RequestParam(required = false) String restrictedFieldValue) {
 
-    log.info("prefix={}, indexName={}, autoCompleteField={}, additionalField={}", prefix, indexName, autoCompleteField, additionalField);
-    return new ResponseEntity<>(searchService.autoComplete(prefix, indexName, autoCompleteField, additionalField), HttpStatus.ACCEPTED);
+    log.info(
+        "prefix={}, indexName={}, autoCompleteField={}, additionalField={}, restrictedField={}, restrictedFieldValue={}",
+        prefix, indexName, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    try {
+      return new ResponseEntity<>(searchService.autoComplete(prefix, indexName,
+          autoCompleteField, additionalField, restrictedField, restrictedFieldValue), HttpStatus.OK);
+    } catch (SearchApiException e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
   }
 
   @GetMapping(path = "/mapping")
   public ResponseEntity<?> mapping(@RequestParam String indexName) {
     log.info("indexName={}", indexName);
     try {
-      return new ResponseEntity<>(searchService.getIndexMapping(indexName), HttpStatus.ACCEPTED);
+      return new ResponseEntity<>(searchService.getIndexMapping(indexName), HttpStatus.OK);
     } catch (SearchApiException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
     
-  @PostMapping(path = "/text", consumes = "application/json")
-  public ResponseEntity<String> query(@RequestBody String query, @RequestParam String indexName) {
+  @PostMapping(path = "/search", consumes = "application/json")
+  public ResponseEntity<String> search(@RequestBody String query, @RequestParam String indexName) {
 
     log.info("indexName={}, query={}", indexName, query);
 

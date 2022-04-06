@@ -1,0 +1,61 @@
+{
+    "took": 66,
+    "timed_out": false,
+    "_shards": {
+      "total": 1,
+      "successful": 1,
+      "skipped": 0,
+      "failed": 0
+    },
+    "hits": {
+      "total": {
+        "value": 3,
+        "relation": "eq"
+      },
+      "max_score": 0.6399027,
+      "hits": [
+        {
+          "_index": "dina_material_sample_index",
+          "_type": "_doc",
+          "_id": "e1e8775a-1c0b-43e8-85ce-63dccf1ffaf0",
+          "_score": 0.6399027,
+          "fields": {
+            "data.id": [
+              "e1e8775a-1c0b-43e8-85ce-63dccf1ffaf0"
+            ],
+            "data.type": [
+              "material-sample"
+            ]
+          }
+        },
+        {
+          "_index": "dina_material_sample_index",
+          "_type": "_doc",
+          "_id": "ed2899c4-f5d2-4cd2-9329-2bc6c4b3a2a0",
+          "_score": 0.6399027,
+          "fields": {
+            "data.id": [
+              "ed2899c4-f5d2-4cd2-9329-2bc6c4b3a2a0"
+            ],
+            "data.type": [
+              "material-sample"
+            ]
+          }
+        },
+        {
+          "_index": "dina_material_sample_index",
+          "_type": "_doc",
+          "_id": "20862ccd-dca5-4c92-b607-b41010319d64",
+          "_score": 0.6399027,
+          "fields": {
+            "data.id": [
+              "20862ccd-dca5-4c92-b607-b41010319d64"
+            ],
+            "data.type": [
+              "material-sample"
+            ]
+          }
+        }
+      ]
+    }
+  }

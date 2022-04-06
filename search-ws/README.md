@@ -35,15 +35,17 @@ docker-compose up
 ```
 
 Once the services have started you can access the search-ws REST API at port 8085 on the localhost.
-<br/>
 
-## Endpoint served by search-ws:
-<br/>
+## Endpoints
 
-### Auto Completion 
+* search-ws/auto-complete
+* search-ws/search
+* search-ws/mapping
+
+### auto-complete 
 
 ```
-GET http://<target-server>:8085/search/auto-complete?prefix=<string>&autoCompleteField=<fully qualified field>&additionalField=<fully qualified field>&indexName=<target index name>
+GET http://<target-server>:8085/search-ws/auto-complete?prefix=<string>&autoCompleteField=<fully qualified field>&additionalField=<fully qualified field>&indexName=<target index name>
 ```
 Content-Type: `application-json`
 
@@ -54,49 +56,114 @@ Content-Type: `application-json`
 - `target-index-name` =  dina_agent_index
 
 
-### Generic searches based on ElasticSearch compliant JSON payload 
-
+### search
+Generic searches based on ElasticSearch compliant JSON payload.
 ```
-POST http://<target-server>:8085/search/text?indexName=<target-index-name>
+POST http://<target-server>:8085/search-ws/search?indexName=<target-index-name>
 ```
 Content-Type: `application-json`
 
 - `target-server` = localhost
-- `target-index-name` =  dina_agent_index
+- `target-index-name` = dina_agent_index
+ 
+## mapping
+
+```
+GET http://<target-server>:8085/search-ws/mapping?indexName=<target-index-name>
+```
+Response: The structure contained in the body section of the payload is made up of three logical sections presented in the following extract:
+
+```
+    "body": {
+        "indexName": "dina_material_sample_index",
+        "attributes": [
+            {
+                "name": "verbatimDeterminer",
+                "type": "text",
+                "path": "data.attributes"
+            },
+            {
+                "name": "publiclyReleasable",
+                "type": "boolean",
+                "path": "data.attributes"
+            },
+            :::
+            :::
+        ],
+        "relationships": [
+            {
+                "name": "type",
+                "value": "collecting-event",
+                "path": "included",
+                "attributes": [
+                    {
+                        "name": "createdOn",
+                        "type": "date",
+                        "path": "attributes"
+                    },
+                    {
+                        "name": "createdBy",
+                        "type": "date",
+                        "path": "attributes"
+                    }
+                ]
+            },
+            {
+                "name": "type",
+                "value": "organism",
+                "path": "included",
+                "attributes": [
+                    {
+                        "name": "createdOn",
+                        "type": "date",
+                        "path": "attributes"
+                    },
+                :::
+                :::
+            ],
+        },
+      }
+    },
+    "statusCode": "OK",
+    "statusCodeValue": 200
+}
+
+```
+
+Relationship section is made of the objects listed as external relationship to the object.
+The relationship object fields are as follwed:
+
+- `name` = Elasticsearch type of the attribute
+- `value` = Name of the DINA relationship (collecting-event, organism...)
+- `path` = Root path for the relationship.
+
+
+Attributes section is made of the following fields
+
+- `name` = name of the attribute
+- `type` = Elasticsearch type of the attribute
+- `path` = Relative path to get to the attribute value within a document. Fully qualified path is built from 
+           the relationship path + attribue path + attribute name (path + path + name) 
 
  
-## Search Queries and Autocomplete support
-<br/>
+## Examples
 
-### Supported indices
-- dina_agent_index (agent specific index)
-- dina_material_sample_index
-
-### Autocomplete support using auto-complete endpoint
-<br/>
-
-#### Auto complete a value equal to 'Jim' by looking at displayname
+### Autocomplete a value equal to 'Jim' by looking at displayname
 ```
-http://localhost:8085/search/auto-complete?prefix=Jim&autoCompleteField=data.attributes.displayName&indexName=dina_agent_index
+http://localhost:8085/search-ws/auto-complete?prefix=Jim&autoCompleteField=data.attributes.displayName&indexName=dina_agent_index
 ```
 <br/>
 
-#### Auto complete a value equal to 'Jim' by looking at displayname and aliases
+### Autocomplete a value equal to 'Jim' by looking at displayname and aliases
 ```
-http://localhost:8085/search/auto-complete?prefix=Jim&autoCompleteField=data.attributes.displayName&additionalField=data.attributes.aliases&indexName=dina_agent_index
+http://localhost:8085/search-ws/auto-complete?prefix=Jim&autoCompleteField=data.attributes.displayName&additionalField=data.attributes.aliases&indexName=dina_agent_index
 ```
 
 *Note:* The provided fields (autoCompleteField and additionalField) have to match the one defined in the selected index.
 
 As per the description in the #Auto Completion section the additonalField is optional and when provided a search is conducted with the information provided.
 
-### Autocomplete support
-
-Only `displayName` field has been analyzed to support search-as-you-type capability.
-
-
-#### Sample auto-complete search
-<br/>
+### Sample auto-complete by using search endpoint
 
 #### dina_agent_index displayname in data section
 
@@ -153,7 +220,6 @@ string-to-auto-complete = the string that the caller wants to find autocomplete 
         "match_all": {}
     }
 }
-
 ```
 
 
@@ -175,43 +241,6 @@ string-to-auto-complete = the string that the caller wants to find autocomplete 
   }
 }
 
-```
-
-## Format of the search-ws Response
-
-```
-{
-  "took" : 4,
-  "timed_out" : false,
-  "_shards" : {
-    "total" : 1,
-    "successful" : 1,
-    "skipped" : 0,
-    "failed" : 0
-  },
-  "hits" : {
-    "total" : {
-      "value" : 1,
-      "relation" : "eq"
-    },
-    "max_score" : 1.6488812,
-    "hits" : [
-      ......... matching payload
-    ]
-  }
-}
-
-```
-
-## Get Index Mapping
-
-Query:
-```
-http://localhost:8085/search/mapping?indexName=dina_agent_index
-```
-Response:
-```
-{"data.id.type":"text","data.attributes.createdOn.type":"date"}
 ```
 
 Cleanup:

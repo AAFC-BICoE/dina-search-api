@@ -1,9 +1,10 @@
 package ca.gc.aafc.dina.search.ws.services;
 
-import org.elasticsearch.action.search.SearchResponse;
-import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.Map;
+import org.springframework.http.ResponseEntity;
+
+import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 
 public interface SearchService {
 
@@ -40,9 +41,12 @@ public interface SearchService {
    * @param indexName Index for the documents
    * @param autoCompleteField target field for the auto complete search.
    * @param additionalField additional or alternate field to evaluate in addition to the autoCompleteField.
+   * @param restrictedField Non null if we want to restrict based on a specific field.
+   * @param restrictedFieldValue The value to filter out.
+   * 
    * @return
    */
-  SearchResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField);
+  AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String restrictedField, String restrictedFieldValue) throws SearchApiException;
 
   /**
    * Search will take the provided json text query and forward it to the configured
@@ -64,6 +68,6 @@ public interface SearchService {
    * @return mapping of the index
    * @throws SearchApiException if something goes wrong with the request
    */
-  Map<String, String> getIndexMapping(String indexName) throws SearchApiException;
+  ResponseEntity<JsonNode> getIndexMapping(String indexName) throws SearchApiException;
 
 }

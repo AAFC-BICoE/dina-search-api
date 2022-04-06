@@ -1,4 +1,4 @@
-package ca.gc.aafc.dina.search.cli.indexing;
+package ca.gc.aafc.dina.search.cli.containers;
 
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
