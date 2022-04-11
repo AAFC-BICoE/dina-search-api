@@ -107,8 +107,7 @@ public class IndexableDocumentHandler {
   }
 
   public JsonNode getDocumentAttributesSection(String rawPayload) throws SearchApiException {
-    JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
-    return dataObject;
+    return parseJsonRaw(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
   }
 
   /**

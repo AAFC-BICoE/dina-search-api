@@ -28,6 +28,8 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
   private final ElasticsearchClient client;
 
+  private static final List<String> SEARCH_FIELDS_TO_RETURN = List.of("data.id", "data.type");
+
   public ElasticSearchDocumentIndexer(ElasticsearchClient client) {
     this.client = client;
   }
@@ -118,11 +120,6 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   public SearchResponse<JsonNode> search(List<String> indexNames, String documentType, String documentId) throws SearchApiException {
 
     try {
-      List<String> fieldsToReturn = new ArrayList<>();
-      fieldsToReturn.add("data.id");
-      fieldsToReturn.add("data.type");
-      
-
       // Match phrase query
       MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id").query(documentId);
       MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type").query(documentType);
@@ -137,13 +134,11 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
                                                           .query(QueryBuilders.bool()
                                                           .must(matchPhraseQueries).build()._toQuery()); 
 
-      SearchResponse<JsonNode> response = client.search(searchBuilder -> searchBuilder
+      return client.search(searchBuilder -> searchBuilder
           .index(indexNames)
           .query(nestedIncluded.build()._toQuery())
-          .storedFields(fieldsToReturn)
-          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
-      
-      return response;
+          .storedFields(SEARCH_FIELDS_TO_RETURN)
+          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(SEARCH_FIELDS_TO_RETURN))), JsonNode.class);
 
     } catch (IOException ex) {
       throw new SearchApiException("Error during search processing", ex);
