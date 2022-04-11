@@ -8,7 +8,7 @@
 #
 # For example in the material-sample example, without an entry for collectingEvent
 # or preparationType these objects will not be automatically included. 
-# Augmmentation of objects is done using the same endpoint when external object references
+# Augmentation of objects is done using the same endpoint when external object references
 # are found during processing of an object.
 #
 #
@@ -41,4 +41,7 @@ endpoints:
     relationships:
       - storageUnitChildren
       - storageUnitType
-      - parentStorageUnit 
+      - parentStorageUnit
+  transaction:
+    targetUrl: ${LOAN_TRANSACTION_URL:http://localhost:8086/api/v1/transaction}
+    indexName: dina_loan_transaction_index
