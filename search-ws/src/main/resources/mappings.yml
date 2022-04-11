@@ -1,0 +1,45 @@
+# Default attributes mappings for object relationships
+#
+#
+# Attributes defined will be added to the list of attributes of the matching
+# relationship when an index mapping is request from a REST client.
+#
+mappings:
+  collecting-event:
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date
+    - name: tags
+      type: text
+    - name: habitat
+      type: text
+    - name: substrate
+      type: text
+    - name: dwcOtherRecordNumbers
+      type: text
+    - name: dwcRecordNumber
+      type: text
+    - name: startEventDateTime
+      type: date
+    - name: endEventDateTime
+      type: date
+
+  organism:
+    - name: determination.verbatimScientificName
+      type: text
+    - name: determination.scientificName
+      type: text
+    - name: typeStatus
+      type: text
+
+  collection:
+    - name: name
+      type: text
+    - name: code
+      type: text
+
+  storage-unit:
+    - name: name
+      type: text
+      

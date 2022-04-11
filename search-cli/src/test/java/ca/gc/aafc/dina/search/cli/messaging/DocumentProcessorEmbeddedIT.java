@@ -205,6 +205,12 @@ public class DocumentProcessorEmbeddedIT {
       assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
       assertEquals(EMBEDDED_ORG_NAME, docFromElasticSearch.at("/included/0/attributes/names/0/name").asText());
 
+      // Give time to time....(We need a hard stop here because of the operations done by process embedded)
+      // search cluster
+      // re-index
+      //
+      Thread.sleep(1000);
+
       // Trigger process embedded document, should retrieve the newly updated
       // organization.
       // Name has been updated to "Integration Updated" (See Get Organization mock)

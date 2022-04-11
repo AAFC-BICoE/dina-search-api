@@ -90,17 +90,34 @@ Response: The structure contained in the body section of the payload is made up 
             :::
             :::
         ],
-        "relationships": {
-            "type": "constant_keyword",
-            "name": "type",
-            "value": "collecting-event",
-            "path": "included",
-            "attributes": [
-                {
-                    "name": "createdOn",
-                    "type": "date",
-                    "path": "attributes.geoReferenceAssertions"
-                },
+        "relationships": [
+            {
+                "name": "type",
+                "value": "collecting-event",
+                "path": "included",
+                "attributes": [
+                    {
+                        "name": "createdOn",
+                        "type": "date",
+                        "path": "attributes"
+                    },
+                    {
+                        "name": "createdBy",
+                        "type": "date",
+                        "path": "attributes"
+                    }
+                ]
+            },
+            {
+                "name": "type",
+                "value": "organism",
+                "path": "included",
+                "attributes": [
+                    {
+                        "name": "createdOn",
+                        "type": "date",
+                        "path": "attributes"
+                    },
                 :::
                 :::
             ],
@@ -113,13 +130,12 @@ Response: The structure contained in the body section of the payload is made up 
 
 ```
 
-Relationship section is made of the following fields
+Relationship section is made of the objects listed as external relationship to the object.
+The relationship object fields are as follwed:
 
-- `type` = Elasticsearch type of the attribute
-- `name` = Elasticsearch field name
-- `value` = Elasticsearch field value for the relationship (collecting-event...)
-- `path` = Path within the included section of the document. (path + name) == (value) can be used to
-           scope the request to only matching relationship type value.
+- `name` = Elasticsearch type of the attribute
+- `value` = Name of the DINA relationship (collecting-event, organism...)
+- `path` = Root path for the relationship.
 
 
 Attributes section is made of the following fields
@@ -127,7 +143,7 @@ Attributes section is made of the following fields
 - `name` = name of the attribute
 - `type` = Elasticsearch type of the attribute
 - `path` = Relative path to get to the attribute value within a document. Fully qualified path is built from 
-           the path + name 
+           the relationship path + attribue path + attribute name (path + path + name) 
 
  
 ## Examples

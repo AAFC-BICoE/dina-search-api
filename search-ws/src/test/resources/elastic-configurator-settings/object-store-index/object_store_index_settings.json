@@ -52,7 +52,7 @@
               "createdOn": {
                 "type": "date"
               },
-              "group": {
+              "bucket": {
                 "type": "text",
                 "fields": {
                   "keyword": {
@@ -61,7 +61,7 @@
                   }
                 }
               },
-              "name": {
+              "originalFilename": {
                 "type": "text",
                 "fields": {
                   "keyword": {
@@ -70,42 +70,23 @@
                   }
                 }
               },
-              "hierarchy": {
-                "properties": {
-                  "uuid": {
-                    "type": "text",
-                    "fields": {
-                      "keyword": {
-                        "type": "keyword",
-                        "ignore_above": 256
-                      }
-                    }
-                  },
-                  "name": {
-                    "type": "text",
-                    "fields": {
-                      "keyword": {
-                        "type": "keyword",
-                        "ignore_above": 256
-                      }
-                    }
-                  },
-                  "rank": {
-                    "type": "text",
-                    "fields": {
-                      "keyword": {
-                        "type": "keyword",
-                        "ignore_above": 256
-                      }
-                    }
+              "acCaption": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
                   }
                 }
+              },
+              "managedAttributeValues": {
+                "type": "object"
               }
             }
           },
           "relationships": {
             "properties": {
-              "parentStorageUnit": {
+              "derivatives": {
                 "properties": {
                   "data": {
                     "properties": {
@@ -122,7 +103,7 @@
                   }
                 }
               },
-              "storageUnitChildren ": {
+              "acMetadataCreator": {
                 "properties": {
                   "data": {
                     "properties": {
@@ -139,7 +120,7 @@
                   }
                 }
               },
-              "storageUnitType ": {
+              "dcCreator": {
                 "properties": {
                   "data": {
                     "properties": {

@@ -1,0 +1,40 @@
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "bool": {
+            "must": [
+              {
+                "match": {
+                  "data.attributes.group" : "cnc"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "nested": {
+            "path": "included",
+            "query": {
+              "bool": {
+                "must": [
+                  {
+                    "match": {
+                      "included.type": "@type@"
+                    }
+                  },
+                  {
+                    "match": {
+                      "included.attributes.dwcVerbatimLocality": "@locality@"
+                    }
+                  }                
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
