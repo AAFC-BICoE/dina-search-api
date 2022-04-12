@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.ShardFailure;
 import co.elastic.clients.elasticsearch._types.ShardStatistics;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchPhraseQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
@@ -26,6 +27,8 @@ import java.util.List;
 public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
   private final ElasticsearchClient client;
+
+  private static final List<String> SEARCH_FIELDS_TO_RETURN = List.of("data.id", "data.type");
 
   public ElasticSearchDocumentIndexer(ElasticsearchClient client) {
     this.client = client;
@@ -117,27 +120,25 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   public SearchResponse<JsonNode> search(List<String> indexNames, String documentType, String documentId) throws SearchApiException {
 
     try {
-      List<String> fieldsToReturn = new ArrayList<>();
-      fieldsToReturn.add("data.id");
-      fieldsToReturn.add("data.type");
-      
-
       // Match phrase query
-      MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id.keyword").query(documentId);
-      MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type.keyword").query(documentType);
+      MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id").query(documentId);
+      MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type").query(documentType);
       
       List<Query> matchPhraseQueries = new ArrayList<>(2);
       matchPhraseQueries.add(documentIdMatchPhrase.build()._toQuery());
       matchPhraseQueries.add(documentTypeMatchPhrase.build()._toQuery());
 
-      SearchResponse<JsonNode> response = client.search(searchBuilder -> searchBuilder
+      // Nested query
+      NestedQuery.Builder nestedIncluded = QueryBuilders.nested()
+                                                          .path("included")
+                                                          .query(QueryBuilders.bool()
+                                                          .must(matchPhraseQueries).build()._toQuery()); 
+
+      return client.search(searchBuilder -> searchBuilder
           .index(indexNames)
-          .query(QueryBuilders.bool()
-                    .must(matchPhraseQueries).build()._toQuery())
-          .storedFields(fieldsToReturn)
-          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class);
-      
-      return response;
+          .query(nestedIncluded.build()._toQuery())
+          .storedFields(SEARCH_FIELDS_TO_RETURN)
+          .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(SEARCH_FIELDS_TO_RETURN))), JsonNode.class);
 
     } catch (IOException ex) {
       throw new SearchApiException("Error during search processing", ex);

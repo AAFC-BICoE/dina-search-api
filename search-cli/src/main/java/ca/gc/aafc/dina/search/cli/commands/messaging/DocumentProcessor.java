@@ -101,7 +101,10 @@ public class DocumentProcessor implements IMessageProcessor {
         break;
 
       case DELETE: 
-        deleteDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());      
+        deleteDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());
+        
+        // Handle delete of a document that may have been embedded in others
+        processEmbeddedDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId()); 
         break;
 
       case NOT_DEFINED:
