@@ -6,9 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -42,7 +40,6 @@ public class DocumentProcessor implements IMessageProcessor {
     this.svcEndpointProps = svcEndpointProps;
     this.indexableDocumentHandler = indexableDocumentHandler;
     this.indexer = indexer;
-    //this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     indexList = new ArrayList<>();
     svcEndpointProps.getEndpoints().values().forEach(desc -> {

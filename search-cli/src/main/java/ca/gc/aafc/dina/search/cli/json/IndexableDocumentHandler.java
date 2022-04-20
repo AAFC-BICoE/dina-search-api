@@ -73,8 +73,8 @@ public class IndexableDocumentHandler {
    * Once all the included section is done, some cleanup is done on the "meta" section.
    * 
    * 
-   * @param rawPayload
-   * @return document as json string
+   * @param rawPayload payload in raw json (json string)
+   * @return document as {@link ObjectNode}
    * @throws SearchApiException
    */
   public ObjectNode assembleDocument(String rawPayload)
