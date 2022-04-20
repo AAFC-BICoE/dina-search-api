@@ -6,9 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -34,7 +32,6 @@ public class DocumentProcessor implements IMessageProcessor {
   private final ServiceEndpointProperties svcEndpointProps;
   private final IndexableDocumentHandler indexableDocumentHandler;
   private final ElasticSearchDocumentIndexer indexer;
-  private final ObjectMapper objectMapper;
   private final List<String> indexList;
 
   public DocumentProcessor(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps,
@@ -43,7 +40,6 @@ public class DocumentProcessor implements IMessageProcessor {
     this.svcEndpointProps = svcEndpointProps;
     this.indexableDocumentHandler = indexableDocumentHandler;
     this.indexer = indexer;
-    this.objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     indexList = new ArrayList<>();
     svcEndpointProps.getEndpoints().values().forEach(desc -> {
@@ -116,26 +112,22 @@ public class DocumentProcessor implements IMessageProcessor {
   /**
    * Index or re-index the document identified by the type and documentId
    */
-  public String indexDocument(String type, String documentId) throws SearchApiException {
-
-    String processedMessage = null;
+  public JsonNode indexDocument(String type, String documentId) throws SearchApiException {
     JsonNode jsonNode = null;
     if (!svcEndpointProps.getEndpoints().containsKey(type)) {
-      processedMessage = "Unsupported endpoint type:" + type;
-      log.error(processedMessage);
-      return processedMessage;
+      throw new SearchApiException("Unsupported endpoint type:" + type);
     }
 
     // Step #1: get the document
     log.info("Retrieving document id:{}", documentId);
     EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
-    processedMessage = aClient.getDataFromUrl(endpointDescriptor, documentId);
+    String documentToIndex = aClient.getDataFromUrl(endpointDescriptor, documentId);
 
     // Step #2: Assemble the document into a JSON map
     log.info("Assembling document id:{}", documentId);
-    processedMessage = indexableDocumentHandler.assembleDocument(processedMessage);
+
     try {
-      jsonNode = objectMapper.readTree(processedMessage);
+      jsonNode = indexableDocumentHandler.assembleDocument(documentToIndex);
     } catch (JsonProcessingException ex) {
       throw new SearchApiException("Unable to parse type '" + type + "' with the id '" + documentId + "'", ex);
     }
@@ -146,7 +138,7 @@ public class DocumentProcessor implements IMessageProcessor {
       indexer.indexDocument(documentId, jsonNode, endpointDescriptor.getIndexName());
     }
 
-    return processedMessage;
+    return jsonNode;
   }
 
   public String deleteDocument(String type, String documentId) throws SearchApiException {
