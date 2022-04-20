@@ -45,3 +45,5 @@ endpoints:
   transaction:
     targetUrl: ${LOAN_TRANSACTION_URL:http://localhost:8086/api/v1/transaction}
     indexName: dina_loan_transaction_index
+    relationships:
+      - involvedAgents

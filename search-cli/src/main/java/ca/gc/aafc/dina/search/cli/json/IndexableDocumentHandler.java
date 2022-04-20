@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
 import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
 import lombok.extern.log4j.Log4j2;
 
@@ -106,8 +107,7 @@ public class IndexableDocumentHandler {
   }
 
   public JsonNode getDocumentAttributesSection(String rawPayload) throws SearchApiException {
-    JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
-    return dataObject;
+    return parseJsonRaw(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
   }
 
   /**
@@ -182,6 +182,13 @@ public class IndexableDocumentHandler {
           //
           if (curObject.isObject()) {
             ((ObjectNode) curObject).set("attributes", dataObject);
+          }
+        } catch (SearchApiNotFoundException exNotFound) {
+          
+          // Remove attribute section from the embedded object
+          //
+          if (curObject.isObject()) {
+            ((ObjectNode) curObject).remove("attributes");
           }
         } catch (SearchApiException apiEx) {
           log.error("Error during processing of included section object type{}, id={}", type, curObjectId);

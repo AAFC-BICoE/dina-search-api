@@ -5,13 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
-import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
-import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -24,16 +29,26 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
+import org.mockserver.mock.Expectation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.indexing.DocumentIndexer;
 import ca.gc.aafc.dina.search.cli.indexing.OperationStatus;
+import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
+import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
@@ -72,14 +87,20 @@ public class DocumentProcessorEmbeddedIT {
   private static final String EMBEDDED_DOCUMENT_INCLUDED_TYPE = "organization";
   private static final String EMBEDDED_DOCUMENT_INCLUDED_ID = "f9e10a21-d8b6-4d9b-8c99-953bdc940862";
 
+  @Autowired 
+  private RestTemplateBuilder builder;
+  
   // Document to index into elastic search
   private static final Path EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH = Path.of("src/test/resources/person_embedded_assemble_response.json");
 
   // Template of response to be receive after process embedded
   private static final Path EMBEDDED_PERSON_RESPONSE_PATH = Path.of("src/test/resources/get_person_embedded_response.json");
- 
+
   // Organization document
   private static final Path EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH = Path.of("src/test/resources/get_updated_organization_embedded_response.json");
+
+  private static ObjectMapper objectMapper;
+  private RestTemplate restTemplate;
 
   @BeforeAll
   static void beforeAll() {
@@ -87,6 +108,8 @@ public class DocumentProcessorEmbeddedIT {
 
     assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
     assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
+
+    objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   @AfterAll
@@ -100,14 +123,12 @@ public class DocumentProcessorEmbeddedIT {
   }
 
   @DisplayName("Integration Test process embedded document")
-  @SneakyThrows
+  @SneakyThrows({ IOException.class, URISyntaxException.class, InterruptedException.class })
   @Test
   public void processEmbedded_Document() {
-
     MockKeyCloakAuthentication mockKeycloakAuthentication = new MockKeyCloakAuthentication(client);
 
     // Mock the person request/response.
-    //
     client.when(mockKeycloakAuthentication.setupMockRequest()
         .withMethod("GET")
         .withPath("/api/v1/" + EMBEDDED_DOCUMENT_TYPE + "/" + EMBEDDED_DOCUMENT_ID)
@@ -119,8 +140,7 @@ public class DocumentProcessorEmbeddedIT {
 
     // Mock the organization request after an update. That mock will be used 
     // indirectly by the re-index operation from the processEmbedded.
-    //
-    client.when(mockKeycloakAuthentication.setupMockRequest()
+    Expectation orgSuccess[] = client.when(mockKeycloakAuthentication.setupMockRequest()
     .withMethod("GET")
     .withPath("/api/v1/" + EMBEDDED_DOCUMENT_INCLUDED_TYPE + "/" + EMBEDDED_DOCUMENT_INCLUDED_ID))
     .respond(mockKeycloakAuthentication.setupMockResponse()
@@ -133,10 +153,23 @@ public class DocumentProcessorEmbeddedIT {
     JsonNode docToIndex = JsonTestUtils.readJson(Files.readString(EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH));
     assertNotNull(docToIndex);
 
-    // Create indices as supported by the dina project
-    //
+    restTemplate = builder.build();
+
+    // For testing, we will be using the agent index.
+    addIndexMapping(
+        "src/test/resources/elastic-configurator-settings/agent-index",
+        "/dina_agent_index_settings.json",
+        DINA_AGENT_INDEX
+    );
+
+    // The other indices must exist, but can be empty for this test. Use the endpoint to generate them.
     serviceEndpointProperties.getEndpoints().values().forEach(desc -> {
       if (StringUtils.isNotBlank (desc.getIndexName())) {
+
+        // Agent index can be skipped since it already has been added above.
+        if (desc.getIndexName().trim().equals(DINA_AGENT_INDEX)) return;
+
+        // Create the indices in elastic search.
         try {
           elasticSearchClient.indices().create(c -> c.index(desc.getIndexName().trim()));
         } catch (ElasticsearchException e) {
@@ -148,21 +181,26 @@ public class DocumentProcessorEmbeddedIT {
       }
     });
 
-    // Index the original document with organization ame set to "Integration"
-    OperationStatus result = documentIndexer.indexDocument(EMBEDDED_DOCUMENT_ID, docToIndex, DINA_AGENT_INDEX);
+    // Index the original document with organization set to "Integration"
+    OperationStatus result;
+    try {
+      result = documentIndexer.indexDocument(EMBEDDED_DOCUMENT_ID, docToIndex, DINA_AGENT_INDEX);
 
-    assertNotNull(result);
-    assertEquals(OperationStatus.SUCCEEDED, result);
+      assertNotNull(result);
+      assertEquals(OperationStatus.SUCCEEDED, result);
+    } catch (SearchApiException e) {
+      fail(e);
+    }
 
     int foundDocument = ElasticSearchTestUtils
-        .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id.keyword", EMBEDDED_DOCUMENT_ID, 1);
+        .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
     Assert.assertEquals(1, foundDocument);
 
     SearchResponse<JsonNode> searchResponse = elasticSearchClient.search(s -> s
         .index(DINA_AGENT_INDEX)
         .query(q -> q
             .term(t -> t
-                .field("data.id.keyword")
+                .field("data.id")
                 .value(v -> v.stringValue(EMBEDDED_DOCUMENT_ID)))),
         JsonNode.class);
 
@@ -171,30 +209,29 @@ public class DocumentProcessorEmbeddedIT {
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
     assertEquals(EMBEDDED_ORG_NAME, docFromElasticSearch.at("/included/0/attributes/names/0/name").asText());
 
+    // We need a hard stop here because of the operations done by process embedded.
+    Thread.sleep(1000);
+
     // Trigger process embedded document, should retrieve the newly updated organization.
     // Name has been updated to "Integration Updated" (See Get Organization mock)
-    //
-    documentProcessor.processEmbeddedDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
-
-    // Give time to time....(We need a hard stop here because of the operations done by process embedded)
-    // search cluster
-    // re-index
-    //
-    Thread.currentThread().sleep(1000);
+    try {
+      documentProcessor.processEmbeddedDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
+    } catch (SearchApiException e) {
+      fail(e);
+    }
 
     // Retrieve the document from elasticsearch
     foundDocument = ElasticSearchTestUtils
-          .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "included.attributes.names.name", EMBEDDED_ORG_NAME_AFTER_UPDATE, 1);
-    assertEquals(1, foundDocument);
+        .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
+    Assert.assertEquals(1, foundDocument);
 
-    // Get the document straight from Elastic search, we should have the 
+    // Get the document straight from Elastic search, we should have the
     // embedded organization updated
-    //
     searchResponse = elasticSearchClient.search(s -> s
         .index(DINA_AGENT_INDEX)
         .query(q -> q
             .term(t -> t
-                .field("data.id.keyword")
+                .field("data.id")
                 .value(v -> v.stringValue(EMBEDDED_DOCUMENT_ID)))),
         JsonNode.class);
 
@@ -202,7 +239,72 @@ public class DocumentProcessorEmbeddedIT {
     docFromElasticSearch = searchResponse.hits().hits().get(0).source();
 
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
-    assertEquals(EMBEDDED_ORG_NAME_AFTER_UPDATE, docFromElasticSearch.at("/included/0/attributes/names/0/name").asText());
-    
+    assertEquals(EMBEDDED_ORG_NAME_AFTER_UPDATE,
+        docFromElasticSearch.at("/included/0/attributes/names/0/name").asText());
+
+    // Mock the organization request after an update. That mock will be used
+    // indirectly by the re-index operation from the processEmbedded.
+    // 404 to simulate a deletion
+    client.clear(orgSuccess[0].getHttpRequest());
+
+    client.when(mockKeycloakAuthentication.setupMockRequest()
+        .withMethod("GET")
+        .withPath("/api/v1/" + EMBEDDED_DOCUMENT_INCLUDED_TYPE + "/" + EMBEDDED_DOCUMENT_INCLUDED_ID))
+        .respond(mockKeycloakAuthentication.setupMockResponse()
+            .withStatusCode(404)
+            .withBody("")
+            .withDelay(TimeUnit.SECONDS, 1));
+
+    // Delete from elasticsearch and process document.
+    // Simulate what send deleted message would do..
+    try {
+      documentProcessor.deleteDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
+
+      documentProcessor.processEmbeddedDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
+    } catch (SearchApiException e) {
+      fail(e);
+    }
+
+    // Retrieve the document from elasticsearch
+    foundDocument = ElasticSearchTestUtils
+        .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
+    Assert.assertEquals(1, foundDocument);
+
+    // Get the document straight from Elastic search, we should have the
+    // embedded organization updated
+    searchResponse = elasticSearchClient.search(s -> s
+        .index(DINA_AGENT_INDEX)
+        .query(q -> q
+            .term(t -> t
+                .field("data.id")
+                .value(v -> v.stringValue(EMBEDDED_DOCUMENT_ID)))),
+        JsonNode.class);
+
+    assertEquals(1, searchResponse.hits().hits().size());
+    docFromElasticSearch = searchResponse.hits().hits().get(0).source();
+
+    assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
+    assertEquals("", docFromElasticSearch.at("/included/0/attributes").asText());
   }
+  
+  private HttpHeaders buildJsonHeaders() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    return headers;
+  }
+
+  private void addIndexMapping(String indexFilePath, String indexFileName, String indexName) throws IOException, JsonProcessingException, JsonMappingException, URISyntaxException {
+    JsonNode jsonNode;
+    Path filename = Path.of(indexFilePath + indexFileName);
+    String documentContent = Files.readString(filename);
+
+    jsonNode = objectMapper.readTree(documentContent);
+    URI uri = new URI("http://localhost:9200/" + indexName);
+
+    HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), buildJsonHeaders());
+    restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
+  }
+
 }

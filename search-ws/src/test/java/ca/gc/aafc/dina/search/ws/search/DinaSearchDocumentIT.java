@@ -1,6 +1,5 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import ca.gc.aafc.dina.search.ws.controller.SearchController;
 import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
@@ -63,9 +62,6 @@ public class DinaSearchDocumentIT {
 
   @Autowired
   private SearchService searchService;
-
-  @Autowired
-  private SearchController searchController;
 
   @Autowired
   private ElasticsearchClient client;
