@@ -51,7 +51,7 @@ public class IndexableDocumentHandler {
   private static final String PUBLISH_INCLUDED = "included";
   private static final String PUBLISH_META = "meta";
 
-  private static final ObjectMapper OM = new ObjectMapper();
+  public static final ObjectMapper OM = new ObjectMapper();
 
   private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
@@ -77,7 +77,7 @@ public class IndexableDocumentHandler {
    * @return document as json string
    * @throws SearchApiException
    */
-  public String assembleDocument(String rawPayload)
+  public ObjectNode assembleDocument(String rawPayload)
       throws SearchApiException, JsonProcessingException {
 
     JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA);
@@ -104,7 +104,7 @@ public class IndexableDocumentHandler {
       newData.set(PUBLISH_META, metaObject);
     }
 
-    return OM.writeValueAsString(newData);
+    return newData;
   }
 
   public JsonNode getDocumentAttributesSection(String rawPayload) throws SearchApiException {

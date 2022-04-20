@@ -46,7 +46,7 @@ public class GetDocument {
       msg = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type), documentId);
 
       if (assemble) {
-        msg = indexableDocumentHandler.assembleDocument(msg);
+        msg = IndexableDocumentHandler.OM.writeValueAsString(indexableDocumentHandler.assembleDocument(msg));
       }
     } catch (SearchApiException | JsonProcessingException ex) {
       log.error("Error during operation execution", ex);

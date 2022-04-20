@@ -21,15 +21,14 @@ public class IndexDocument {
   }
 
   @ShellMethod(value = "Index a document into elasticsearch", key = "index-document")
-  public String indexDocument(
+  public void indexDocument(
                   @ShellOption(help = "Document type", value = { "-t", "--type" }) String type,
                   @ShellOption(help = "Unique object identifier", value = { "-i", "--documentId" }) String documentId) {
 
     try {
-      return documentProcessor.indexDocument(type, documentId);
+      documentProcessor.indexDocument(type, documentId);
     } catch (SearchApiException e) {
       log.error("Indexing error: ", e);
     }
-    return null;
   }
 }
