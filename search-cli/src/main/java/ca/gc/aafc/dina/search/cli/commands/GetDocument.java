@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
@@ -47,8 +48,8 @@ public class GetDocument {
       if (assemble) {
         msg = indexableDocumentHandler.assembleDocument(msg);
       }
-    } catch (SearchApiException sapiEx) {
-      log.error("Error during operation execution", sapiEx);
+    } catch (SearchApiException | JsonProcessingException ex) {
+      log.error("Error during operation execution", ex);
     }
 
     return msg;

@@ -133,8 +133,9 @@ public class DocumentProcessor implements IMessageProcessor {
 
     // Step #2: Assemble the document into a JSON map
     log.info("Assembling document id:{}", documentId);
-    processedMessage = indexableDocumentHandler.assembleDocument(processedMessage);
+
     try {
+      processedMessage = indexableDocumentHandler.assembleDocument(processedMessage);
       jsonNode = objectMapper.readTree(processedMessage);
     } catch (JsonProcessingException ex) {
       throw new SearchApiException("Unable to parse type '" + type + "' with the id '" + documentId + "'", ex);

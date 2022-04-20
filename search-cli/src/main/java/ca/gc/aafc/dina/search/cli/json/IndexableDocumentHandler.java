@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.json;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -77,7 +78,7 @@ public class IndexableDocumentHandler {
    * @throws SearchApiException
    */
   public String assembleDocument(String rawPayload)
-      throws SearchApiException {
+      throws SearchApiException, JsonProcessingException {
 
     JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA);
 
@@ -103,7 +104,7 @@ public class IndexableDocumentHandler {
       newData.set(PUBLISH_META, metaObject);
     }
 
-    return newData.toString();
+    return OM.writeValueAsString(newData);
   }
 
   public JsonNode getDocumentAttributesSection(String rawPayload) throws SearchApiException {
@@ -138,11 +139,8 @@ public class IndexableDocumentHandler {
    * their attributes property.
    * 
    * @param includedArray Array containing included json spec objects
-   * 
-   * @throws SearchApiException
    */
-  private void processIncluded(JsonNode includedArray)
-      throws SearchApiException {
+  private void processIncluded(JsonNode includedArray) {
 
     if (includedArray == null || !includedArray.isArray()) {
       return;
