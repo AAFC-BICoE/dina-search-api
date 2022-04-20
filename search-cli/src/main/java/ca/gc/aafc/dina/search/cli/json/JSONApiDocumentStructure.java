@@ -8,7 +8,8 @@ import com.fasterxml.jackson.core.JsonPointer;
 public final class JSONApiDocumentStructure {
 
   // Utility class
-  private JSONApiDocumentStructure(){}
+  private JSONApiDocumentStructure() {
+  }
 
   public static final String DATA = "data";
   public static final String INCLUDED = "included";
