@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.Mapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -65,13 +66,7 @@ public class SearchController {
     }
   }
 
-  /**
-   * Get with a body.
-   * @param query
-   * @param indexName
-   * @return
-   */
-  @GetMapping(path = "/count", consumes = "application/json")
+  @PostMapping(path = "/count", consumes = "application/json")
   public ResponseEntity<String> count(@RequestBody String query, @RequestParam String indexName) {
 
     log.info("indexName={}, query={}", indexName, query);

@@ -174,14 +174,13 @@ public class ESSearchService implements SearchService {
    * @param indexName
    * @param query Json query to forward to the elasticsearch API.
    * @return
-   * @throws SearchApiException
    */
   @Override
   public CountResponse count(String indexName, String query) {
 
     URI uri = countUriBuilder.build(Map.of("indexName", indexName));
     HttpEntity<?> entity = new HttpEntity<>(query, JSON_HEADERS);
-    ResponseEntity<CountResponse> countResponse = restTemplate.exchange(uri, HttpMethod.GET, entity, CountResponse.class);
+    ResponseEntity<CountResponse> countResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, CountResponse.class);
 
     return countResponse.getBody();
   }

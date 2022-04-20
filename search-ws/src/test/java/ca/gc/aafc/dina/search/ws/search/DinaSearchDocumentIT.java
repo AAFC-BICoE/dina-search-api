@@ -137,9 +137,11 @@ public class DinaSearchDocumentIT {
                                 .replace("@locality@", "Ottawa"); 
 
       result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, threeResultsQuery);
-
       assertNotNull(result);
       assertTrue(result.contains("\"total\":{\"value\":3,\"relation\":\"eq\"}"));
+
+      // validate with the count
+      assertEquals(Long.valueOf(3), searchService.count(DINA_MATERIAL_SAMPLE_INDEX, threeResultsQuery).getCount());
 
       // collecting-event and Gatineau
       String oneResultQuery = queryStringTemplate
