@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Custom class that mimics ElasticSearch SearchResponse will only the fields that are relevant.
+ * Custom class that mimics ElasticSearch SearchResponse with only the fields that are relevant.
  */
 @RequiredArgsConstructor
 @Getter

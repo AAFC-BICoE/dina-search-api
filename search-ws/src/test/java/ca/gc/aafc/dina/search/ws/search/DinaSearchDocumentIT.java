@@ -272,6 +272,9 @@ public class DinaSearchDocumentIT {
     
     assertNotNull(result);
     assertTrue(result.contains("\"total\":{\"value\":2,\"relation\":\"eq\"}"));
+
+    // try with the count
+    assertEquals(Long.valueOf(2), searchService.count(DINA_AGENT_INDEX, queryString).getCount());
   }
 
   @Test

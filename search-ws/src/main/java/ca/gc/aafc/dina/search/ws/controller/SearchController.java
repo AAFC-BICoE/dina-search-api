@@ -64,4 +64,22 @@ public class SearchController {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
+
+  /**
+   * Get with a body.
+   * @param query
+   * @param indexName
+   * @return
+   */
+  @GetMapping(path = "/count", consumes = "application/json")
+  public ResponseEntity<String> count(@RequestBody String query, @RequestParam String indexName) {
+
+    log.info("indexName={}, query={}", indexName, query);
+
+    try {
+      return new ResponseEntity<>(searchService.search(indexName, query), HttpStatus.ACCEPTED);
+    } catch (SearchApiException e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+  }
 }
