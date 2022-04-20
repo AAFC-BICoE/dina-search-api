@@ -97,7 +97,7 @@ public class DocumentProcessorIT {
             .withDelay(TimeUnit.SECONDS, 1));
 
     // Create a request for the document processor.
-    JsonNode jsonMessage = JsonTestUtils.readJson(documentProcessor.indexDocument(DOCUMENT_TYPE, DOCUMENT_ID));
+    JsonNode jsonMessage = documentProcessor.indexDocument(DOCUMENT_TYPE, DOCUMENT_ID);
 
     // Test to ensure the person message was properly assembled.
     assertEquals(DOCUMENT_ID, jsonMessage.at("/data/id").asText());

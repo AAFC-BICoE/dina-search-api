@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.json;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -50,7 +51,7 @@ public class IndexableDocumentHandler {
   private static final String PUBLISH_INCLUDED = "included";
   private static final String PUBLISH_META = "meta";
 
-  private static final ObjectMapper OM = new ObjectMapper();
+  public static final ObjectMapper OM = new ObjectMapper();
 
   private final OpenIDHttpClient aClient;
   private final ServiceEndpointProperties svcEndpointProps;
@@ -72,12 +73,12 @@ public class IndexableDocumentHandler {
    * Once all the included section is done, some cleanup is done on the "meta" section.
    * 
    * 
-   * @param rawPayload
-   * @return document as json string
+   * @param rawPayload payload in raw json (json string)
+   * @return document as {@link ObjectNode}
    * @throws SearchApiException
    */
-  public String assembleDocument(String rawPayload)
-      throws SearchApiException {
+  public ObjectNode assembleDocument(String rawPayload)
+      throws SearchApiException, JsonProcessingException {
 
     JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA);
 
@@ -103,7 +104,7 @@ public class IndexableDocumentHandler {
       newData.set(PUBLISH_META, metaObject);
     }
 
-    return newData.toString();
+    return newData;
   }
 
   public JsonNode getDocumentAttributesSection(String rawPayload) throws SearchApiException {
@@ -138,11 +139,8 @@ public class IndexableDocumentHandler {
    * their attributes property.
    * 
    * @param includedArray Array containing included json spec objects
-   * 
-   * @throws SearchApiException
    */
-  private void processIncluded(JsonNode includedArray)
-      throws SearchApiException {
+  private void processIncluded(JsonNode includedArray) {
 
     if (includedArray == null || !includedArray.isArray()) {
       return;
