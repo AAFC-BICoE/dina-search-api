@@ -1,23 +1,17 @@
 package ca.gc.aafc.dina.search.cli.json;
 
+import ca.gc.aafc.dina.search.cli.http.CacheableApiAccess;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.jayway.jsonpath.Configuration;
-import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.PathNotFoundException;
-import com.jayway.jsonpath.ReadContext;
-import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider;
-import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider;
 
 import org.springframework.stereotype.Component;
 
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
-import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
-import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
+
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Optional;
@@ -37,22 +31,13 @@ import java.util.Optional;
 @Component
 public class IndexableDocumentHandler {
 
-  public static final Configuration JACKSON_JSON_NODE_CONFIGURATION = 
-      Configuration.builder()
-        .mappingProvider(new JacksonMappingProvider())
-        .jsonProvider(new JacksonJsonNodeJsonProvider())
-        .build();
-
-  public static final String JSON_PATH_DATA_ATTRIBUTES = "$.data.attributes";
-  public static final String JSON_PATH_DATA_RELATIONSHIPS = "$.data.relationships";
-
   public static final ObjectMapper OM = new ObjectMapper();
 
-  private final OpenIDHttpClient aClient;
+  private final CacheableApiAccess client;
   private final ServiceEndpointProperties svcEndpointProps;
 
-  public IndexableDocumentHandler(OpenIDHttpClient aClient, ServiceEndpointProperties svcEndpointProps) {
-    this.aClient = aClient;
+  public IndexableDocumentHandler(CacheableApiAccess client, ServiceEndpointProperties svcEndpointProps) {
+    this.client = client;
     this.svcEndpointProps = svcEndpointProps;
   }
 
@@ -95,29 +80,6 @@ public class IndexableDocumentHandler {
     return newData;
   }
 
-  public JsonNode getDocumentAttributesSection(String rawPayload) throws SearchApiException {
-    return parseJsonRaw(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
-  }
-
-  /**
-   * Parse json raw string into a {@link JsonNode} from the supplied jsonPath.
-   * @param jsonRawPayload
-   * @param jsonPath
-   * @return
-   */
-  private JsonNode parseJsonRaw(String jsonRawPayload, String jsonPath) {
-
-    ReadContext documentCtx = JsonPath.using(JACKSON_JSON_NODE_CONFIGURATION).parse(jsonRawPayload);
-
-    JsonNode jsonNode = null;
-    try {
-      jsonNode = documentCtx.read(jsonPath);
-    } catch (PathNotFoundException pPathNotFoundEx) {
-      // This is not really an error, but an indication that the element is not present.
-      log.warn("Element {} not found,", jsonPath, pPathNotFoundEx);
-    }
-    return jsonNode;
-  }
 
   private static Optional<JsonNode> atJsonPtr(JsonNode document, JsonPointer ptr) {
     JsonNode node = document.at(ptr);
@@ -139,51 +101,40 @@ public class IndexableDocumentHandler {
       return;
     }
 
-    // Start processing each entry of the included data
-    //
     for (JsonNode curObject : includedArray) {
 
-      if (curObject.get("attributes") != null) {
-        // Already have the attributes...just skip the current entry
+      if (curObject.get("attributes") != null || !curObject.isObject()) {
+        // Already have the attributes or the node is not an object ... skip the current entry
         continue;
       }
 
       // Getting the type and perform a level #1 retrieval of attributes
       //
-      String type = curObject.get("type").asText();
+      String type = curObject.get(JSONApiDocumentStructure.TYPE).asText();
       if (svcEndpointProps.getEndpoints().containsKey(type)) {
 
         // Get the Id and retrieved the attributes from the related object.
         //
         String curObjectId = curObject.get("id").asText();
-        String rawPayload = null;
 
         // Best effort processing for assembling of include section
         try {
-          
-          rawPayload = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type), curObjectId);
+          String rawPayload = client.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
 
-          // Take the data.attributes section to be embedded....
-          //
-          JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA_ATTRIBUTES);
+          JsonNode document = OM.readTree(rawPayload);
+          // Take the data.attributes section to be embedded
+          Optional<JsonNode> dataObject = atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
 
-          // At this stage we have the type, id and attributes for the object
-          //
-          // First pass, we can embed the object right away...
-          //
-          if (curObject.isObject()) {
-            ((ObjectNode) curObject).set("attributes", dataObject);
+          if(dataObject.isPresent()) {
+            ((ObjectNode) curObject).set("attributes", dataObject.get());
           }
-        } catch (SearchApiNotFoundException exNotFound) {
-          
-          // Remove attribute section from the embedded object
-          //
-          if (curObject.isObject()) {
+          else {
+            // Remove attribute section from the embedded object
             ((ObjectNode) curObject).remove("attributes");
           }
-        } catch (SearchApiException apiEx) {
-          log.error("Error during processing of included section object type{}, id={}", type, curObjectId);
-        } 
+        } catch (SearchApiException | JsonProcessingException ex) {
+          log.error("Error during processing of included section object type{}, id={}, message={}", type, curObjectId, ex.getMessage());
+        }
       }
     }
   }

@@ -23,7 +23,7 @@ public final class JSONApiDocumentStructure {
   public static final JsonPointer DATA_PTR = JsonPointer.valueOf("/" + DATA);
   public static final JsonPointer INCLUDED_PTR = JsonPointer.valueOf("/" + INCLUDED);
   public static final JsonPointer META_PTR = JsonPointer.valueOf("/" + META);
-  public static final String ATTRIBUTES_PTR = DATA_PTR + "/" + ATTRIBUTES;
+  public static final JsonPointer ATTRIBUTES_PTR = JsonPointer.valueOf("/" + DATA+ "/" + ATTRIBUTES);
 
 
 }
