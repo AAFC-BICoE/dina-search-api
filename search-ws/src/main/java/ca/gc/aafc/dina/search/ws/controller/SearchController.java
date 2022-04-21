@@ -71,7 +71,7 @@ public class SearchController {
     log.info("indexName={}, query={}", indexName, query);
 
     try {
-      return new ResponseEntity<>(searchService.search(indexName, query), HttpStatus.ACCEPTED);
+      return new ResponseEntity<>(searchService.count(indexName, query), HttpStatus.ACCEPTED);
     } catch (SearchApiException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
