@@ -64,4 +64,10 @@ public class SearchController {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
+
+  @PostMapping(path = "/count", consumes = "application/json")
+  public ResponseEntity<?> count(@RequestBody String query, @RequestParam String indexName) {
+    log.info("indexName={}, query={}", indexName, query);
+    return new ResponseEntity<>(searchService.count(indexName, query), HttpStatus.ACCEPTED);
+  }
 }

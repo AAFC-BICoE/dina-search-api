@@ -62,6 +62,14 @@ public interface SearchService {
   String search(String indexName, String query) throws SearchApiException;
 
   /**
+   * count takes the provided json text query and forward it to the configured API to get a document count.
+   * @param indexName
+   * @param query Json query to forward to the elasticsearch API.
+   * @return
+   */
+  CountResponse count(String indexName, String query);
+
+  /**
    * Get the mapping of the provided indexName.
    * Mapping is returned as a Map where the key is like "data.attributes.displayName.type" and the value like "text"
    * @param indexName
