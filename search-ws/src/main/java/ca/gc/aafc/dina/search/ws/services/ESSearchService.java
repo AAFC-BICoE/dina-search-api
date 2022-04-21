@@ -54,7 +54,10 @@ public class ESSearchService implements SearchService {
 
   private final ElasticsearchClient client;
   private final RestTemplate restTemplate;
+
+  // URI for low level ElasticSearch client
   private final UriBuilder searchUriBuilder;
+  private final UriBuilder countUriBuilder;
 
   @Autowired
   private MappingObjectAttributes mappingObjectAttributes;
@@ -68,13 +71,16 @@ public class ESSearchService implements SearchService {
 
     // Create a URIBuilder that will be used as part of the search for documents
     // within a specific index.
-    searchUriBuilder =
-        new DefaultUriBuilderFactory().builder()
+    searchUriBuilder = prepareESUriBuilder(yamlConfigProperties, "_search");
+    countUriBuilder = prepareESUriBuilder(yamlConfigProperties, "_count");
+  }
+
+  private static UriBuilder prepareESUriBuilder(YAMLConfigProperties yamlConfigProperties, String esEndpoint) {
+    return new DefaultUriBuilderFactory().builder()
         .scheme(yamlConfigProperties.getElasticsearch().get("protocol"))
         .host(yamlConfigProperties.getElasticsearch().get("host"))
         .port(yamlConfigProperties.getElasticsearch().get("port"))
-        .path("{indexName}/_search");
-
+        .path("{indexName}/" + esEndpoint);
   }
 
   private static HttpHeaders buildJsonHeaders() {
@@ -160,6 +166,23 @@ public class ESSearchService implements SearchService {
     } catch (JsonProcessingException e) {
       throw new SearchApiException("Error during search processing", e);
     }
+  }
+
+  /**
+   * Send a _count request to ElasticSearch using the http api since the Java Client doesn't
+   * support query as json string at the moment.
+   * @param indexName
+   * @param query Json query to forward to the elasticsearch API.
+   * @return
+   */
+  @Override
+  public CountResponse count(String indexName, String query) {
+
+    URI uri = countUriBuilder.build(Map.of("indexName", indexName));
+    HttpEntity<?> entity = new HttpEntity<>(query, JSON_HEADERS);
+    ResponseEntity<CountResponse> countResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, CountResponse.class);
+
+    return countResponse.getBody();
   }
 
   @Override

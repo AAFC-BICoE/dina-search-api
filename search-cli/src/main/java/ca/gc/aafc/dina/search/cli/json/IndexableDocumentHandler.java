@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.json;
 
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +19,8 @@ import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
 import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
 import lombok.extern.log4j.Log4j2;
+
+import java.util.Optional;
 
 /**
  * This class handles merging DINA API document with external document references embedded in the
@@ -40,16 +43,8 @@ public class IndexableDocumentHandler {
         .jsonProvider(new JacksonJsonNodeJsonProvider())
         .build();
 
-  public static final String JSON_PATH_DATA = "$.data";
   public static final String JSON_PATH_DATA_ATTRIBUTES = "$.data.attributes";
   public static final String JSON_PATH_DATA_RELATIONSHIPS = "$.data.relationships";
-
-  public static final String JSON_PATH_INCLUDED = "$.included";
-  public static final String JSON_PATH_META = "$.meta";
-
-  private static final String PUBLISH_DATA = "data";
-  private static final String PUBLISH_INCLUDED = "included";
-  private static final String PUBLISH_META = "meta";
 
   public static final ObjectMapper OM = new ObjectMapper();
 
@@ -80,29 +75,22 @@ public class IndexableDocumentHandler {
   public ObjectNode assembleDocument(String rawPayload)
       throws SearchApiException, JsonProcessingException {
 
-    JsonNode dataObject = parseJsonRaw(rawPayload, JSON_PATH_DATA);
-
-    JsonNode includedArray = parseJsonRaw(rawPayload, JSON_PATH_INCLUDED);
-    if (includedArray != null) {
-      processIncluded(includedArray);
-    }
-
-    JsonNode metaObject = parseJsonRaw(rawPayload, JSON_PATH_META);
-    if (metaObject != null) {
-      processMeta(metaObject);
-    }
-
+    JsonNode document = OM.readTree(rawPayload);
     ObjectNode newData = OM.createObjectNode();
 
-    newData.set(PUBLISH_DATA, dataObject);
+    newData.set(JSONApiDocumentStructure.DATA, atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
+        .orElseThrow(() -> new SearchApiException("JSON:API data section missing")));
 
-    if (includedArray != null) {
-      newData.set(PUBLISH_INCLUDED, includedArray);
-    }
+    // included section is optional
+    atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(included -> {
+      processIncluded(included);
+      newData.set(JSONApiDocumentStructure.INCLUDED, included);
+    });
 
-    if (metaObject != null) {
-      newData.set(PUBLISH_META, metaObject);
-    }
+    JsonNode metaNode = atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
+        .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
+    processMeta(metaNode);
+    newData.set(JSONApiDocumentStructure.META, metaNode);
 
     return newData;
   }
@@ -129,6 +117,11 @@ public class IndexableDocumentHandler {
       log.warn("Element {} not found,", jsonPath, pPathNotFoundEx);
     }
     return jsonNode;
+  }
+
+  private static Optional<JsonNode> atJsonPtr(JsonNode document, JsonPointer ptr) {
+    JsonNode node = document.at(ptr);
+    return node.isMissingNode() ? Optional.empty() : Optional.of(node);
   }
 
 
@@ -202,7 +195,7 @@ public class IndexableDocumentHandler {
    * 
    * @param metaObject meta section of the DINA json api object
    */
-  private void processMeta(JsonNode metaObject) {
+  private static void processMeta(JsonNode metaObject) {
 
     if (metaObject == null || !metaObject.isObject()) {
       return;

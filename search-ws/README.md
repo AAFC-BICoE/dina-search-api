@@ -40,6 +40,7 @@ Once the services have started you can access the search-ws REST API at port 808
 
 * search-ws/auto-complete
 * search-ws/search
+* search-ws/count
 * search-ws/mapping
 
 ### auto-complete 
@@ -65,6 +66,18 @@ Content-Type: `application-json`
 
 - `target-server` = localhost
 - `target-index-name` = dina_agent_index
+
+### count
+Generic count based on ElasticSearch compliant JSON payload.
+```
+POST http://<target-server>:8085/search-ws/count?indexName=<target-index-name>
+```
+Content-Type: `application-json`
+
+- `target-server` = localhost
+- `target-index-name` = dina_agent_index
+
+The query should be sent in the body of the POST.
  
 ## mapping
 
@@ -131,7 +144,7 @@ Response: The structure contained in the body section of the payload is made up 
 ```
 
 Relationship section is made of the objects listed as external relationship to the object.
-The relationship object fields are as follwed:
+The relationship object fields are as followed:
 
 - `name` = Elasticsearch type of the attribute
 - `value` = Name of the DINA relationship (collecting-event, organism...)

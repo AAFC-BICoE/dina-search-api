@@ -28,6 +28,7 @@ import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
 import lombok.SneakyThrows;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @ExtendWith(MockServerExtension.class) 
@@ -103,6 +104,9 @@ public class DocumentProcessorIT {
     assertEquals(DOCUMENT_ID, jsonMessage.at("/data/id").asText());
     assertEquals(DOCUMENT_INCLUDE_ID, jsonMessage.at("/included/0/id").asText());
     assertEquals(TEST_USER, jsonMessage.at("/data/attributes/displayName").asText());
+
+    // make sure meta section is there
+    assertFalse(jsonMessage.at("/meta").isMissingNode());
 
     // Test to ensure included organization was properly assembled.
     assertEquals(TEST_USER, jsonMessage.at("/included/0/attributes/createdBy").asText());
