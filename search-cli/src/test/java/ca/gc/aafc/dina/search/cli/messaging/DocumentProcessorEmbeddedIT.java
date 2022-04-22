@@ -58,8 +58,6 @@ import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import lombok.SneakyThrows;
 
-import javax.annotation.Nullable;
-
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @ExtendWith(MockServerExtension.class) 
 @MockServerSettings(ports = {1080, 8081, 8082})
@@ -288,8 +286,6 @@ public class DocumentProcessorEmbeddedIT {
 
     // Validate that the API response is in the cache
     Cache cache = cacheManager.getCache(CacheableApiAccess.CACHE_NAME);
-    serviceEndpointProperties.getEndpoints().get(DINA_AGENT_INDEX);
-
     Object objFromCache = cache.get(getCacheableApiAccessCacheKey(
         serviceEndpointProperties.getEndpoints().get(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
         EMBEDDED_DOCUMENT_INCLUDED_ID));
