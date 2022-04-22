@@ -37,12 +37,17 @@ public class CacheConfiguration extends CachingConfigurerSupport {
 
   private static final long CACHE_TIMEOUT_IN_MINUTE = 1;
 
+  /**
+   * Configure Caffeine.
+   * Uses expireAfterWrite to get new copy of the data at a regular interval just in case.
+   * @return
+   */
   @Bean
   public Caffeine<Object, Object> caffeineConfig() {
     log.debug("cache timeout: " + CACHE_TIMEOUT_IN_MINUTE);
     return Caffeine
         .newBuilder()
-        .expireAfterAccess(CACHE_TIMEOUT_IN_MINUTE, TimeUnit.MINUTES);
+        .expireAfterWrite(CACHE_TIMEOUT_IN_MINUTE, TimeUnit.MINUTES);
   }
 
   @Bean

@@ -80,12 +80,10 @@ public class IndexableDocumentHandler {
     return newData;
   }
 
-
   private static Optional<JsonNode> atJsonPtr(JsonNode document, JsonPointer ptr) {
     JsonNode node = document.at(ptr);
     return node.isMissingNode() ? Optional.empty() : Optional.of(node);
   }
-
 
   /**
    * Processing of the included section of a DINA compliant json api object.
@@ -103,7 +101,7 @@ public class IndexableDocumentHandler {
 
     for (JsonNode curObject : includedArray) {
 
-      if (curObject.get("attributes") != null || !curObject.isObject()) {
+      if (curObject.get(JSONApiDocumentStructure.ATTRIBUTES) != null || !curObject.isObject()) {
         // Already have the attributes or the node is not an object ... skip the current entry
         continue;
       }
@@ -115,7 +113,7 @@ public class IndexableDocumentHandler {
 
         // Get the Id and retrieved the attributes from the related object.
         //
-        String curObjectId = curObject.get("id").asText();
+        String curObjectId = curObject.get(JSONApiDocumentStructure.ID).asText();
 
         // Best effort processing for assembling of include section
         try {
@@ -125,12 +123,11 @@ public class IndexableDocumentHandler {
           // Take the data.attributes section to be embedded
           Optional<JsonNode> dataObject = atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
 
-          if(dataObject.isPresent()) {
-            ((ObjectNode) curObject).set("attributes", dataObject.get());
-          }
-          else {
+          if (dataObject.isPresent()) {
+            ((ObjectNode) curObject).set(JSONApiDocumentStructure.ATTRIBUTES, dataObject.get());
+          } else {
             // Remove attribute section from the embedded object
-            ((ObjectNode) curObject).remove("attributes");
+            ((ObjectNode) curObject).remove(JSONApiDocumentStructure.ATTRIBUTES);
           }
         } catch (SearchApiException | JsonProcessingException ex) {
           log.error("Error during processing of included section object type{}, id={}, message={}", type, curObjectId, ex.getMessage());
