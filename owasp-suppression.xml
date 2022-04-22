@@ -12,5 +12,6 @@
         <notes>Suppresses a specific cve for spring-retry-1.3.3.jar</notes>
         <filePath regex="true">.*\bspring-retry-1\.3\.3\.jar</filePath>
         <cve>CVE-2022-22965</cve>
+        <cve>CVE-2016-1000027/cve>
     </suppress>
 </suppressions>
