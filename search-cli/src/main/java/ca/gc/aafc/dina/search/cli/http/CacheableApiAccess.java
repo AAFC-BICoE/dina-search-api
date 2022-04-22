@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 @Component
 public class CacheableApiAccess {
 
-  private static final String CACHE_NAME = "apiAccess";
+  public static final String CACHE_NAME = "apiAccess";
 
   private final OpenIDHttpClient client;
 
