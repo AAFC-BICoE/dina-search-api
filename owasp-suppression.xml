@@ -14,4 +14,11 @@
         <cve>CVE-2022-22965</cve>
         <cve>CVE-2016-1000027</cve>
     </suppress>
+        <suppress>
+        <notes>Suppresses a specific cve for spring-shell-core-2.0.0.RELEASE.jar</notes>
+        <filePath regex="true">.*\bspring-shell-core-2\.0\.0\.RELEASE\.jar</filePath>
+        <cve>CVE-2022-22965</cve>
+        <cve>CVE-2016-1000027</cve>
+    </suppress>
+    
 </suppressions>
