@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -51,6 +52,7 @@ public class ESSearchService implements SearchService {
 
   private static final ObjectMapper OM = new ObjectMapper();
   private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
+  private static final String EMPTY_QUERY = "{\"query\":{}}";
 
   private final ElasticsearchClient client;
   private final RestTemplate restTemplate;
@@ -179,6 +181,13 @@ public class ESSearchService implements SearchService {
   public CountResponse count(String indexName, String query) {
 
     URI uri = countUriBuilder.build(Map.of("indexName", indexName));
+
+    // Accept empty query but don't forward it to ElasticSearch
+    if(EMPTY_QUERY.equalsIgnoreCase(StringUtils.trimWhitespace(query))){
+      HttpEntity<?> entity = new HttpEntity<>(JSON_HEADERS);
+      return restTemplate.exchange(uri, HttpMethod.GET, entity, CountResponse.class).getBody();
+    }
+
     HttpEntity<?> entity = new HttpEntity<>(query, JSON_HEADERS);
     ResponseEntity<CountResponse> countResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, CountResponse.class);
 
