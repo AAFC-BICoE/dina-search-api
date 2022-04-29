@@ -25,10 +25,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
+
+import org.apache.commons.lang3.StringUtils;
 
 import ca.gc.aafc.dina.search.ws.config.MappingAttribute;
 import ca.gc.aafc.dina.search.ws.config.MappingObjectAttributes;
@@ -51,6 +52,7 @@ public class ESSearchService implements SearchService {
 
   private static final ObjectMapper OM = new ObjectMapper();
   private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
+  private static final String EMPTY_QUERY = "{\"query\":{}}";
 
   private final ElasticsearchClient client;
   private final RestTemplate restTemplate;
@@ -110,7 +112,7 @@ public class ESSearchService implements SearchService {
     fields.add(autoCompleteField + ".autocomplete._2gram");
     fields.add(autoCompleteField + ".autocomplete._3gram");
 
-    if (StringUtils.hasText(additionalField)) {
+    if (StringUtils.isNotBlank(additionalField)) {
       fields.add(additionalField);
       fieldsToReturn.add(additionalField);
     }
@@ -128,7 +130,7 @@ public class ESSearchService implements SearchService {
               .build()._toQuery()
       );
 
-      if (StringUtils.hasText(restrictedField) && StringUtils.hasText(restrictedFieldValue)) {
+      if (StringUtils.isNotBlank(restrictedField) && StringUtils.isNotBlank(restrictedFieldValue)) {
         // Add restricted query filter to query builder.
         autoCompleteQueryBuilder.filter(
             QueryBuilders.term()
@@ -179,6 +181,13 @@ public class ESSearchService implements SearchService {
   public CountResponse count(String indexName, String query) {
 
     URI uri = countUriBuilder.build(Map.of("indexName", indexName));
+
+    // Accept empty query but don't forward it to ElasticSearch
+    if (EMPTY_QUERY.equalsIgnoreCase(StringUtils.deleteWhitespace(query))) {
+      HttpEntity<?> entity = new HttpEntity<>(JSON_HEADERS);
+      return restTemplate.exchange(uri, HttpMethod.GET, entity, CountResponse.class).getBody();
+    }
+
     HttpEntity<?> entity = new HttpEntity<>(query, JSON_HEADERS);
     ResponseEntity<CountResponse> countResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, CountResponse.class);
 
