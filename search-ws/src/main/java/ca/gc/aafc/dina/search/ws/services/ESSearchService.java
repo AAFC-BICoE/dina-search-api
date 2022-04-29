@@ -183,7 +183,7 @@ public class ESSearchService implements SearchService {
     URI uri = countUriBuilder.build(Map.of("indexName", indexName));
 
     // Accept empty query but don't forward it to ElasticSearch
-    if(EMPTY_QUERY.equalsIgnoreCase(StringUtils.deleteWhitespace(query))){
+    if (EMPTY_QUERY.equalsIgnoreCase(StringUtils.deleteWhitespace(query))) {
       HttpEntity<?> entity = new HttpEntity<>(JSON_HEADERS);
       return restTemplate.exchange(uri, HttpMethod.GET, entity, CountResponse.class).getBody();
     }
