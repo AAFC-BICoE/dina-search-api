@@ -117,7 +117,7 @@ public class DinaSearchDocumentIT {
           retrieveJSONObject("nested_document3.json"));
       indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT4_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
           retrieveJSONObject("nested_document4.json"));
-      
+
       String queryStringTemplate = TestResourceHelper
           .readContentAsString("test-documents/nested-tests/sample-nested-request-template.json");
 
@@ -193,7 +193,7 @@ public class DinaSearchDocumentIT {
     indexDocumentForIT(DINA_AGENT_INDEX, DOCUMENT_ID, DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
 
     // validate count with empty query
-    assertEquals(Long.valueOf(1), searchService.count(DINA_AGENT_INDEX, "{\"query\":{}}").getCount());
+    assertEquals(Long.valueOf(1), searchService.count(DINA_AGENT_INDEX, "{\"query\":{ }}").getCount());
     assertEquals(Long.valueOf(1), searchService.count(DINA_AGENT_INDEX, "").getCount());
   }
 
