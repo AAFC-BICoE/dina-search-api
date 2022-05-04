@@ -5,7 +5,7 @@
   <parent>
     <artifactId>search-api-parent</artifactId>
     <groupId>io.github.aafc-bicoe</groupId>
-    <version>0.15-SNAPSHOT</version>
+    <version>0.16-SNAPSHOT</version>
   </parent>
 
   <artifactId>search-cli</artifactId>
@@ -30,7 +30,7 @@
     <dependency>
       <groupId>io.github.aafc-bicoe</groupId>
       <artifactId>search-messaging</artifactId>
-      <version>0.15-SNAPSHOT</version>
+      <version>0.16-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.shell</groupId>
@@ -65,6 +65,16 @@
 			<artifactId>json-path</artifactId>
 			<version>${json-path.version}</version>
 		</dependency>
+
+    <!-- caching -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-cache</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
+    </dependency>
 
     <!-- Elastic Search Dependencies -->
     <dependency>

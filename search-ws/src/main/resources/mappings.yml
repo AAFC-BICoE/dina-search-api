@@ -42,4 +42,3 @@ mappings:
   storage-unit:
     - name: name
       type: text
-      

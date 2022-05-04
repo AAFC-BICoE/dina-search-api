@@ -5,7 +5,7 @@
   <parent>
     <artifactId>search-api-parent</artifactId>
     <groupId>io.github.aafc-bicoe</groupId>
-    <version>0.15-SNAPSHOT</version>
+    <version>0.16-SNAPSHOT</version>
   </parent>
 
   <artifactId>search-ws</artifactId>
@@ -48,6 +48,12 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>elasticsearch</artifactId>
       <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.aafc-bicoe</groupId>
+      <artifactId>dina-test-support</artifactId>
+      <version>${dina-base-api.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

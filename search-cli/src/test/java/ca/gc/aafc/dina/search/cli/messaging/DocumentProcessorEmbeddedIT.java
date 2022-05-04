@@ -12,11 +12,12 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
+import ca.gc.aafc.dina.search.cli.config.CacheConfiguration;
+import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import ca.gc.aafc.dina.search.cli.http.CacheableApiAccess;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
@@ -33,6 +34,8 @@ import org.mockserver.mock.Expectation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -64,13 +67,16 @@ public class DocumentProcessorEmbeddedIT {
   private static final String EMBEDDED_ORG_NAME = "Integration";
   private static final String EMBEDDED_ORG_NAME_AFTER_UPDATE = "Integration Updated";
 
+  @Container
+  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+
   private ClientAndServer client;
 
   @Autowired
   private ElasticsearchClient elasticSearchClient;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+  @Autowired
+  private CacheManager cacheManager;
 
   @Autowired
   private ServiceEndpointProperties serviceEndpointProperties;
@@ -99,17 +105,12 @@ public class DocumentProcessorEmbeddedIT {
   // Organization document
   private static final Path EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH = Path.of("src/test/resources/get_updated_organization_embedded_response.json");
 
-  private static ObjectMapper objectMapper;
-  private RestTemplate restTemplate;
-
   @BeforeAll
   static void beforeAll() {
     ELASTICSEARCH_CONTAINER.start();
 
     assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
     assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
-
-    objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
   }
 
   @AfterAll
@@ -140,7 +141,7 @@ public class DocumentProcessorEmbeddedIT {
 
     // Mock the organization request after an update. That mock will be used 
     // indirectly by the re-index operation from the processEmbedded.
-    Expectation orgSuccess[] = client.when(mockKeycloakAuthentication.setupMockRequest()
+    Expectation[] orgSuccess = client.when(mockKeycloakAuthentication.setupMockRequest()
     .withMethod("GET")
     .withPath("/api/v1/" + EMBEDDED_DOCUMENT_INCLUDED_TYPE + "/" + EMBEDDED_DOCUMENT_INCLUDED_ID))
     .respond(mockKeycloakAuthentication.setupMockResponse()
@@ -152,8 +153,6 @@ public class DocumentProcessorEmbeddedIT {
     // person document with he original organization name set to "Integration"
     JsonNode docToIndex = JsonTestUtils.readJson(Files.readString(EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH));
     assertNotNull(docToIndex);
-
-    restTemplate = builder.build();
 
     // For testing, we will be using the agent index.
     addIndexMapping(
@@ -259,7 +258,6 @@ public class DocumentProcessorEmbeddedIT {
     // Simulate what send deleted message would do..
     try {
       documentProcessor.deleteDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
-
       documentProcessor.processEmbeddedDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
     } catch (SearchApiException e) {
       fail(e);
@@ -285,6 +283,13 @@ public class DocumentProcessorEmbeddedIT {
 
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
     assertEquals("", docFromElasticSearch.at("/included/0/attributes").asText());
+
+    // Validate that the API response is in the cache
+    Cache cache = cacheManager.getCache(CacheableApiAccess.CACHE_NAME);
+    Object objFromCache = cache.get(getCacheableApiAccessCacheKey(
+        serviceEndpointProperties.getEndpoints().get(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
+        EMBEDDED_DOCUMENT_INCLUDED_ID));
+    assertNotNull(objFromCache);
   }
   
   private HttpHeaders buildJsonHeaders() {
@@ -295,15 +300,31 @@ public class DocumentProcessorEmbeddedIT {
     return headers;
   }
 
+  /**
+   * Utility method to generate cache eky the same was Spring is doing it using custom KeyGenerator.
+   * Only works for getFromApi method.
+   * @param endpointDescriptor
+   * @param objectId
+   * @return
+   */
+  @SneakyThrows
+  private String getCacheableApiAccessCacheKey(EndpointDescriptor endpointDescriptor, String objectId) {
+    CacheConfiguration.MethodBasedKeyGenerator keyGen = new CacheConfiguration.MethodBasedKeyGenerator();
+    // dummy instance only used to generate the key
+    CacheableApiAccess cacheableApiAccess = new CacheableApiAccess(null);
+    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", EndpointDescriptor.class, String.class), endpointDescriptor, objectId).toString();
+  }
+
   private void addIndexMapping(String indexFilePath, String indexFileName, String indexName) throws IOException, JsonProcessingException, JsonMappingException, URISyntaxException {
     JsonNode jsonNode;
     Path filename = Path.of(indexFilePath + indexFileName);
     String documentContent = Files.readString(filename);
 
-    jsonNode = objectMapper.readTree(documentContent);
+    jsonNode = JsonTestUtils.readJson(documentContent);
     URI uri = new URI("http://localhost:9200/" + indexName);
 
     HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), buildJsonHeaders());
+    RestTemplate restTemplate = builder.build();
     restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
   }
 

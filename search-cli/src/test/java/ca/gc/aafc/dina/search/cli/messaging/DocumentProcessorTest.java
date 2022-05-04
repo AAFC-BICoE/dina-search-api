@@ -50,8 +50,7 @@ public class DocumentProcessorTest {
   
   @MockBean
   private ElasticSearchDocumentIndexer indexer;
-  
-  
+
   @DisplayName("Test processEmbedded invalid document type")
   @Test
   public void processEmbeddedDocumentInvalidDocumentType() {

@@ -1,7 +1,9 @@
 package ca.gc.aafc.dina.search.ws.search;
 
+import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
+import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.FieldValue;
@@ -116,16 +118,14 @@ public class DinaSearchDocumentIT {
       indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT4_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
           retrieveJSONObject("nested_document4.json"));
 
-      // Get All search, there should be 0 search results.
-      String queryStringTemplate = Files.readString(
-          Path.of("src/test/resources/test-documents/nested-tests")
-              .resolve("sample-nested-request-template.json"));
+      String queryStringTemplate = TestResourceHelper
+          .readContentAsString("test-documents/nested-tests/sample-nested-request-template.json");
 
       // storage-unit and Gatineau
       String noResultsQuery = queryStringTemplate
                                 .replace("@type@", "storage-unit")
-                                .replace("@locality@", "Gatineau"); 
-
+                                .replace("@locality@", "Gatineau");
+      // Get All search, there should be 0 search results.
       String result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, noResultsQuery);
 
       assertNotNull(result);
@@ -185,6 +185,16 @@ public class DinaSearchDocumentIT {
 
     // Make sure we can serialize the response
     assertTrue(OM.writeValueAsString(searchResponse).contains("displayName"));
+  }
+
+  @Test
+  public void testCount() throws IOException, InterruptedException, SearchApiException {
+    // Let's add a document into the elasticsearch cluster
+    indexDocumentForIT(DINA_AGENT_INDEX, DOCUMENT_ID, DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
+
+    // validate count with empty query
+    assertEquals(Long.valueOf(1), searchService.count(DINA_AGENT_INDEX, "{\"query\":{ }}").getCount());
+    assertEquals(Long.valueOf(1), searchService.count(DINA_AGENT_INDEX, "").getCount());
   }
 
   @DisplayName("Integration Test search autocomplete document autocomplete field")
