@@ -1,6 +1,5 @@
 package ca.gc.aafc.dina.search.ws.services;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -19,12 +18,12 @@ public class IndexMappingResponse {
   @Builder
   @JsonInclude(JsonInclude.Include.NON_NULL)
   static class Attribute {
-    final String name;
-    final String type;
-    final String path;
+    private final String name;
+    private final String type;
+    private final String path;
 
     @JsonProperty("distinct_term_agg")
-    final Boolean distinctTermAgg;
+    private final Boolean distinctTermAgg;
 
     private Attribute(String name, String type, String path, Boolean distinctTermAgg) {
       this.name = name;
