@@ -214,9 +214,8 @@ public class ESSearchService implements SearchService {
 
         Stack<String> pathStack = new Stack<>();
         pathStack.push(propertyName);
-        Map<String, String> pathType = new HashMap<>();
 
-        crawlMapping(pathStack, property, pathType, data, included, relationships);
+        crawlMapping(pathStack, property, data, included, relationships);
 
         // Add all document attributes
         ArrayNode documentAttributes = indexMappingNode.putArray("attributes");
@@ -294,11 +293,8 @@ public class ESSearchService implements SearchService {
    * Crawl ElasticSearch mapping until we find the "type".
    * 
    * @param path               current path expressed as a Stack
-   * @param esMappingStructure structure returned by the ElasticSearch client
-   * @param mappingDefinition  result containing the mapping and its type
    */
   private static void crawlMapping(Stack<String> path, Property propertyToCrawl,
-      Map<String, String> mappingDefinition,
       Map<String, String> data,
       Map<String, String> included,
       Map<String, String> relationships) {
@@ -316,7 +312,7 @@ public class ESSearchService implements SearchService {
       path.push(propertyName);
 
       if (property.isObject() && !property.isNested()) {
-        crawlMapping(path, property, mappingDefinition, data, included, relationships);
+        crawlMapping(path, property, data, included, relationships);
       } else {
 
         String attributeName = path.stream().collect(Collectors.joining("."));
