@@ -220,7 +220,7 @@ public class ESSearchService implements SearchService {
         // Add all document attributes
         ArrayNode documentAttributes = indexMappingNode.putArray("attributes");
         data.entrySet().forEach(curEntry -> {
-          ObjectNode curJsonAttribute = setJsonNode(curEntry.getKey(), curEntry.getValue(), false);
+          ObjectNode curJsonAttribute = setJsonNode(curEntry.getKey(), curEntry.getValue(), false, null);
           documentAttributes.add(curJsonAttribute);
         });
 
@@ -239,14 +239,13 @@ public class ESSearchService implements SearchService {
             relationshipContainer.add(curRelationship);
 
             // Add attributes for the relationship
-            //
             List<MappingAttribute> attributes  = mappingObjectAttributes.getMappings().get(curKey.getValue());
             
             if (attributes != null) {
               ArrayNode relationShipAttributes = curRelationship.putArray("attributes");
 
               attributes.forEach(curEntry -> {
-                ObjectNode curJsonAttribute = setJsonNode(curEntry.getName(), curEntry.getType(), true);
+                ObjectNode curJsonAttribute = setJsonNode(curEntry.getName(), curEntry.getType(), true, curEntry.getDistinctTermAgg());
                 relationShipAttributes.add(curJsonAttribute);     
               });
             }
@@ -263,12 +262,12 @@ public class ESSearchService implements SearchService {
     return ResponseEntity.ok().body(indexMappingNode);
   }
 
-  private ObjectNode setJsonNode(String key, String value, boolean isIncludedSection) {
+  private ObjectNode setJsonNode(String key, String type, boolean isIncludedSection, Boolean distinctTermAgg) {
 
-    ObjectNode curJsonAttribute = OM.createObjectNode();
+    IndexMappingResponse.Attribute.AttributeBuilder attributeBuilder = IndexMappingResponse.Attribute.builder();
 
-    curJsonAttribute.put("name", key.substring(key.lastIndexOf(".") + 1));
-    curJsonAttribute.put("type", value);
+    attributeBuilder.name(key.substring(key.lastIndexOf(".") + 1));
+    attributeBuilder.type(type);
 
     int startPos = 0;
     if (key.startsWith("included.")) {
@@ -284,9 +283,10 @@ public class ESSearchService implements SearchService {
       path = "attributes" + (!path.isEmpty() ? "." + path : path); 
     }
 
-    curJsonAttribute.put("path", path);
+    attributeBuilder.distinctTermAgg(distinctTermAgg);
+    attributeBuilder.path(path);
 
-    return curJsonAttribute;
+    return OM.convertValue(attributeBuilder.build(), ObjectNode.class);
   }
 
   /**

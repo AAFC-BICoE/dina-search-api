@@ -46,3 +46,4 @@ mappings:
   preparation-type:
     - name: name
       type: text
+      distinctTermAgg: true

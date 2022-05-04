@@ -10,4 +10,5 @@ import lombok.Setter;
 public class MappingAttribute {
   private String name;
   private String type;
+  private Boolean distinctTermAgg;
 }
