@@ -22,6 +22,7 @@ endpoints:
       - storageUnit
       - collection
       - preparedBy
+      - preparationType
     indexName: dina_material_sample_index       
   metadata: 
     targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}

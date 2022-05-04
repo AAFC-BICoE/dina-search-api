@@ -52,6 +52,7 @@
       <plugin>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok-maven-plugin</artifactId>
+        <version>${lombok-maven-plugin.version}</version>
         <configuration>
           <sourceDirectory>src/main/java</sourceDirectory>
           <outputDirectory>${project.build.directory}/delombok</outputDirectory>
