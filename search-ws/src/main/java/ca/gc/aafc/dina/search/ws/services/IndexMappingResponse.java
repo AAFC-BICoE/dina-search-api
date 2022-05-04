@@ -17,7 +17,7 @@ public class IndexMappingResponse {
   @Getter
   @Builder
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  static class Attribute {
+  static final class Attribute {
     private final String name;
     private final String type;
     private final String path;
