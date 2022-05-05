@@ -231,25 +231,18 @@ public class ESSearchService implements SearchService {
 
           if (curKey.getKey().endsWith("data.type.value")) {
 
-            ObjectNode curRelationship = OM.createObjectNode();
+            IndexMappingResponse.Attribute.Relationship.RelationshipBuilder relBuilder =
+                    IndexMappingResponse.Attribute.Relationship.builder().value(curKey.getValue());
 
-            curRelationship.put("name", "type");
-            curRelationship.put("value",curKey.getValue());           
-            curRelationship.put("path", "included");
-            relationshipContainer.add(curRelationship);
-
-            // Add attributes for the relationship
+            // Add attributes for the relationship based on configuration
             List<MappingAttribute> attributes  = mappingObjectAttributes.getMappings().get(curKey.getValue());
             
             if (attributes != null) {
-              ArrayNode relationShipAttributes = curRelationship.putArray("attributes");
-
               attributes.forEach(curEntry -> {
-                ObjectNode curJsonAttribute = setJsonNode(curEntry.getName(), curEntry.getType(), true, curEntry.getDistinctTermAgg());
-                relationShipAttributes.add(curJsonAttribute);     
+                relBuilder.attribute(buildAttribute(curEntry.getName(), curEntry.getType(), true, curEntry.getDistinctTermAgg()));
               });
             }
-
+            relationshipContainer.add(OM.convertValue(relBuilder.build(), ObjectNode.class));
           }
         });
       });
@@ -263,6 +256,10 @@ public class ESSearchService implements SearchService {
   }
 
   private ObjectNode setJsonNode(String key, String type, boolean isIncludedSection, Boolean distinctTermAgg) {
+    return OM.convertValue(buildAttribute(key, type, isIncludedSection, distinctTermAgg), ObjectNode.class);
+  }
+
+  private IndexMappingResponse.Attribute buildAttribute(String key, String type, boolean isIncludedSection, Boolean distinctTermAgg) {
 
     IndexMappingResponse.Attribute.AttributeBuilder attributeBuilder = IndexMappingResponse.Attribute.builder();
 
@@ -286,7 +283,7 @@ public class ESSearchService implements SearchService {
     attributeBuilder.distinctTermAgg(distinctTermAgg);
     attributeBuilder.path(path);
 
-    return OM.convertValue(attributeBuilder.build(), ObjectNode.class);
+    return attributeBuilder.build();
   }
 
   /**

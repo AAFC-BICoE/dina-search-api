@@ -4,15 +4,16 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Singular;
 
 import java.util.List;
 
 public class IndexMappingResponse {
 
-  private String indexMapping;
+  //private String indexMapping;
 
-  private List<Attribute> attributes;
-  private List<Object> relationships;
+  //private List<Attribute> attributes;
+  //private List<Object> relationships;
 
   @Getter
   @Builder
@@ -35,6 +36,22 @@ public class IndexMappingResponse {
 //    public static Attribute of(String name, String type, String path) {
 //      return new Attribute(name, type, path);
 //    }
+
+    @Getter
+    @Builder
+    static final class Relationship {
+      private final String name = "type";
+      private final String path = "included";
+      private final String value;
+
+      @Singular
+      private final List<Attribute> attributes;
+
+      private Relationship(String value, List<Attribute> attributes){
+        this.value = value;
+        this.attributes = attributes;
+      }
+    }
   }
 
 

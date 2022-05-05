@@ -37,7 +37,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -45,13 +44,14 @@ public class DinaSearchDocumentIT {
   
   private static final String DINA_AGENT_INDEX = "dina_agent_index";
   private static final String DINA_MATERIAL_SAMPLE_INDEX = "dina_material_sample_index";
+  private static final String OBJECT_STORE_ES_INDEX = "object_store_index";
+
   private static final String MATERIAL_SAMPLE_DOCUMENT_ID = "2e5eab9e-1d75-4a26-997e-34362d6b4585";
   private static final String MATERIAL_SAMPLE_SEARCH_FIELD = "data.id";
   private static final String DINA_AGENT_SEARCH_FIELD = "name";
   private static final String DOCUMENT_ID = "test-document";
 
   // Nested searches
-  //
   private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT1_ID = "94c97f20-3481-4a44-ba64-3a1351051a76";
   private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT2_ID = "6149d5da-ae6d-4f61-8ed1-b24511698a76";
   private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT3_ID = "f9a8bcab-ebd1-4222-8892-3f83416455fc";
@@ -91,19 +91,14 @@ public class DinaSearchDocumentIT {
   public void testSearchNestedObjects() throws Exception { 
 
     try {
-
       RestTemplate restTemplate = builder.build();
 
-      // Retrieve raw JSON.
-      String documentContent = Files.readString(
-          Path.of("src/test/resources/elastic-configurator-settings/collection-index")
-              .resolve("dina_material_sample_index_settings.json"));
-
-      JsonNode jsonNode = OM.readTree(documentContent);
+      String matSampleEsSettings = TestResourceHelper
+              .readContentAsString("elastic-configurator-settings/collection-index/dina_material_sample_index_settings.json");
 
       URI uri = new URI("http://" + ELASTICSEARCH_CONTAINER.getHttpHostAddress() + "/" + DINA_MATERIAL_SAMPLE_INDEX);
 
-      HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), buildJsonHeaders());
+      HttpEntity<?> entity = new HttpEntity<>(matSampleEsSettings, buildJsonHeaders());
       restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
 
       // Let's add a document into the elasticsearch cluster
@@ -162,8 +157,7 @@ public class DinaSearchDocumentIT {
       assertTrue(result.contains("\"total\":{\"value\":0,\"relation\":\"eq\"}"));
 
     } catch (Exception e) {
-      e.printStackTrace();
-      fail();
+      fail(e);
     }
   }
 
@@ -291,10 +285,18 @@ public class DinaSearchDocumentIT {
   public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
     indexDocumentForIT(DINA_AGENT_INDEX, "test-document-1", DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
 
-    ResponseEntity<JsonNode> response = searchService.getIndexMapping(DINA_AGENT_INDEX);
+    // Submit ES mapping
+    String objectStoreEsSettings = TestResourceHelper
+            .readContentAsString("elastic-configurator-settings/object-store-index/object_store_index_settings.json");
+    URI uri = new URI("http://" + ELASTICSEARCH_CONTAINER.getHttpHostAddress() + "/" + OBJECT_STORE_ES_INDEX);
+    HttpEntity<?> entity = new HttpEntity<>(objectStoreEsSettings, buildJsonHeaders());
+    RestTemplate restTemplate = builder.build();
+    restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
+
+    ResponseEntity<JsonNode> response = searchService.getIndexMapping(OBJECT_STORE_ES_INDEX);
     JsonNode result = response.getBody();
 
-    assertEquals("dina_agent_index", result.get("indexName").asText());    
+    assertEquals(OBJECT_STORE_ES_INDEX, result.get("indexName").asText());
     JsonNode attributes = result.get("attributes");
     boolean found = false;
     for (JsonNode curNode: attributes) {
