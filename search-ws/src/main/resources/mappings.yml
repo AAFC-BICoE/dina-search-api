@@ -42,3 +42,7 @@ mappings:
   storage-unit:
     - name: name
       type: text
+
+  preparation-type:
+    - name: name
+      type: text
