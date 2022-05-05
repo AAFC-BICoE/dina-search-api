@@ -32,28 +32,22 @@ public class IndexMappingResponse {
       this.path = path;
       this.distinctTermAgg = distinctTermAgg;
     }
-
-//    public static Attribute of(String name, String type, String path) {
-//      return new Attribute(name, type, path);
-//    }
-
-    @Getter
-    @Builder
-    static final class Relationship {
-      private final String name = "type";
-      private final String path = "included";
-      private final String value;
-
-      @Singular
-      private final List<Attribute> attributes;
-
-      private Relationship(String value, List<Attribute> attributes){
-        this.value = value;
-        this.attributes = attributes;
-      }
-    }
   }
 
+  @Getter
+  @Builder
+  static final class Relationship {
+    private final String name = "type";
+    private final String path = "included";
+    private final String value;
 
+    @Singular
+    private final List<Attribute> attributes;
+
+    private Relationship(String value, List<Attribute> attributes) {
+      this.value = value;
+      this.attributes = attributes;
+    }
+  }
 
 }

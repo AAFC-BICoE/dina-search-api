@@ -231,8 +231,8 @@ public class ESSearchService implements SearchService {
 
           if (curKey.getKey().endsWith("data.type.value")) {
 
-            IndexMappingResponse.Attribute.Relationship.RelationshipBuilder relBuilder =
-                    IndexMappingResponse.Attribute.Relationship.builder().value(curKey.getValue());
+            IndexMappingResponse.Relationship.RelationshipBuilder relBuilder =
+                    IndexMappingResponse.Relationship.builder().value(curKey.getValue());
 
             // Add attributes for the relationship based on configuration
             List<MappingAttribute> attributes  = mappingObjectAttributes.getMappings().get(curKey.getValue());
