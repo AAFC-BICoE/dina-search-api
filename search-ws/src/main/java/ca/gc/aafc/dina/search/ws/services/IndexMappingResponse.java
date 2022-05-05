@@ -32,19 +32,25 @@ public class IndexMappingResponse {
       this.path = path;
       this.distinctTermAgg = distinctTermAgg;
     }
+
   }
 
   @Getter
-  @Builder
   static final class Relationship {
-    private final String name = "type";
-    private final String path = "included";
+    private static final String REL_NAME = "type";
+    private static final String REL_PATH = "included";
+
+    private final String name;
+    private final String path;
     private final String value;
 
-    @Singular
     private final List<Attribute> attributes;
 
-    private Relationship(String value, List<Attribute> attributes) {
+    @Builder
+    private Relationship(String value, @Singular List<Attribute> attributes) {
+      // name and path are always the same for relationships block
+      this.name = REL_NAME;
+      this.path = REL_PATH;
       this.value = value;
       this.attributes = attributes;
     }
