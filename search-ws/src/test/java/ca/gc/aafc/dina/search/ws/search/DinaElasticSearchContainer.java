@@ -21,20 +21,13 @@ public class DinaElasticSearchContainer extends ElasticsearchContainer {
     this.addEnv(CLUSTER_NAME, ELASTIC_SEARCH);
 
     // Configuration and default indices..
-    //
 
-    // default-document-index
-    String defaultIndexName = "dina_document_index_settings.json";
+
     String path = "src/test/resources/elastic-configurator-settings";
-
-    File file = new File(path + "/default-document-index/" + defaultIndexName);
-    
-    // Default document mapping
-    this.withCopyFileToContainer(MountableFile.forHostPath(file.toPath()), "/usr/share/elasticsearch/config/dina_document_index");
 
     // dina-agent-index
     String dinaAgentIndexName = "dina_agent_index_settings.json";
-    file = new File(path + "/agent-index/" + dinaAgentIndexName);
+    File file = new File(path + "/agent-index/" + dinaAgentIndexName);
 
     // Agent document mapping
     this.withCopyFileToContainer(MountableFile.forHostPath(file.toPath()), "/usr/share/elasticsearch/config/dina_agent_index");
