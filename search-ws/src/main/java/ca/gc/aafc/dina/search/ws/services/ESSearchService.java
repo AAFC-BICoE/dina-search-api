@@ -2,26 +2,17 @@ package ca.gc.aafc.dina.search.ws.services;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.stream.Collectors;
+import java.util.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -195,95 +186,29 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
-  public ResponseEntity<JsonNode> getIndexMapping(String indexName) throws SearchApiException {
+  public IndexMappingResponse getIndexMapping(String indexName) throws SearchApiException {
 
-    Map<String, String> data = new HashMap<>();
-    Map<String, String> included = new HashMap<>();
-    Map<String, String> relationships = new HashMap<>();
-
-    ObjectNode indexMappingNode = OM.createObjectNode();
-    indexMappingNode.put("indexName", indexName);
+    IndexMappingResponse.IndexMappingResponseBuilder indexMappingResponseBuilder = IndexMappingResponse.builder();
+    indexMappingResponseBuilder.indexName(indexName);
 
     try {
-
-      // Retrieve the index mapping.
+      // Retrieve the index mapping from ElasticSearch
       GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
 
-      // First level is always "properties".
+      // First level is always "properties"
       mappingResponse.result().get(indexName).mappings().properties().forEach((propertyName, property) -> {
 
         Stack<String> pathStack = new Stack<>();
         pathStack.push(propertyName);
 
-        crawlMapping(pathStack, property, data, included, relationships);
-
-        // Add all document attributes
-        ArrayNode documentAttributes = indexMappingNode.putArray("attributes");
-        data.entrySet().forEach(curEntry -> {
-          ObjectNode curJsonAttribute = setJsonNode(curEntry.getKey(), curEntry.getValue(), false, null);
-          documentAttributes.add(curJsonAttribute);
-        });
-
-        // Attributes from included relationships
-        //
-        ArrayNode relationshipContainer = indexMappingNode.putArray("relationships");
-        relationships.entrySet().forEach(curKey -> {
-
-          if (curKey.getKey().endsWith("data.type.value")) {
-
-            IndexMappingResponse.Relationship.RelationshipBuilder relBuilder =
-                    IndexMappingResponse.Relationship.builder().value(curKey.getValue());
-
-            // Add attributes for the relationship based on configuration
-            List<MappingAttribute> attributes  = mappingObjectAttributes.getMappings().get(curKey.getValue());
-            
-            if (attributes != null) {
-              attributes.forEach(curEntry -> {
-                relBuilder.attribute(buildAttribute(curEntry.getName(), curEntry.getType(), true, curEntry.getDistinctTermAgg()));
-              });
-            }
-            relationshipContainer.add(OM.convertValue(relBuilder.build(), ObjectNode.class));
-          }
-        });
+        crawlMapping(pathStack, property, mappingObjectAttributes, indexMappingResponseBuilder);
       });
 
     } catch (IOException | ElasticsearchException e) {
-      log.error("Error during index-mapping processing", e);
-      return new ResponseEntity<>(indexMappingNode, HttpStatus.BAD_REQUEST);
+      throw new SearchApiException("Error during search processing", e);
     }
 
-    return ResponseEntity.ok().body(indexMappingNode);
-  }
-
-  private ObjectNode setJsonNode(String key, String type, boolean isIncludedSection, Boolean distinctTermAgg) {
-    return OM.convertValue(buildAttribute(key, type, isIncludedSection, distinctTermAgg), ObjectNode.class);
-  }
-
-  private IndexMappingResponse.Attribute buildAttribute(String key, String type, boolean isIncludedSection, Boolean distinctTermAgg) {
-
-    IndexMappingResponse.Attribute.AttributeBuilder attributeBuilder = IndexMappingResponse.Attribute.builder();
-
-    attributeBuilder.name(key.substring(key.lastIndexOf(".") + 1));
-    attributeBuilder.type(type);
-
-    int startPos = 0;
-    if (key.startsWith("included.")) {
-      startPos = "included.".length();
-    }
-
-    String path = "";
-    if (key.substring(startPos).contains(".")) {
-      path = key.substring(startPos, key.lastIndexOf("."));
-    }
-
-    if (isIncludedSection) {
-      path = "attributes" + (!path.isEmpty() ? "." + path : path); 
-    }
-
-    attributeBuilder.distinctTermAgg(distinctTermAgg);
-    attributeBuilder.path(path);
-
-    return attributeBuilder.build();
+    return indexMappingResponseBuilder.build();
   }
 
   /**
@@ -292,9 +217,8 @@ public class ESSearchService implements SearchService {
    * @param path               current path expressed as a Stack
    */
   private static void crawlMapping(Stack<String> path, Property propertyToCrawl,
-      Map<String, String> data,
-      Map<String, String> included,
-      Map<String, String> relationships) {
+      MappingObjectAttributes mappingObjectAttributes,
+      IndexMappingResponse.IndexMappingResponseBuilder responseBuilder) {
 
     Map<String, Property> propertiesToProcess = null;
     if (propertyToCrawl.isNested()) {
@@ -305,48 +229,86 @@ public class ESSearchService implements SearchService {
 
     propertiesToProcess.forEach((propertyName, property) -> {
 
-      // Add path to path stack.
+      // compute the path of where we are in the mapping structure
+      String currentPath = String.join(".", path);
+
+      // Add the property to path stack.
       path.push(propertyName);
 
       if (property.isObject() && !property.isNested()) {
-        crawlMapping(path, property, data, included, relationships);
+        crawlMapping(path, property, mappingObjectAttributes, responseBuilder);
       } else {
 
-        String attributeName = path.stream().collect(Collectors.joining("."));
-        String type = property._kind().jsonValue();
-        PropertyVariant theProperty = property._get();
+        //String attributeName = String.join(".", path);
 
         // Single Attribute
-        //
-        if (attributeName.startsWith("data")) {
-          if (attributeName.startsWith("data.relationships")) {
-            
-            log.debug("Attribute: {}", attributeName);
-            String valueString = "";
+        if (currentPath.startsWith("data")) {
+          if (currentPath.startsWith("data.relationships")) {
+            PropertyVariant theProperty = property._get();
+            log.debug("Attribute: {}", currentPath);
+            // we need a constant_keyword in order to get the type from the ES mapping
             if (theProperty._toProperty().isConstantKeyword()) {
               JsonValue value = theProperty._toProperty().constantKeyword().value().toJson();
-              valueString = value.toString().replace("\"", "");
-            } else if (theProperty._toProperty().isKeyword()) {
-              valueString = theProperty._toProperty().keyword().name();
-            } else if (theProperty._toProperty().isText()) {
-              valueString = theProperty._toProperty().text().name();
-            } else {
-              valueString = theProperty._toProperty().toString();
+              String valueString = value.toString().replace("\"", "");
+              IndexMappingResponse.Relationship rel = handleRelationshipSection(valueString, currentPath, mappingObjectAttributes);
+              if (rel != null) {
+                responseBuilder.relationship(rel);
+              }
             }
-            
-            if (valueString != null) {
-              relationships.put(attributeName, type);
-              relationships.put(attributeName + ".value", valueString);
+            else {
+              log.debug("skipping : {}. Only constant_keyword are supported", currentPath);
             }
           } else {
-            data.put(attributeName, type);
+            String type = property._kind().jsonValue();
+            responseBuilder.attribute(IndexMappingResponse.Attribute.builder()
+                    .name(propertyName)
+                    .path(currentPath)
+                    .type(type).build());
           }
-        } else if (attributeName.startsWith("included")) {
-          included.put(attributeName, type);
+        } else {
+          log.debug("skipping : {}", currentPath);
         }
       }
       path.pop();
     });
+  }
+
+  /**
+   * Builds a {@link IndexMappingResponse.Relationship}.
+   *
+   * @param typeKey type from the ElasticSearch mapping also matching in the {@link MappingObjectAttributes}
+   * @param esPath full path from the ElasticSearch mapping (e.g. data.relationships.acMetadataCreator.data)
+   * @param mappingObjectAttributes from config file
+   * @return
+   */
+  private static IndexMappingResponse.Relationship handleRelationshipSection(String typeKey, String esPath, MappingObjectAttributes mappingObjectAttributes) {
+    List<MappingAttribute> attributes = mappingObjectAttributes.getMappings().get(typeKey);
+    // make sure we have configuration for the relationship
+    if (attributes != null) {
+      IndexMappingResponse.Relationship.RelationshipBuilder relBuilder = IndexMappingResponse.Relationship.builder()
+              .value(typeKey);
+
+      relBuilder.referencedBy(StringUtils.substringBetween(esPath,"relationships.", ".data"));
+
+      attributes.forEach(curEntry -> {
+        IndexMappingResponse.Attribute.AttributeBuilder attributeBuilder = IndexMappingResponse.Attribute.builder();
+        // if mappingObjectAttributes has something like determination.verbatimScientificName we only want the last part
+        if(curEntry.getName().contains(".")) {
+          attributeBuilder.name(StringUtils.substringAfterLast(curEntry.getName(), "."));
+          attributeBuilder.path( "attributes." + StringUtils.substringBeforeLast(curEntry.getName(), "."));
+        }
+        else {
+          attributeBuilder.name(curEntry.getName());
+          attributeBuilder.path("attributes");
+        }
+
+        attributeBuilder.type(curEntry.getType()).distinctTermAgg(curEntry.getDistinctTermAgg());
+
+        relBuilder.attribute(attributeBuilder.build());
+      });
+      return relBuilder.build();
+    }
+    return null;
   }
 
 }

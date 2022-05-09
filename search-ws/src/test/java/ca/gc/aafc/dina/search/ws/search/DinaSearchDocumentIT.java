@@ -2,6 +2,7 @@ package ca.gc.aafc.dina.search.ws.search;
 
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
+import ca.gc.aafc.dina.search.ws.services.IndexMappingResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
@@ -293,14 +294,12 @@ public class DinaSearchDocumentIT {
     RestTemplate restTemplate = builder.build();
     restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
 
-    ResponseEntity<JsonNode> response = searchService.getIndexMapping(OBJECT_STORE_ES_INDEX);
-    JsonNode result = response.getBody();
+    IndexMappingResponse response = searchService.getIndexMapping(OBJECT_STORE_ES_INDEX);
 
-    assertEquals(OBJECT_STORE_ES_INDEX, result.get("indexName").asText());
-    JsonNode attributes = result.get("attributes");
+    assertEquals(OBJECT_STORE_ES_INDEX, response.getIndexName());
     boolean found = false;
-    for (JsonNode curNode: attributes) {
-      if (curNode.get("name").asText().equals("createdOn") && "date".equals(curNode.get("type").asText()))  {
+    for (IndexMappingResponse.Attribute curAttribute: response.getAttributes()) {
+      if (curAttribute.getName().equals("createdOn") && "date".equals(curAttribute.getType()))  {
         found = true;
         break;
       }
@@ -308,8 +307,7 @@ public class DinaSearchDocumentIT {
     assertTrue(found);
 
     // test behavior of non-existing index
-    response = searchService.getIndexMapping("abcd");
-    assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
   }
 
   @SuppressWarnings("unchecked")

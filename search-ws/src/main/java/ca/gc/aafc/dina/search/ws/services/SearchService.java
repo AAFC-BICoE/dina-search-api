@@ -76,6 +76,6 @@ public interface SearchService {
    * @return mapping of the index
    * @throws SearchApiException if something goes wrong with the request
    */
-  ResponseEntity<JsonNode> getIndexMapping(String indexName) throws SearchApiException;
+  IndexMappingResponse getIndexMapping(String indexName) throws SearchApiException;
 
 }
