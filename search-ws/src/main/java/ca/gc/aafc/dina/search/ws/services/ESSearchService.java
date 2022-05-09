@@ -1,27 +1,5 @@
 package ca.gc.aafc.dina.search.ws.services;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.*;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.DefaultUriBuilderFactory;
-import org.springframework.web.util.UriBuilder;
-
-import org.apache.commons.lang3.StringUtils;
-
 import ca.gc.aafc.dina.search.ws.config.MappingAttribute;
 import ca.gc.aafc.dina.search.ws.config.MappingObjectAttributes;
 import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
@@ -34,8 +12,31 @@ import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.json.JsonValue;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriBuilder;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 
 @Log4j2
 @Service
@@ -217,8 +218,8 @@ public class ESSearchService implements SearchService {
    * @param path               current path expressed as a Stack
    */
   private static void crawlMapping(Stack<String> path, Property propertyToCrawl,
-      MappingObjectAttributes mappingObjectAttributes,
-      IndexMappingResponse.IndexMappingResponseBuilder responseBuilder) {
+                                   MappingObjectAttributes mappingObjectAttributes,
+                                   IndexMappingResponse.IndexMappingResponseBuilder responseBuilder) {
 
     Map<String, Property> propertiesToProcess = null;
     if (propertyToCrawl.isNested()) {
@@ -239,8 +240,6 @@ public class ESSearchService implements SearchService {
         crawlMapping(path, property, mappingObjectAttributes, responseBuilder);
       } else {
 
-        //String attributeName = String.join(".", path);
-
         // Single Attribute
         if (currentPath.startsWith("data")) {
           if (currentPath.startsWith("data.relationships")) {
@@ -254,8 +253,7 @@ public class ESSearchService implements SearchService {
               if (rel != null) {
                 responseBuilder.relationship(rel);
               }
-            }
-            else {
+            } else {
               log.debug("skipping : {}. Only constant_keyword are supported", currentPath);
             }
           } else {
