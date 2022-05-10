@@ -38,6 +38,10 @@
     "properties": {
       "data": {
         "properties": {
+          "type": {
+            "type": "constant_keyword",
+            "value": "person"
+          },
           "attributes": {
             "properties": {
               "aliases": {
@@ -94,120 +98,19 @@
               }
             }
           },
-          "id": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword",
-                "ignore_above": 256
-              }
-            }
-          },
           "relationships": {
             "properties": {
               "organizations": {
                 "properties": {
                   "data": {
                     "properties": {
-                      "id": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
-                      },
                       "type": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
+                        "type": "constant_keyword",
+                        "value": "organization"
                       }
                     }
                   }
                 }
-              }
-            }
-          },
-          "type": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword",
-                "ignore_above": 256
-              }
-            }
-          }
-        }
-      },
-      "included": {
-        "properties": {
-          "attributes": {
-            "properties": {
-              "aliases": {
-                "type": "text",
-                "fields": {
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                  }
-                }
-              },
-              "createdBy": {
-                "type": "text",
-                "fields": {
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                  }
-                }
-              },
-              "createdOn": {
-                "type": "date"
-              },
-              "names": {
-                "properties": {
-                  "languageCode": {
-                    "type": "text",
-                    "fields": {
-                      "keyword": {
-                        "type": "keyword",
-                        "ignore_above": 256
-                      }
-                    }
-                  },
-                  "name": {
-                    "type": "text",
-                    "fields": {
-                      "keyword": {
-                        "type": "keyword",
-                        "ignore_above": 256
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "id": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword",
-                "ignore_above": 256
-              }
-            }
-          },
-          "type": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword",
-                "ignore_above": 256
               }
             }
           }
