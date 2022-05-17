@@ -29,6 +29,7 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
   private static final String MATERIAL_SAMPLE_DOCUMENT1_ID = "94c97f20-3481-4a44-ba64-3a1351051a76";
   private static final String MATERIAL_SAMPLE_DOCUMENT2_ID = "94c97f20-3481-4a44-ba64-3a1351051a77";
   private static final String MATERIAL_SAMPLE_DOCUMENT3_ID = "94c97f20-3481-4a44-ba64-3a1351051a78";
+  private static final String MATERIAL_SAMPLE_DOCUMENT4_ID = "94c97f20-3481-4a44-ba64-3a1351051a79";
 
   @Container
   private static final CustomElasticSearchContainer ELASTICSEARCH_CONTAINER = new CustomElasticSearchContainer();
@@ -75,20 +76,22 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
             retrieveJSONObject("icu/matSampleName2.json"));
     indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT3_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
             retrieveJSONObject("icu/matSampleName3.json"));
+    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT4_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+            retrieveJSONObject("icu/matSampleName4.json"));
 
     // Sort on "keyword" (alphabetical sort)
     String queryStringKeywordAsc = "{\"sort\":[{ \"data.attributes.materialSampleName.keyword\" : \"asc\" }]" + "}";
     String result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, queryStringKeywordAsc);
-    assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC101","CNC22", "CNC3")));
+    assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC00044", "CNC101", "CNC22", "CNC3")));
 
     // Sort on "sort" (alphanumeric natural sort)
     String queryStringAsc = "{\"sort\":[{ \"data.attributes.materialSampleName.sort\" : \"asc\" }]" + "}";
     result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, queryStringAsc);
-    assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC3", "CNC22","CNC101")));
+    assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC3", "CNC22","CNC00044", "CNC101")));
 
     String queryStringDesc = "{\"sort\":[{ \"data.attributes.materialSampleName.sort\" : \"desc\" }]" + "}";
     result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, queryStringDesc);
-    assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC101","CNC22","CNC3")));
+    assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC101","CNC00044","CNC22","CNC3")));
   }
 
 }
