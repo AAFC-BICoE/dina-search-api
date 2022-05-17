@@ -1,0 +1,135 @@
+{
+  "settings": {
+    "index": {
+      "number_of_shards": "1",
+      "number_of_replicas": "1"
+    }
+  },
+  "mappings": {
+    "dynamic_templates": [
+      {
+        "includes_as_nested": {
+          "match_mapping_type": "object",
+          "match": "included",
+          "mapping": {
+            "type": "nested"
+          }
+        }
+      },
+      {
+        "id_as_keywords": {
+          "match_mapping_type": "string",
+          "match": "id",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      },
+      {
+        "type_as_keywords": {
+          "match_mapping_type": "string",
+          "match": "type",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      }
+    ],
+    "properties": {
+      "data": {
+        "properties": {
+          "type": {
+            "type": "constant_keyword",
+            "value": "material-sample"
+          },
+          "attributes": {
+            "properties": {
+              "group": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "createdBy": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "createdOn": {
+                "type": "date"
+              },
+              "dwcCatalogNumber": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "dwcOtherCatalogNumbers": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "materialSampleName": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  },
+                  "sort": {
+                    "type": "icu_collation_keyword",
+                    "index": false,
+                    "numeric": true,
+                    "language": "en"
+                  }
+                }
+              },
+              "preparationDate": {
+                "type": "date"
+              },
+              "managedAttributes": {
+                "type": "object"
+              },
+              "preparationRemarks": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "meta": {
+        "properties": {
+          "moduleVersion": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

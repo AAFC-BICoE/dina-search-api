@@ -4,15 +4,7 @@ import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import co.elastic.clients.elasticsearch._types.FieldValue;
-import co.elastic.clients.elasticsearch._types.Result;
-import co.elastic.clients.elasticsearch.core.CountResponse;
-import co.elastic.clients.elasticsearch.core.IndexResponse;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,10 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
@@ -34,20 +24,18 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-public class DinaSearchDocumentIT {
+public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   
   private static final String DINA_AGENT_INDEX = "dina_agent_index";
-  private static final String DINA_MATERIAL_SAMPLE_INDEX = "dina_material_sample_index";
+  public static final String DINA_MATERIAL_SAMPLE_INDEX = "dina_material_sample_index";
   private static final String OBJECT_STORE_ES_INDEX = "object_store_index";
 
   private static final String MATERIAL_SAMPLE_DOCUMENT_ID = "2e5eab9e-1d75-4a26-997e-34362d6b4585";
-  private static final String MATERIAL_SAMPLE_SEARCH_FIELD = "data.id";
+  public static final String MATERIAL_SAMPLE_SEARCH_FIELD = "data.id";
   private static final String DINA_AGENT_SEARCH_FIELD = "name";
   private static final String DOCUMENT_ID = "test-document";
 
@@ -63,18 +51,14 @@ public class DinaSearchDocumentIT {
   @Autowired
   private SearchService searchService;
 
-  @Autowired
-  private ElasticsearchClient client;
-
   @Container
   private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
-
-  private static final ObjectMapper OM = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   @BeforeEach
   private void beforeEach() {
     ELASTICSEARCH_CONTAINER.start();
 
+    // configuration of the sear-ws will expect 9200
     assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
     assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
 
@@ -94,7 +78,7 @@ public class DinaSearchDocumentIT {
       RestTemplate restTemplate = builder.build();
 
       String matSampleEsSettings = TestResourceHelper
-              .readContentAsString("elastic-configurator-settings/collection-index/dina_material_sample_index_settings.json");
+              .readContentAsString("es-mapping/material_sample_index_settings.json");
 
       URI uri = new URI("http://" + ELASTICSEARCH_CONTAINER.getHttpHostAddress() + "/" + DINA_MATERIAL_SAMPLE_INDEX);
 
@@ -311,80 +295,4 @@ public class DinaSearchDocumentIT {
     response = searchService.getIndexMapping("abcd");
     assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
   }
-
-  @SuppressWarnings("unchecked")
-  private Map<String, Object> retrieveJSONObject(String documentName) {
-    try {
-      // Retrieve raw JSON.
-      String path = "src/test/resources/test-documents";
-      Path filename = Path.of(path + "/" + documentName);
-      String documentContent = Files.readString(filename);
-
-      // Convert raw JSON into JSON map.
-      return OM.readValue(documentContent, Map.class);
-
-    } catch (IOException ex) {
-      fail("Unable to parse JSON into map object: " + ex.getMessage());
-    }
-
-    return null;
-  }
-
-  /**
-   * Index a document for integration test purpose and wait until the document is indexed.
-   * @throws IOException
-   * @throws ElasticsearchException
-   * @throws InterruptedException
-   */
-  private void indexDocumentForIT(String indexName, String documentId, String searchField, Object jsonMap) 
-      throws ElasticsearchException, IOException, InterruptedException {
-
-    // Make the call to elastic to index the document.
-    IndexResponse response = client.index(builder -> builder
-      .id(documentId)
-      .index(indexName)
-      .document(jsonMap)
-    );
-    Result indexResult = response.result();
-
-    assertEquals(Result.Created, indexResult);
-    searchAndWait(documentId, searchField, 1, indexName);
-  }
-
-  private int search(String searchValue, String searchField, String indexName) throws ElasticsearchException, IOException {
-    // Count the total number of search results.
-    CountResponse countResponse = client.count(builder -> builder
-      .query(queryBuilder -> queryBuilder
-        .match(matchBuilder -> matchBuilder
-          .query(FieldValue.of(searchValue))
-          .field(searchField)
-        )
-      )
-      .index(indexName)
-    );
-
-    return (int) countResponse.count();
-  }
-
-  private int searchAndWait(String searchValue, String searchField, int foundCondition, String indexName)
-      throws ElasticsearchException, IOException, InterruptedException {
-
-    int foundDocument = -1;
-    int nCount = 0;
-    while (foundDocument != foundCondition && nCount < 10) {
-      Thread.sleep(1000);
-      foundDocument = search(searchValue, searchField, indexName);
-      nCount++;
-    }
-    return foundDocument;
-  }
-
-  private HttpHeaders buildJsonHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
-  }
-
 }
