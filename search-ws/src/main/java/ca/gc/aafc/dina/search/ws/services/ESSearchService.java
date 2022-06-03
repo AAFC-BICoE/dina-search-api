@@ -220,7 +220,7 @@ public class ESSearchService implements SearchService {
         // Add all document attributes
         ArrayNode documentAttributes = indexMappingNode.putArray("attributes");
         data.entrySet().forEach(curEntry -> {
-          ObjectNode curJsonAttribute = setJsonNode(curEntry.getKey(), curEntry.getValue(), false);
+          ObjectNode curJsonAttribute = setJsonNode(curEntry.getKey(), curEntry.getValue(), false, null);
           documentAttributes.add(curJsonAttribute);
         });
 
@@ -231,26 +231,18 @@ public class ESSearchService implements SearchService {
 
           if (curKey.getKey().endsWith("data.type.value")) {
 
-            ObjectNode curRelationship = OM.createObjectNode();
+            IndexMappingResponse.Relationship.RelationshipBuilder relBuilder =
+                    IndexMappingResponse.Relationship.builder().value(curKey.getValue());
 
-            curRelationship.put("name", "type");
-            curRelationship.put("value",curKey.getValue());           
-            curRelationship.put("path", "included");
-            relationshipContainer.add(curRelationship);
-
-            // Add attributes for the relationship
-            //
+            // Add attributes for the relationship based on configuration
             List<MappingAttribute> attributes  = mappingObjectAttributes.getMappings().get(curKey.getValue());
             
             if (attributes != null) {
-              ArrayNode relationShipAttributes = curRelationship.putArray("attributes");
-
               attributes.forEach(curEntry -> {
-                ObjectNode curJsonAttribute = setJsonNode(curEntry.getName(), curEntry.getType(), true);
-                relationShipAttributes.add(curJsonAttribute);     
+                relBuilder.attribute(buildAttribute(curEntry.getName(), curEntry.getType(), true, curEntry.getDistinctTermAgg()));
               });
             }
-
+            relationshipContainer.add(OM.convertValue(relBuilder.build(), ObjectNode.class));
           }
         });
       });
@@ -263,12 +255,16 @@ public class ESSearchService implements SearchService {
     return ResponseEntity.ok().body(indexMappingNode);
   }
 
-  private ObjectNode setJsonNode(String key, String value, boolean isIncludedSection) {
+  private ObjectNode setJsonNode(String key, String type, boolean isIncludedSection, Boolean distinctTermAgg) {
+    return OM.convertValue(buildAttribute(key, type, isIncludedSection, distinctTermAgg), ObjectNode.class);
+  }
 
-    ObjectNode curJsonAttribute = OM.createObjectNode();
+  private IndexMappingResponse.Attribute buildAttribute(String key, String type, boolean isIncludedSection, Boolean distinctTermAgg) {
 
-    curJsonAttribute.put("name", key.substring(key.lastIndexOf(".") + 1));
-    curJsonAttribute.put("type", value);
+    IndexMappingResponse.Attribute.AttributeBuilder attributeBuilder = IndexMappingResponse.Attribute.builder();
+
+    attributeBuilder.name(key.substring(key.lastIndexOf(".") + 1));
+    attributeBuilder.type(type);
 
     int startPos = 0;
     if (key.startsWith("included.")) {
@@ -284,9 +280,10 @@ public class ESSearchService implements SearchService {
       path = "attributes" + (!path.isEmpty() ? "." + path : path); 
     }
 
-    curJsonAttribute.put("path", path);
+    attributeBuilder.distinctTermAgg(distinctTermAgg);
+    attributeBuilder.path(path);
 
-    return curJsonAttribute;
+    return attributeBuilder.build();
   }
 
   /**

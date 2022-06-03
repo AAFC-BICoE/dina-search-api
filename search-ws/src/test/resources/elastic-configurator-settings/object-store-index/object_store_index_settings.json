@@ -38,6 +38,10 @@
     "properties": {
       "data": {
         "properties": {
+          "type": {
+            "type": "constant_keyword",
+            "value": "metadata"
+          },
           "attributes": {
             "properties": {
               "createdBy": {
@@ -91,13 +95,8 @@
                   "data": {
                     "properties": {
                       "type": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
+                        "type": "constant_keyword",
+                        "value": "derivative"
                       }
                     }
                   }
@@ -108,13 +107,8 @@
                   "data": {
                     "properties": {
                       "type": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
+                        "type": "constant_keyword",
+                        "value": "person"
                       }
                     }
                   }
@@ -125,13 +119,8 @@
                   "data": {
                     "properties": {
                       "type": {
-                        "type": "text",
-                        "fields": {
-                          "keyword": {
-                            "type": "keyword",
-                            "ignore_above": 256
-                          }
-                        }
+                        "type": "constant_keyword",
+                        "value": "person"
                       }
                     }
                   }
