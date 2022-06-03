@@ -1,0 +1,16 @@
+{
+  "data": {
+    "id": "94c97f20-3481-4a44-ba64-3a1351051a77",
+    "type": "material-sample",
+    "attributes": {
+      "version": 0,
+      "group": "cnc",
+      "createdOn": "2022-03-02T17:40:24.211011Z",
+      "createdBy": "cnc-cm",
+      "dwcOtherCatalogNumbers": [
+        "202"
+      ],
+      "materialSampleName": "CNC22"
+    }
+  }
+}
