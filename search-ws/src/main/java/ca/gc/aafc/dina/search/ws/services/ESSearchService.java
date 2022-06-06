@@ -291,11 +291,10 @@ public class ESSearchService implements SearchService {
       attributes.forEach(curEntry -> {
         IndexMappingResponse.Attribute.AttributeBuilder attributeBuilder = IndexMappingResponse.Attribute.builder();
         // if mappingObjectAttributes has something like determination.verbatimScientificName we only want the last part
-        if(curEntry.getName().contains(".")) {
+        if (curEntry.getName().contains(".")) {
           attributeBuilder.name(StringUtils.substringAfterLast(curEntry.getName(), "."));
-          attributeBuilder.path( "attributes." + StringUtils.substringBeforeLast(curEntry.getName(), "."));
-        }
-        else {
+          attributeBuilder.path("attributes." + StringUtils.substringBeforeLast(curEntry.getName(), "."));
+        } else {
           attributeBuilder.name(curEntry.getName());
           attributeBuilder.path("attributes");
         }
