@@ -10,7 +10,7 @@
       {
         "includes_as_nested": {
           "match_mapping_type": "object",
-          "match":   "included",
+          "match": "included",
           "mapping": {
             "type": "nested"
           }
@@ -19,7 +19,7 @@
       {
         "id_as_keywords": {
           "match_mapping_type": "string",
-          "match":   "id",
+          "match": "id",
           "mapping": {
             "type": "keyword"
           }
@@ -28,7 +28,7 @@
       {
         "type_as_keywords": {
           "match_mapping_type": "string",
-          "match":   "type",
+          "match": "type",
           "mapping": {
             "type": "keyword"
           }
@@ -40,11 +40,11 @@
         "properties": {
           "type": {
             "type": "constant_keyword",
-            "value": "person"
+            "value": "material-sample"
           },
           "attributes": {
             "properties": {
-              "aliases": {
+              "group": {
                 "type": "text",
                 "fields": {
                   "keyword": {
@@ -65,50 +65,51 @@
               "createdOn": {
                 "type": "date"
               },
-              "displayName": {
+              "dwcCatalogNumber": {
                 "type": "text",
                 "fields": {
-                  "autocomplete": {
-                    "type": "search_as_you_type",
-                    "max_shingle_size": 3
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "dwcOtherCatalogNumbers": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "materialSampleName": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
                   },
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
+                  "sort": {
+                    "type": "icu_collation_keyword",
+                    "index": false,
+                    "numeric": true,
+                    "language": "en"
                   }
                 }
               },
-              "familyNames": {
+              "preparationDate": {
+                "type": "date"
+              },
+              "managedAttributes": {
+                "type": "object"
+              },
+              "preparationRemarks": {
                 "type": "text",
                 "fields": {
                   "keyword": {
                     "type": "keyword",
                     "ignore_above": 256
-                  }
-                }
-              },
-              "givenNames": {
-                "type": "text",
-                "fields": {
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                  }
-                }
-              }
-            }
-          },
-          "relationships": {
-            "properties": {
-              "organizations": {
-                "properties": {
-                  "data": {
-                    "properties": {
-                      "type": {
-                        "type": "constant_keyword",
-                        "value": "organization"
-                      }
-                    }
                   }
                 }
               }
