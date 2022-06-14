@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.ws.search;
 
+import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.FieldValue;
@@ -9,15 +10,22 @@ import co.elastic.clients.elasticsearch.core.IndexResponse;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
 
+import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.DINA_MATERIAL_SAMPLE_INDEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -30,6 +38,9 @@ public abstract class ElasticSearchBackedTest {
 
   @Autowired
   protected ElasticsearchClient client;
+
+  @Autowired
+  protected RestTemplateBuilder builder;
 
   public static HttpHeaders buildJsonHeaders() {
     HttpHeaders headers = new HttpHeaders();
@@ -55,6 +66,17 @@ public abstract class ElasticSearchBackedTest {
     }
 
     return null;
+  }
+
+  protected void sendMapping(String mappingJsonFile, String esHttpHostAddress, String indexName) throws IOException, URISyntaxException {
+    String matSampleEsSettings = TestResourceHelper
+            .readContentAsString(mappingJsonFile);
+
+    URI uri = new URI("http://" + esHttpHostAddress + "/" + indexName);
+
+    HttpEntity<?> entity = new HttpEntity<>(matSampleEsSettings, buildJsonHeaders());
+    RestTemplate restTemplate = builder.build();
+    restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
   }
 
   /**
