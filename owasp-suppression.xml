@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.2.xsd">
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <suppress>
         <notes>The bug is present only in Spring Framework 5.0.5.RELEASE but creates false positive with other versions</notes>
         <cve>CVE-2018-1258</cve>
@@ -8,7 +8,7 @@
         <notes>CVE about Keycloak Server</notes>
         <cve>CVE-2021-4133</cve>
     </suppress>
-        <suppress>
+    <suppress>
         <notes>not valid for search-api</notes>
         <packageUrl regex="true">^pkg:maven/org\.springframework/spring.*$</packageUrl>
         <cve>CVE-2016-1000027</cve>
