@@ -3,22 +3,31 @@ package ca.gc.aafc.dina.search.ws.services;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Singular;
 
 import java.util.List;
+import java.util.Set;
 
+@Builder
+@Getter
 public class IndexMappingResponse {
 
-  //private String indexMapping;
+  @JsonProperty("index_name")
+  private String indexName;
 
-  //private List<Attribute> attributes;
-  //private List<Object> relationships;
+  @Singular
+  private Set<Attribute> attributes;
+
+  @Singular
+  private Set<Relationship> relationships;
 
   @Getter
+  @EqualsAndHashCode
   @Builder
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  static final class Attribute {
+  public static final class Attribute {
     private final String name;
     private final String type;
     private final String path;
@@ -32,14 +41,15 @@ public class IndexMappingResponse {
       this.path = path;
       this.distinctTermAgg = distinctTermAgg;
     }
-
   }
 
   @Getter
-  static final class Relationship {
+  @EqualsAndHashCode
+  public static final class Relationship {
     private static final String REL_NAME = "type";
     private static final String REL_PATH = "included";
 
+    private final String referencedBy;
     private final String name;
     private final String path;
     private final String value;
@@ -47,10 +57,11 @@ public class IndexMappingResponse {
     private final List<Attribute> attributes;
 
     @Builder
-    private Relationship(String value, @Singular List<Attribute> attributes) {
+    private Relationship(String value, String referencedBy, @Singular List<Attribute> attributes) {
       // name and path are always the same for relationships block
       this.name = REL_NAME;
       this.path = REL_PATH;
+      this.referencedBy = referencedBy;
       this.value = value;
       this.attributes = attributes;
     }

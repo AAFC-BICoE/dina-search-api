@@ -1,9 +1,5 @@
 package ca.gc.aafc.dina.search.ws.services;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import org.springframework.http.ResponseEntity;
-
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 
 public interface SearchService {
@@ -76,6 +72,6 @@ public interface SearchService {
    * @return mapping of the index
    * @throws SearchApiException if something goes wrong with the request
    */
-  ResponseEntity<JsonNode> getIndexMapping(String indexName) throws SearchApiException;
+  IndexMappingResponse getIndexMapping(String indexName) throws SearchApiException;
 
 }
