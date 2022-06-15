@@ -35,9 +35,6 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
   private static final CustomElasticSearchContainer ELASTICSEARCH_CONTAINER = new CustomElasticSearchContainer();
 
   @Autowired
-  private RestTemplateBuilder builder;
-
-  @Autowired
   private SearchService searchService;
 
   @BeforeEach
@@ -59,16 +56,8 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
   @Test
   public void testSearchSortWithICUField() throws Exception {
 
-    RestTemplate restTemplate = builder.build();
-
-    String matSampleEsSettings = TestResourceHelper
-            .readContentAsString("es-mapping/material_sample_index_icu_settings.json");
-
-    URI uri = new URI("http://" + ELASTICSEARCH_CONTAINER.getHttpHostAddress() + "/" + DINA_MATERIAL_SAMPLE_INDEX);
-
-    HttpEntity<?> entity = new HttpEntity<>(matSampleEsSettings, buildJsonHeaders());
-    restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
-
+    sendMapping("es-mapping/material_sample_index_icu_settings.json",
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_MATERIAL_SAMPLE_INDEX);
 
     indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
             retrieveJSONObject("icu/matSampleName1.json"));
