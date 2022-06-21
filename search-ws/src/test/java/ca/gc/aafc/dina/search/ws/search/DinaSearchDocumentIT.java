@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
@@ -146,6 +147,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
     assertNotNull(searchResponse.getHits());
     assertEquals(1, searchResponse.getHits().size());
+    assertEquals(DOCUMENT_ID, searchResponse.getHits().get(0).getDocumentId());
 
     // Make sure we can serialize the response
     assertTrue(OM.writeValueAsString(searchResponse).contains("displayName"));
