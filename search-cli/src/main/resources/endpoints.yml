@@ -30,6 +30,7 @@ endpoints:
     relationships:
       - acMetadataCreator
       - dcCreator
+      - derivatives
   organization: 
     targetUrl: ${ORGANIZATION_URL:http://localhost:8082/api/v1/organization}
   person: 
