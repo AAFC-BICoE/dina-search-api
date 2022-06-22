@@ -156,7 +156,7 @@ Attributes section is made of the following fields
 - `name` = name of the attribute
 - `type` = Elasticsearch type of the attribute
 - `path` = Relative path to get to the attribute value within a document. Fully qualified path is built from 
-           the relationship path + attribue path + attribute name (path + path + name) 
+           the relationship path + attribute path + attribute name (path + path + name) 
 
  
 ## Examples

@@ -21,6 +21,7 @@ public class AutocompleteResponse {
   @Getter
   public static class Hit {
     private final String index;
+    private final String documentId;
     private final Double score;
     private final Object source;
   }
@@ -35,6 +36,7 @@ public class AutocompleteResponse {
     for (co.elastic.clients.elasticsearch.core.search.Hit<?> hit : sr.hits().hits()) {
       hits.add(Hit.builder()
           .index(hit.index())
+          .documentId(hit.id())
           .score(hit.score())
           .source(hit.source())
           .build());
