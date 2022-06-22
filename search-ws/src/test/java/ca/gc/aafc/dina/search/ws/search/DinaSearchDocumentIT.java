@@ -6,6 +6,7 @@ import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
 import ca.gc.aafc.dina.search.ws.services.IndexMappingResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +23,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,6 +39,8 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   public static final String MATERIAL_SAMPLE_SEARCH_FIELD = "data.id";
   private static final String DINA_AGENT_SEARCH_FIELD = "name";
   private static final String DOCUMENT_ID = "test-document";
+
+  private static final String PERSON_1_ID = "77529673-72bf-4fdc-88e2-df3b59b9c3a0";
 
   // Nested searches
   private static final String MATERIAL_SAMPLE_NESTED_DOCUMENT1_ID = "94c97f20-3481-4a44-ba64-3a1351051a76";
@@ -148,6 +152,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     assertNotNull(searchResponse.getHits());
     assertEquals(1, searchResponse.getHits().size());
     assertEquals(DOCUMENT_ID, searchResponse.getHits().get(0).getDocumentId());
+    assertEquals(PERSON_1_ID, ((ObjectNode)searchResponse.getHits().get(0).getSource()).get("data").get("id").textValue());
 
     // Make sure we can serialize the response
     assertTrue(OM.writeValueAsString(searchResponse).contains("displayName"));
