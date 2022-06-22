@@ -45,6 +45,7 @@ public class ESSearchService implements SearchService {
   private static final ObjectMapper OM = new ObjectMapper();
   private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
   private static final String EMPTY_QUERY = "{\"query\":{}}";
+  private static final String ID_FIELD = "data.id";
 
   private final ElasticsearchClient client;
   private final RestTemplate restTemplate;
@@ -100,6 +101,7 @@ public class ESSearchService implements SearchService {
     List<String> fields = new ArrayList<>();
     List<String> fieldsToReturn = new ArrayList<>();
     fields.add(autoCompleteField);
+    fieldsToReturn.add(ID_FIELD);
     fieldsToReturn.add(autoCompleteField);
     fields.add(autoCompleteField + ".autocomplete._2gram");
     fields.add(autoCompleteField + ".autocomplete._3gram");
