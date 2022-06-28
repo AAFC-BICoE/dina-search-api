@@ -43,6 +43,10 @@ mappings:
     - name: name
       type: text
 
+  storage-unit-type:
+    - name: name
+      type: text
+
   preparation-type:
     - name: name
       type: text
