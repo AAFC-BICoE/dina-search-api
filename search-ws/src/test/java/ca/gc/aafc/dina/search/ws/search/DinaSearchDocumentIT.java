@@ -147,7 +147,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     String textToMatch = "joh";
     String autoCompleteField = "data.attributes.displayName";
     String additionalField = "";
-    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField, null, null);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_AGENT_INDEX, autoCompleteField, additionalField, null, null, null);
 
     assertNotNull(searchResponse.getHits());
     assertEquals(1, searchResponse.getHits().size());
@@ -179,14 +179,14 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     String additionalField = "";
     String restrictedField = "";
     String restrictedFieldValue = "";
-    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, null, restrictedField, restrictedFieldValue);
 
     assertNotNull(searchResponse.getHits());
     assertEquals(1, searchResponse.getHits().size());
   }
 
 
-  @DisplayName("Integration Test search autocomplete document restricted match")
+  @DisplayName("Integration Test search autocomplete document restricted and group match")
   @Test
   public void testSearchAutoCompleteMaterialSampleRestrictedMatch() throws Exception { 
     // Let's add a document into the elasticsearch cluster 
@@ -197,10 +197,22 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     String additionalField = "";
     String restrictedField = "data.attributes.group.keyword";
     String restrictedFieldValue = "cnc";
-    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, null, restrictedField, restrictedFieldValue);
 
     assertNotNull(searchResponse.getHits());
     assertEquals(1, searchResponse.getHits().size());
+
+    //try using the group parameter
+    searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedFieldValue, null, null);
+
+    assertNotNull(searchResponse.getHits());
+    assertEquals(1, searchResponse.getHits().size());
+
+    //try using another group (nothing should match)
+    searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, "abc", null, null);
+
+    assertNotNull(searchResponse.getHits());
+    assertEquals(0, searchResponse.getHits().size());
   }
 
   @DisplayName("Integration Test search autocomplete document restricted no match")
@@ -214,7 +226,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     String additionalField = "";
     String restrictedField = "data.attributes.group.keyword";
     String restrictedFieldValue = "cnc-no-match";
-    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, null, restrictedField, restrictedFieldValue);
 
     assertNotNull(searchResponse.getHits());
     assertEquals(0, searchResponse.getHits().size());

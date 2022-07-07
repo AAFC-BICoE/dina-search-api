@@ -35,14 +35,15 @@ public interface SearchService {
    * 
    * @param textToMatch Text to match
    * @param indexName Index for the documents
-   * @param autoCompleteField target field for the auto complete search.
-   * @param additionalField additional or alternate field to evaluate in addition to the autoCompleteField.
+   * @param autoCompleteField target field for the auto complete search
+   * @param additionalField additional or alternate field to evaluate in addition to the autoCompleteField
+   * @param group optional group owning the object to filter on
    * @param restrictedField Non null if we want to restrict based on a specific field.
    * @param restrictedFieldValue The value to filter out.
    * 
    * @return
    */
-  AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String restrictedField, String restrictedFieldValue) throws SearchApiException;
+  AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String group, String restrictedField, String restrictedFieldValue) throws SearchApiException;
 
   /**
    * Search will take the provided json text query and forward it to the configured
