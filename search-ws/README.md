@@ -50,12 +50,15 @@ GET http://<target-server>:8085/search-ws/auto-complete?prefix=<string>&autoComp
 ```
 Content-Type: `application-json`
 
-- `target-server` = localhost
 - `prefix` = string that we are looking matches
 - `autoCompleteField` = Fully qualified field that has been mapped as 'search_as_you_type'
-- `additionalField` = Fully qualified field that we want to add as an alternative to the autocomplete field.
-- `target-index-name` =  dina_agent_index
+- `target-index-name` =  name of the ElasticSearch index (e.g. dina_agent_index)
 
+Optional parameters:
+- `additionalField` = Fully qualified field to add as an alternative to the autocomplete field
+- `restrictedField` = Fully qualified field to filter on (e.g. `data.relationships.data.id`)
+- `restrictedFieldValue` = value to filter on the field in `restrictedField`
+- `group` = a group to filter on
 
 ### search
 Generic searches based on ElasticSearch compliant JSON payload.
