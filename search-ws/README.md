@@ -87,60 +87,40 @@ GET http://<target-server>:8085/search-ws/mapping?indexName=<target-index-name>
 Response: The structure contained in the body section of the payload is made up of three logical sections presented in the following extract:
 
 ```
-    "body": {
-        "indexName": "dina_material_sample_index",
-        "attributes": [
-            {
-                "name": "verbatimDeterminer",
-                "type": "text",
-                "path": "data.attributes"
-            },
-            {
-                "name": "publiclyReleasable",
-                "type": "boolean",
-                "path": "data.attributes"
-            },
-            :::
-            :::
-        ],
-        "relationships": [
-            {
-                "name": "type",
-                "value": "collecting-event",
-                "path": "included",
-                "attributes": [
-                    {
-                        "name": "createdOn",
-                        "type": "date",
-                        "path": "attributes"
-                    },
-                    {
-                        "name": "createdBy",
-                        "type": "date",
-                        "path": "attributes"
-                    }
-                ]
-            },
-            {
-                "name": "type",
-                "value": "organism",
-                "path": "included",
-                "attributes": [
-                    {
-                        "name": "createdOn",
-                        "type": "date",
-                        "path": "attributes"
-                    },
-                :::
-                :::
-            ],
+{
+    "indexName": "dina_material_sample_index",
+    "attributes": [
+        {
+            "name": "verbatimDeterminer",
+            "type": "text",
+            "path": "data.attributes"
         },
-      }
-    },
-    "statusCode": "OK",
-    "statusCodeValue": 200
+        {
+            "name": "publiclyReleasable",
+            "type": "boolean",
+            "path": "data.attributes"
+        }
+    ],
+    "relationships": [
+        {
+            "name": "type",
+            "value": "collecting-event",
+            "path": "included",
+            "attributes": [
+                {
+                    "name": "createdOn",
+                    "type": "date",
+                    "path": "attributes"
+                },
+                {
+                    "name": "createdBy",
+                    "type": "date",
+                    "path": "attributes"
+                }
+            ]
+        }
+    ]
 }
-
 ```
 
 Relationship section is made of the objects listed as external relationship to the object.
@@ -158,14 +138,12 @@ Attributes section is made of the following fields
 - `path` = Relative path to get to the attribute value within a document. Fully qualified path is built from 
            the relationship path + attribute path + attribute name (path + path + name) 
 
- 
 ## Examples
 
 ### Autocomplete a value equal to 'Jim' by looking at displayname
 ```
 http://localhost:8085/search-ws/auto-complete?prefix=Jim&autoCompleteField=data.attributes.displayName&indexName=dina_agent_index
 ```
-<br/>
 
 ### Autocomplete a value equal to 'Jim' by looking at displayname and aliases
 ```
@@ -174,7 +152,7 @@ http://localhost:8085/search-ws/auto-complete?prefix=Jim&autoCompleteField=data.
 
 *Note:* The provided fields (autoCompleteField and additionalField) have to match the one defined in the selected index.
 
-As per the description in the #Auto Completion section the additonalField is optional and when provided a search is conducted with the information provided.
+As per the description in the #Auto Completion section the additionalField is optional and when provided a search is conducted with the information provided.
 
 ### Sample auto-complete by using search endpoint
 
@@ -195,10 +173,8 @@ As per the description in the #Auto Completion section the additonalField is opt
     }
   }
 }
-
-string-to-auto-complete = the string that the caller wants to find autocomplete matches
-
 ```
+string-to-auto-complete = the string that the caller wants to find autocomplete matches
 
 #### dina_agent_index displayName in included section
 
@@ -239,7 +215,6 @@ string-to-auto-complete = the string that the caller wants to find autocomplete 
 ### Get entries matching specific conditions
 
 ```
-
 {
   "query": {
     "bool": {
@@ -253,7 +228,6 @@ string-to-auto-complete = the string that the caller wants to find autocomplete 
     }
   }
 }
-
 ```
 
 Cleanup:
