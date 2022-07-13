@@ -52,6 +52,11 @@ mappings:
       type: text
       distinctTermAgg: true
 
+  preparation-method:
+    - name: name
+      type: text
+      distinctTermAgg: true
+
   person:
     - name: displayName
       type: text
