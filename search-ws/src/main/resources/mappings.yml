@@ -60,3 +60,7 @@ mappings:
   person:
     - name: displayName
       type: text
+
+  assemblage:
+    - name: name
+      type: text
