@@ -28,7 +28,9 @@ public class SearchController {
 
   @GetMapping(path = "/auto-complete")
   public ResponseEntity<?> autocomplete(@RequestParam String prefix, @RequestParam String indexName,
-      @RequestParam String autoCompleteField, @RequestParam(required = false) String additionalField,
+      @RequestParam String autoCompleteField,
+      @RequestParam(required = false) String additionalField,
+      @RequestParam(required = false) String group,
       @RequestParam(required = false) String restrictedField,
       @RequestParam(required = false) String restrictedFieldValue) {
 
@@ -37,7 +39,7 @@ public class SearchController {
         prefix, indexName, autoCompleteField, additionalField, restrictedField, restrictedFieldValue);
     try {
       return new ResponseEntity<>(searchService.autoComplete(prefix, indexName,
-          autoCompleteField, additionalField, restrictedField, restrictedFieldValue), HttpStatus.OK);
+          autoCompleteField, additionalField, group, restrictedField, restrictedFieldValue), HttpStatus.OK);
     } catch (SearchApiException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }

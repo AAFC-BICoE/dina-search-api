@@ -46,6 +46,7 @@ public class ESSearchService implements SearchService {
   private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
   private static final String EMPTY_QUERY = "{\"query\":{}}";
   private static final String ID_FIELD = "data.id";
+  private static final String GROUP_FIELD = "data.attributes.group.keyword"; //use the keyword version since we do a term filter
 
   private final ElasticsearchClient client;
   private final RestTemplate restTemplate;
@@ -88,7 +89,9 @@ public class ESSearchService implements SearchService {
 
 
   @Override
-  public AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String restrictedField, String restrictedFieldValue) throws SearchApiException {
+  public AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField,
+                                           String additionalField, String group,
+                                           String restrictedField, String restrictedFieldValue) throws SearchApiException {
 
     // Based on our naming convention, we will create the expected fields to search for:
     //
@@ -124,8 +127,17 @@ public class ESSearchService implements SearchService {
               .build()._toQuery()
       );
 
+      if (StringUtils.isNotBlank(group)) {
+        autoCompleteQueryBuilder.filter(
+                QueryBuilders.term()
+                        .field(GROUP_FIELD)
+                        .value(v -> v.stringValue(group))
+                        .build()._toQuery()
+        );
+      }
+
       if (StringUtils.isNotBlank(restrictedField) && StringUtils.isNotBlank(restrictedFieldValue)) {
-        // Add restricted query filter to query builder.
+        // Add restricted query filter to query builder
         autoCompleteQueryBuilder.filter(
             QueryBuilders.term()
                 .field(restrictedField)
