@@ -7,7 +7,7 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
 import java.time.Duration;
 
 /**
- * Custom ElasticSearch image with the icu plugin.
+ * Custom ElasticSearch image with the icu plugin installed inside the image.
  *
  */
 public class CustomElasticSearchContainer extends GenericContainer<CustomElasticSearchContainer> {
@@ -21,6 +21,7 @@ public class CustomElasticSearchContainer extends GenericContainer<CustomElastic
 
     this.addExposedPorts(9200, 9300);
     withEnv("discovery.type", "single-node");
+    withEnv(ESContainerConfig.XPACK_SECURITY_CONFIG , "false");
     setWaitStrategy((new HttpWaitStrategy()).forPort(9200)
             .forStatusCodeMatching((response) -> response == 200 || response == 401)
             .withStartupTimeout(Duration.ofMinutes(2L)));
