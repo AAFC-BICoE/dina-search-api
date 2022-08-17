@@ -21,6 +21,14 @@
       <groupId>io.github.aafc-bicoe</groupId>
       <artifactId>dina-base-api</artifactId>
       <version>${dina-base-api.version}</version>
+      <configuration>
+          <excludes>
+            <exclude>
+              <groupId>org.postgresql</groupId>
+              <artifactId>postgresql</artifactId>
+            </exclude>
+          </excludes>
+        </configuration>
     </dependency>
 
     <dependency>
