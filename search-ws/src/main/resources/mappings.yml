@@ -30,7 +30,7 @@ mappings:
       type: text
     - name: determination.scientificName
       type: text
-    - name: typeStatus
+    - name: determination.typeStatus
       type: text
 
   collection:
