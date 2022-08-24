@@ -43,8 +43,8 @@ public class MappingObjectAttributes {
       return null;
     }
 
-    for(MappingAttribute ma : allAttribute) {
-      if(attributeName.equals(ma.getName())){
+    for (MappingAttribute ma : allAttribute) {
+      if (attributeName.equals(ma.getName())) {
         return ma;
       }
     }
