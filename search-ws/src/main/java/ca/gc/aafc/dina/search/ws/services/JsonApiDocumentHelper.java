@@ -10,8 +10,6 @@ final class JsonApiDocumentHelper {
 
   public static final String DATA = "data";
   public static final String DATA_ATTRIBUTES = "data.attributes";
-  //private static final String DATA_ATTRIBUTES_DOT = "data.attributes.";
-
   public static final String DATA_RELATIONSHIPS = "data.relationships";
 
   private JsonApiDocumentHelper() {
