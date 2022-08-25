@@ -18,4 +18,37 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public class MappingObjectAttributes {
   private final Map<String, List<MappingAttribute>> mappings;
+
+  /**
+   * Get the attributes list of a specific type from the mapping configuration.
+   * @param type
+   * @return the mapping attributes list or null
+   */
+  public List<MappingAttribute> getAttributes(String type) {
+    if (mappings == null) {
+      return null;
+    }
+    return mappings.get(type);
+  }
+
+  /**
+   * Get the attribute of a specific type from the mapping configuration.
+   * @param type
+   * @param attributeName
+   * @return the mapping attributes or null
+   */
+  public MappingAttribute getAttribute(String type, String attributeName) {
+    List<MappingAttribute> allAttribute = getAttributes(type);
+    if(allAttribute == null) {
+      return null;
+    }
+
+    for (MappingAttribute ma : allAttribute) {
+      if (attributeName.equals(ma.getName())) {
+        return ma;
+      }
+    }
+    return null;
+  }
+
 }
