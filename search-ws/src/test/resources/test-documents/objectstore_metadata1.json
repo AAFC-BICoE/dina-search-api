@@ -1,0 +1,80 @@
+{
+  "data": {
+    "id": "1529d266-fa37-46f6-85e9-ccb2d145bbf3",
+    "type": "metadata",
+    "attributes": {
+      "createdBy": "cnc-cm",
+      "createdOn": "2021-10-05T13:41:58.038915Z",
+      "bucket": "cnc",
+      "fileIdentifier": "c7c1cd76-9a59-4fd9-b7c2-ae5f4a9b4a95",
+      "fileExtension": ".jpg",
+      "resourceExternalURL": null,
+      "dcFormat": "image/jpeg",
+      "dcType": "IMAGE",
+      "acCaption": "late-night-snacking.jpg",
+      "acDigitizationDate": null,
+      "xmpMetadataDate": "2022-08-25T18:11:09.229384Z",
+      "xmpRightsWebStatement": "https://open.canada.ca/en/open-government-licence-canada",
+      "dcRights": "Copyright Government of Canada",
+      "xmpRightsOwner": "Government of Canada",
+      "xmpRightsUsageTerms": "",
+      "orientation": null,
+      "originalFilename": "late-night-snacking.jpg",
+      "acHashFunction": "SHA-1",
+      "acHashValue": "7ae1c2bd668522dfbdda536b285ae787576d88e9",
+      "publiclyReleasable": true,
+      "group": "cnc",
+      "managedAttributes": {
+        "test_2": "123"
+      }
+    },
+    "relationships": {
+      "derivatives": {
+        "data": [
+          {
+            "id": "1ea2bd73-c1ed-4401-8c5a-cf5734f35387",
+            "type": "derivative"
+          }
+        ]
+      },
+      "acMetadataCreator": {
+        "data": {
+          "id": "ba05d46b-6c75-4c92-82d6-e72237d9982f",
+          "type": "person"
+        }
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "1ea2bd73-c1ed-4401-8c5a-cf5734f35387",
+      "type": "derivative",
+      "attributes": {
+        "bucket": "cnc",
+        "fileIdentifier": "472cdfde-90e6-4794-b600-aaee88edebd1",
+        "fileExtension": ".jpg",
+        "dcType": "IMAGE",
+        "dcFormat": "image/jpeg",
+        "acHashFunction": null,
+        "acHashValue": null,
+        "createdBy": "System Generated",
+        "createdOn": "2021-10-05T13:41:58.038915Z",
+        "derivativeType": "THUMBNAIL_IMAGE"
+      }
+    },
+    {
+      "id": "ba05d46b-6c75-4c92-82d6-e72237d9982f",
+      "type": "person"
+    }
+  ],
+  "meta": {
+    "totalResourceCount": 1,
+    "external": [
+      {
+        "type": "person",
+        "href": "Agent/api/v1/person"
+      }
+    ],
+    "moduleVersion": "0.40"
+  }
+}

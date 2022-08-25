@@ -282,6 +282,12 @@ public class ESSearchService implements SearchService {
             MappingAttribute mappingAttribute = crawlContext.getMappingConfiguration()
                     .getAttribute(crawlContext.getDocumentType(), computedPropertyName);
 
+            // if no mapping attribute is found try to match as object
+            if(mappingAttribute == null) {
+              mappingAttribute = crawlContext.getMappingConfiguration()
+                      .getObjectAttribute(crawlContext.getDocumentType(), computedPropertyName);
+            }
+
             if(mappingAttribute != null) {
               String type = property._kind().jsonValue();
               responseBuilder.attribute(IndexMappingResponse.Attribute.builder()

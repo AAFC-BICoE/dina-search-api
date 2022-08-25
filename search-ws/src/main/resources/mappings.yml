@@ -102,3 +102,5 @@ mappings:
     - name: xmpRightsWebStatement
       type: text
       distinctTermAgg: true
+    - name: managedAttributes
+      type: object
