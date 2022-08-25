@@ -36,8 +36,10 @@ mappings:
   collection:
     - name: name
       type: text
+      distinctTermAgg: true
     - name: code
       type: text
+      distinctTermAgg: true
 
   storage-unit:
     - name: name
