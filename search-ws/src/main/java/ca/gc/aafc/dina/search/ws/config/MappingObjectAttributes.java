@@ -3,6 +3,7 @@ package ca.gc.aafc.dina.search.ws.config;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
@@ -45,6 +46,29 @@ public class MappingObjectAttributes {
 
     for (MappingAttribute ma : allAttribute) {
       if (attributeName.equals(ma.getName())) {
+        return ma;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Get the Object attribute of a specific type from the mapping configuration.
+   * Object attribute represents the higher level of the attribute.
+   * This method will only try to match the first level. managedAttributes.test_2 will match managedAttributes.
+   * @param type
+   * @param attributeName
+   * @return the mapping attributes or null
+   */
+  public MappingAttribute getObjectAttribute(String type, String attributeName) {
+    List<MappingAttribute> allAttribute = getAttributes(type);
+    if(allAttribute == null) {
+      return null;
+    }
+
+    String potentialObjectName = StringUtils.substringBefore(attributeName, ".");
+    for (MappingAttribute ma : allAttribute) {
+      if (potentialObjectName.equals(ma.getName()) && ma.getType().equals("object")) {
         return ma;
       }
     }
