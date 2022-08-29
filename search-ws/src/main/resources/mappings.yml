@@ -1,10 +1,25 @@
 # Default attributes mappings for object relationships
 #
-#
 # Attributes defined will be added to the list of attributes of the matching
 # relationship when an index mapping is request from a REST client.
 #
 mappings:
+
+  material-sample:
+    - name: materialSampleName
+      type: text
+    - name: materialSampleType
+      type: text
+      distinctTermAgg: true
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date
+    - name: tags
+      type: text
+    - name: preparationDate
+      type: date
+
   collecting-event:
     - name: createdBy
       type: text
@@ -30,14 +45,16 @@ mappings:
       type: text
     - name: determination.scientificName
       type: text
-    - name: typeStatus
+    - name: determination.typeStatus
       type: text
 
   collection:
     - name: name
       type: text
+      distinctTermAgg: true
     - name: code
       type: text
+      distinctTermAgg: true
 
   storage-unit:
     - name: name
@@ -64,3 +81,24 @@ mappings:
   assemblage:
     - name: name
       type: text
+
+  metadata:
+    - name: bucket
+      type: text
+    - name: createdBy
+      type: text
+    - name: acCaption
+      type: text
+    - name: originalFilename
+      type: text
+    - name: createdOn
+      type: date
+    - name: dcType
+      type: text
+      distinctTermAgg: true
+    - name: dcFormat
+      type: text
+      distinctTermAgg: true
+    - name: xmpRightsWebStatement
+      type: text
+      distinctTermAgg: true

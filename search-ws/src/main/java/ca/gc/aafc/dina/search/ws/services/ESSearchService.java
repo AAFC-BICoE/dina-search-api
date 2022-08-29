@@ -7,7 +7,6 @@ import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
-import co.elastic.clients.elasticsearch._types.mapping.PropertyVariant;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
@@ -15,7 +14,6 @@ import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.json.JsonValue;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Stack;
 
 @Log4j2
@@ -209,14 +208,22 @@ public class ESSearchService implements SearchService {
     try {
       // Retrieve the index mapping from ElasticSearch
       GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
+      Map<String, Property> mappingProperties = mappingResponse.result().get(indexName).mappings().properties();
 
-      // First level is always "properties"
-      mappingResponse.result().get(indexName).mappings().properties().forEach((propertyName, property) -> {
+      // sanity check for JSON:API documents
+      Objects.requireNonNull(mappingProperties.get("data"));
+      // Extract document type
+      String docType = ESResponseHelper.extractConstantKeywordValue(
+              Objects.requireNonNull(mappingProperties.get("data").object().properties().get("type")));
 
+      MappingCrawlContext crawlContext = MappingCrawlContext.builder()
+              .mappingConfiguration(mappingObjectAttributes)
+                      .documentType(docType).build();
+
+      mappingProperties.forEach((propertyName, property) -> {
         Stack<String> pathStack = new Stack<>();
         pathStack.push(propertyName);
-
-        crawlMapping(pathStack, property, mappingObjectAttributes, indexMappingResponseBuilder);
+        crawlMapping(pathStack, property, crawlContext, indexMappingResponseBuilder);
       });
 
     } catch (IOException | ElasticsearchException e) {
@@ -232,10 +239,10 @@ public class ESSearchService implements SearchService {
    * @param path               current path expressed as a Stack
    */
   private static void crawlMapping(Stack<String> path, Property propertyToCrawl,
-                                   MappingObjectAttributes mappingObjectAttributes,
+                                   MappingCrawlContext crawlContext,
                                    IndexMappingResponse.IndexMappingResponseBuilder responseBuilder) {
 
-    Map<String, Property> propertiesToProcess = null;
+    Map<String, Property> propertiesToProcess;
     if (propertyToCrawl.isNested()) {
       propertiesToProcess = propertyToCrawl.nested().properties();
     } else {
@@ -251,31 +258,41 @@ public class ESSearchService implements SearchService {
       path.push(propertyName);
 
       if (property.isObject() && !property.isNested()) {
-        crawlMapping(path, property, mappingObjectAttributes, responseBuilder);
+        crawlMapping(path, property, crawlContext, responseBuilder);
       } else {
-
         // Single Attribute
         if (currentPath.startsWith("data")) {
-          if (currentPath.startsWith("data.relationships")) {
-            PropertyVariant theProperty = property._get();
+          if (JsonApiDocumentHelper.isRelationshipsPath(currentPath)) {
             log.debug("Attribute: {}", currentPath);
             // we need a constant_keyword in order to get the type from the ES mapping
-            if (theProperty._toProperty().isConstantKeyword()) {
-              JsonValue value = theProperty._toProperty().constantKeyword().value().toJson();
-              String valueString = value.toString().replace("\"", "");
-              IndexMappingResponse.Relationship rel = handleRelationshipSection(valueString, currentPath, mappingObjectAttributes);
+            if (property.isConstantKeyword()) {
+              String valueString = ESResponseHelper.extractConstantKeywordValue(property);
+              IndexMappingResponse.Relationship rel = handleRelationshipSection(valueString, currentPath, crawlContext.getMappingConfiguration());
               if (rel != null) {
                 responseBuilder.relationship(rel);
               }
             } else {
-              log.debug("skipping : {}. Only constant_keyword are supported", currentPath);
+              log.debug("skipping : {}. Only constant_keyword are supported on relationships", currentPath);
+            }
+          } else if(JsonApiDocumentHelper.isAttributesPath(currentPath)) {
+            // compute name for properties that are like determination.verbatimScientificName
+            String computedPropertyName = JsonApiDocumentHelper.removeAttributesPrefix(currentPath).isBlank() ?
+                            propertyName : JsonApiDocumentHelper.removeAttributesPrefix(currentPath) + "." + propertyName;
+
+            MappingAttribute mappingAttribute = crawlContext.getMappingConfiguration()
+                    .getAttribute(crawlContext.getDocumentType(), computedPropertyName);
+
+            if(mappingAttribute != null) {
+              String type = property._kind().jsonValue();
+              responseBuilder.attribute(IndexMappingResponse.Attribute.builder()
+                      .name(propertyName)
+                      .path(currentPath)
+                      .type(type)
+                      .distinctTermAgg(mappingAttribute.getDistinctTermAgg())
+                      .build());
             }
           } else {
-            String type = property._kind().jsonValue();
-            responseBuilder.attribute(IndexMappingResponse.Attribute.builder()
-                    .name(propertyName)
-                    .path(currentPath)
-                    .type(type).build());
+            log.debug("skipping : {} : not a part of attributes or relationships", currentPath);
           }
         } else {
           log.debug("skipping : {}", currentPath);
@@ -294,7 +311,7 @@ public class ESSearchService implements SearchService {
    * @return
    */
   private static IndexMappingResponse.Relationship handleRelationshipSection(String typeKey, String esPath, MappingObjectAttributes mappingObjectAttributes) {
-    List<MappingAttribute> attributes = mappingObjectAttributes.getMappings().get(typeKey);
+    List<MappingAttribute> attributes = mappingObjectAttributes.getAttributes(typeKey);
     // make sure we have configuration for the relationship
     if (attributes != null) {
       IndexMappingResponse.Relationship.RelationshipBuilder relBuilder = IndexMappingResponse.Relationship.builder()
