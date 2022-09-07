@@ -2,26 +2,20 @@ package ca.gc.aafc.dina.search.ws.search;
 
 import ca.gc.aafc.dina.search.ws.container.CustomElasticSearchContainer;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
-import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.web.client.RestTemplate;
 import org.testcontainers.junit.jupiter.Container;
 
-import java.net.URI;
-
-import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.*;
+import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.DINA_MATERIAL_SAMPLE_INDEX;
+import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.MATERIAL_SAMPLE_SEARCH_FIELD;
+import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static com.jayway.jsonpath.matchers.JsonPathMatchers.*;
 
 @SpringBootTest
 public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
@@ -76,11 +70,24 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
     // Sort on "sort" (alphanumeric natural sort)
     String queryStringAsc = "{\"sort\":[{ \"data.attributes.materialSampleName.sort\" : \"asc\" }]" + "}";
     result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, queryStringAsc);
-    assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC3", "CNC22","CNC00044", "CNC101")));
+    assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC3", "CNC22", "CNC00044", "CNC101")));
 
     String queryStringDesc = "{\"sort\":[{ \"data.attributes.materialSampleName.sort\" : \"desc\" }]" + "}";
     result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, queryStringDesc);
-    assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC101","CNC00044","CNC22","CNC3")));
+    assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC101", "CNC00044", "CNC22", "CNC3")));
+
+
+  }
+
+  @Test
+  public void testMappingResponseWithICUPlugin() throws Exception {
+    sendMapping("es-mapping/material_sample_index_icu_settings.json",
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_MATERIAL_SAMPLE_INDEX);
+
+    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+            retrieveJSONObject("icu/matSampleName1.json"));
+
+    assertNotNull(searchService.getIndexMapping(DINA_MATERIAL_SAMPLE_INDEX));
   }
 
 }

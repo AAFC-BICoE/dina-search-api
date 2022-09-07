@@ -15,7 +15,7 @@ services:
 
   elasticsearch-dina:
     # we need a plugin so a custom image is built (to ensure an immutable Docker image)
-    image: elasticsearch_icu:7.16.2
+    image: elasticsearch_icu:7.17.6
     build: elasticsearch/
     environment:
       - xpack.security.enabled=false
@@ -67,7 +67,7 @@ services:
   #    - elasticsearch-dina
 
   search-cli:
-    image: aafcbicoe/dina-search-cli:0.20
+    image: aafcbicoe/dina-search-cli:0.21
     stdin_open: true
     tty: true
     environment:
@@ -78,7 +78,7 @@ services:
       - dina_rabbitmq_net
 
   search-ws:
-    image: aafcbicoe/dina-search-ws:0.20
+    image: aafcbicoe/dina-search-ws:0.21
     ports:
       - 8085:8085
 

@@ -283,17 +283,24 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     RestTemplate restTemplate = builder.build();
     restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
 
+    // index a document to trigger the dynamic mapping
+    indexDocumentForIT(OBJECT_STORE_ES_INDEX, "test-document-1", DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("objectstore_metadata1.json"));
+
     IndexMappingResponse response = searchService.getIndexMapping(OBJECT_STORE_ES_INDEX);
 
     assertEquals(OBJECT_STORE_ES_INDEX, response.getIndexName());
-    boolean found = false;
+    boolean createdOnFound = false;
+    boolean managedAttributeTest2Found = false;
+
     for (IndexMappingResponse.Attribute curAttribute: response.getAttributes()) {
       if (curAttribute.getName().equals("createdOn") && "date".equals(curAttribute.getType()))  {
-        found = true;
-        break;
+        createdOnFound = true;
+      }
+      if (curAttribute.getName().equals("test_2") && "text".equals(curAttribute.getType()))  {
+        managedAttributeTest2Found = true;
       }
     }
-    assertTrue(found);
+    assertTrue(createdOnFound && managedAttributeTest2Found);
 
     // test behavior of non-existing index
     assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
