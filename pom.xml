@@ -18,7 +18,7 @@
   </parent>
 
   <modules>
-    <module>search-messaging</module>    
+    <module>search-messaging</module>
     <module>search-cli</module>
     <module>search-ws</module>
   </modules>
