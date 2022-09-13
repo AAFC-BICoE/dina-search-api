@@ -19,6 +19,10 @@ mappings:
       type: text
     - name: preparationDate
       type: date
+    - name: managedAttributes
+      type: object
+    - name: hostOrganism.name
+      type: text
 
   collecting-event:
     - name: createdBy
@@ -39,6 +43,8 @@ mappings:
       type: date
     - name: endEventDateTime
       type: date
+    - name: host
+      type: text
 
   organism:
     - name: determination.verbatimScientificName
@@ -81,6 +87,11 @@ mappings:
   assemblage:
     - name: name
       type: text
+
+  project:
+    - name: name
+      type: text
+      distinctTermAgg: true
 
   metadata:
     - name: bucket
