@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpEntity;
@@ -69,7 +70,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     ELASTICSEARCH_CONTAINER.stop();
   }
 
-  @DisplayName("Integration Test search nested objects")
+  @DisplayName("Search nested objects")
   @Test
   public void testSearchNestedObjects() throws Exception { 
 
@@ -98,7 +99,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
       String result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, noResultsQuery);
 
       assertNotNull(result);
-      assertTrue(result.contains("\"total\":{\"value\":0,\"relation\":\"eq\"}"));
+      JSONAssert.assertEquals("{\"hits\":{\"total\":{\"value\":0,\"relation\":\"eq\"}}}", result, false);
 
       // collecting-event and Ottawa
       String threeResultsQuery = queryStringTemplate
@@ -107,7 +108,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
       result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, threeResultsQuery);
       assertNotNull(result);
-      assertTrue(result.contains("\"total\":{\"value\":3,\"relation\":\"eq\"}"));
+      JSONAssert.assertEquals("{\"hits\":{\"total\":{\"value\":3,\"relation\":\"eq\"}}}", result, false);
 
       // validate with the count
       assertEquals(Long.valueOf(3), searchService.count(DINA_MATERIAL_SAMPLE_INDEX, threeResultsQuery).getCount());
@@ -120,7 +121,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
       result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, oneResultQuery);
 
       assertNotNull(result);
-      assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
+      JSONAssert.assertEquals("{\"hits\":{\"total\":{\"value\":1,\"relation\":\"eq\"}}}", result, false);
 
       // storage-unit and Ottawa
       noResultsQuery = queryStringTemplate
@@ -130,7 +131,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
       result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, noResultsQuery);
 
       assertNotNull(result);
-      assertTrue(result.contains("\"total\":{\"value\":0,\"relation\":\"eq\"}"));
+      JSONAssert.assertEquals("{\"hits\":{\"total\":{\"value\":0,\"relation\":\"eq\"}}}", result, false);
 
     } catch (Exception e) {
       fail(e);
@@ -246,7 +247,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     String result = searchService.search(DINA_AGENT_INDEX, queryString);
     
     assertNotNull(result);
-    assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
+    JSONAssert.assertEquals("{\"hits\":{\"total\":{\"value\":1,\"relation\":\"eq\"}}}", result, false);
   }
 
   @DisplayName("Integration Test search Get All text document")
@@ -265,7 +266,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     String result = searchService.search(DINA_AGENT_INDEX, queryString);
     
     assertNotNull(result);
-    assertTrue(result.contains("\"total\":{\"value\":2,\"relation\":\"eq\"}"));
+    JSONAssert.assertEquals("{\"hits\":{\"total\":{\"value\":2,\"relation\":\"eq\"}}}", result, false);
 
     // try with the count
     assertEquals(Long.valueOf(2), searchService.count(DINA_AGENT_INDEX, queryString).getCount());

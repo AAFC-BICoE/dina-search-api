@@ -11,10 +11,13 @@ import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import co.elastic.clients.json.JsonpMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.json.stream.JsonGenerator;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +33,9 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilder;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,17 +48,16 @@ import java.util.Stack;
 @Service
 public class ESSearchService implements SearchService {
 
-  private static final ObjectMapper OM = new ObjectMapper();
   private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
   private static final String EMPTY_QUERY = "{\"query\":{}}";
   private static final String ID_FIELD = "data.id";
   private static final String GROUP_FIELD = "data.attributes.group.keyword"; //use the keyword version since we do a term filter
 
   private final ElasticsearchClient client;
+  private final JsonpMapper jsonpMapper;
   private final RestTemplate restTemplate;
 
   // URI for low level ElasticSearch client
-  private final UriBuilder searchUriBuilder;
   private final UriBuilder countUriBuilder;
 
   @Autowired
@@ -64,10 +69,10 @@ public class ESSearchService implements SearchService {
                   YAMLConfigProperties yamlConfigProperties) {
     this.restTemplate = builder.build();
     this.client = client;
+    this.jsonpMapper = client._jsonpMapper();
 
     // Create a URIBuilder that will be used as part of the search for documents
     // within a specific index.
-    searchUriBuilder = prepareESUriBuilder(yamlConfigProperties, "_search");
     countUriBuilder = prepareESUriBuilder(yamlConfigProperties, "_count");
   }
 
@@ -159,19 +164,19 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
-  public String search(String indexName, String query) throws SearchApiException {
-
-    JsonNode jsonNode;
+  public String search(String indexName, String queryJson) throws SearchApiException {
     try {
-      jsonNode = OM.readTree(query);
-      URI uri = searchUriBuilder.build(Map.of("indexName", indexName));
+      Reader strReader = new StringReader(queryJson);
+      SearchRequest sr = SearchRequest.of(b -> b
+              .withJson(strReader).index(indexName));
 
-      HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), JSON_HEADERS);
-      ResponseEntity<String> searchResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, String.class);
-
-      return searchResponse.getBody();
-
-    } catch (JsonProcessingException e) {
+      SearchResponse<?> response = client.search(sr, JsonNode.class);
+      StringWriter writer = new StringWriter();
+      try (JsonGenerator generator = jsonpMapper.jsonProvider().createGenerator(writer)) {
+        jsonpMapper.serialize(response, generator);
+      }
+      return writer.toString();
+    } catch (IOException e) {
       throw new SearchApiException("Error during search processing", e);
     }
   }
