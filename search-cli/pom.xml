@@ -13,7 +13,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spring.shell.version>2.1.0</spring.shell.version>
+    <spring.shell.version>2.1.1</spring.shell.version>
     <okhttp.version>4.9.0</okhttp.version>
     <java-jwt.version>3.11.0</java-jwt.version>
     <json-path.version>2.5.0</json-path.version>
