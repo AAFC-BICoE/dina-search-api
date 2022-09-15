@@ -64,7 +64,7 @@ public interface SearchService {
    * @param query Json query to forward to the elasticsearch API.
    * @return
    */
-  CountResponse count(String indexName, String query);
+  CountResponse count(String indexName, String query) throws SearchApiException;
 
   /**
    * Get the mapping of the provided indexName.

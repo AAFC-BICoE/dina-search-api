@@ -70,6 +70,11 @@ public class SearchController {
   @PostMapping(path = "/count", consumes = "application/json")
   public ResponseEntity<?> count(@RequestBody String query, @RequestParam String indexName) {
     log.info("indexName={}, query={}", indexName, query);
-    return new ResponseEntity<>(searchService.count(indexName, query), HttpStatus.ACCEPTED);
+
+    try {
+      return new ResponseEntity<>(searchService.count(indexName, query), HttpStatus.ACCEPTED);
+    } catch (SearchApiException e) {
+      return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+    }
   }
 }

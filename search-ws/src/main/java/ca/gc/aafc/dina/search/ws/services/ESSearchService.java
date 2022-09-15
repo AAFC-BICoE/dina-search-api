@@ -3,7 +3,6 @@ package ca.gc.aafc.dina.search.ws.services;
 import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
 import ca.gc.aafc.dina.search.ws.config.MappingAttribute;
 import ca.gc.aafc.dina.search.ws.config.MappingObjectAttributes;
-import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
@@ -11,34 +10,23 @@ import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
+import co.elastic.clients.elasticsearch.core.CountRequest;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
 import co.elastic.clients.json.JsonpMapper;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.json.stream.JsonGenerator;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.DefaultUriBuilderFactory;
-import org.springframework.web.util.UriBuilder;
 
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,50 +36,20 @@ import java.util.Stack;
 @Service
 public class ESSearchService implements SearchService {
 
-  private static final HttpHeaders JSON_HEADERS = buildJsonHeaders();
   private static final String EMPTY_QUERY = "{\"query\":{}}";
   private static final String ID_FIELD = "data.id";
   private static final String GROUP_FIELD = "data.attributes.group.keyword"; //use the keyword version since we do a term filter
 
   private final ElasticsearchClient client;
   private final JsonpMapper jsonpMapper;
-  private final RestTemplate restTemplate;
-
-  // URI for low level ElasticSearch client
-  private final UriBuilder countUriBuilder;
 
   @Autowired
   private MappingObjectAttributes mappingObjectAttributes;
   
-  public ESSearchService(
-                  @Autowired RestTemplateBuilder builder, 
-                  @Autowired ElasticsearchClient client,
-                  YAMLConfigProperties yamlConfigProperties) {
-    this.restTemplate = builder.build();
+  public ESSearchService(@Autowired ElasticsearchClient client) {
     this.client = client;
     this.jsonpMapper = client._jsonpMapper();
-
-    // Create a URIBuilder that will be used as part of the search for documents
-    // within a specific index.
-    countUriBuilder = prepareESUriBuilder(yamlConfigProperties, "_count");
   }
-
-  private static UriBuilder prepareESUriBuilder(YAMLConfigProperties yamlConfigProperties, String esEndpoint) {
-    return new DefaultUriBuilderFactory().builder()
-        .scheme(yamlConfigProperties.getElasticsearch().get("protocol"))
-        .host(yamlConfigProperties.getElasticsearch().get("host"))
-        .port(yamlConfigProperties.getElasticsearch().get("port"))
-        .path("{indexName}/" + esEndpoint);
-  }
-
-  private static HttpHeaders buildJsonHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
-  }
-
 
   @Override
   public AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField,
@@ -185,24 +143,28 @@ public class ESSearchService implements SearchService {
    * Send a _count request to ElasticSearch using the http api since the Java Client doesn't
    * support query as json string at the moment.
    * @param indexName
-   * @param query Json query to forward to the elasticsearch API.
+   * @param queryJson Json query to forward to the elasticsearch API.
    * @return
    */
   @Override
-  public CountResponse count(String indexName, String query) {
+  public CountResponse count(String indexName, String queryJson) throws SearchApiException {
 
-    URI uri = countUriBuilder.build(Map.of("indexName", indexName));
+    CountRequest.Builder crBuilder = new CountRequest.Builder();
+    crBuilder.index(indexName);
 
-    // Accept empty query but don't forward it to ElasticSearch
-    if (EMPTY_QUERY.equalsIgnoreCase(StringUtils.deleteWhitespace(query))) {
-      HttpEntity<?> entity = new HttpEntity<>(JSON_HEADERS);
-      return restTemplate.exchange(uri, HttpMethod.GET, entity, CountResponse.class).getBody();
+    // we allow empty query for count where we will count all records.
+    if (StringUtils.isNotBlank(queryJson) && !EMPTY_QUERY.equalsIgnoreCase(StringUtils.deleteWhitespace(queryJson))) {
+      Reader strReader = new StringReader(queryJson);
+      crBuilder.withJson(strReader);
     }
 
-    HttpEntity<?> entity = new HttpEntity<>(query, JSON_HEADERS);
-    ResponseEntity<CountResponse> countResponse = restTemplate.exchange(uri, HttpMethod.POST, entity, CountResponse.class);
-
-    return countResponse.getBody();
+    CountRequest cr = crBuilder.build();
+    try {
+      co.elastic.clients.elasticsearch.core.CountResponse response = client.count(cr);
+      return new CountResponse(response.count());
+    } catch (IOException e) {
+      throw new SearchApiException("Error during search processing", e);
+    }
   }
 
   @Override
