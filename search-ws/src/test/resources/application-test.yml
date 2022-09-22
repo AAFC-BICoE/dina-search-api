@@ -1,7 +1,5 @@
 server:
   port: 8085
-crnk:
-  enabled: false
 elasticsearch:
   host: localhost
   port: 9200
