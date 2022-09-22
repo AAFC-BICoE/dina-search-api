@@ -1,8 +1,12 @@
 server:
   port: 8085
+crnk:
+  enabled: false
 elasticsearch:
   host: localhost
   port: 9200
   protocol: http
+
+
 keycloak:
-  enabled: false
+  auth-server-url: http://localhost:8080/auth

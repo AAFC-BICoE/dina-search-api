@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.ws.controller;
 
+import ca.gc.aafc.dina.security.DinaAuthenticatedUser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,15 +16,21 @@ import ca.gc.aafc.dina.search.ws.services.SearchService;
 
 import lombok.extern.log4j.Log4j2;
 
+import java.util.Optional;
+import java.util.Set;
+
 @Log4j2
 @RestController
 @RequestMapping(value = "/search-ws", produces = "application/json")
 public class SearchController {
   
   private final SearchService searchService;
-  
-  public SearchController(@Autowired SearchService searchService) {
+
+  private final DinaAuthenticatedUser authenticatedUser;
+
+  public SearchController(@Autowired SearchService searchService, Optional<DinaAuthenticatedUser> authenticatedUser) {
     this.searchService = searchService;
+    this.authenticatedUser = authenticatedUser.orElse(null);
   }
 
   @GetMapping(path = "/auto-complete")
@@ -47,7 +54,9 @@ public class SearchController {
 
   @GetMapping(path = "/mapping")
   public ResponseEntity<?> mapping(@RequestParam String indexName) {
-    log.info("indexName={}", indexName);
+
+    log.info("indexName={}, group(s)={}", () -> indexName,
+            () -> Optional.of(authenticatedUser).map(DinaAuthenticatedUser::getGroups).orElse(Set.of()));
     try {
       return new ResponseEntity<>(searchService.getIndexMapping(indexName), HttpStatus.OK);
     } catch (SearchApiException e) {
@@ -58,7 +67,8 @@ public class SearchController {
   @PostMapping(path = "/search", consumes = "application/json")
   public ResponseEntity<String> search(@RequestBody String query, @RequestParam String indexName) {
 
-    log.info("indexName={}, query={}", indexName, query);
+    log.info("indexName={}, query={}, group(s)={}", () -> indexName, () -> query,
+            () -> Optional.of(authenticatedUser).map(DinaAuthenticatedUser::getGroups).orElse(Set.of()));
 
     try {
       return new ResponseEntity<>(searchService.search(indexName, query), HttpStatus.ACCEPTED);
@@ -69,7 +79,8 @@ public class SearchController {
 
   @PostMapping(path = "/count", consumes = "application/json")
   public ResponseEntity<?> count(@RequestBody String query, @RequestParam String indexName) {
-    log.info("indexName={}, query={}", indexName, query);
+    log.info("indexName={}, query={}, group(s)={}", () -> indexName, () -> query,
+            () -> Optional.of(authenticatedUser).map(DinaAuthenticatedUser::getGroups).orElse(Set.of()));
     return new ResponseEntity<>(searchService.count(indexName, query), HttpStatus.ACCEPTED);
   }
 }
