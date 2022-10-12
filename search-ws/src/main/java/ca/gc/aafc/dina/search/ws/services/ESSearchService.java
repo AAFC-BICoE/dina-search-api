@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.ws.services;
 
+import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
 import ca.gc.aafc.dina.search.ws.config.MappingAttribute;
 import ca.gc.aafc.dina.search.ws.config.MappingObjectAttributes;
 import ca.gc.aafc.dina.search.ws.config.YAMLConfigProperties;
@@ -262,7 +263,7 @@ public class ESSearchService implements SearchService {
       } else {
         // Single Attribute
         if (currentPath.startsWith("data")) {
-          if (JsonApiDocumentHelper.isRelationshipsPath(currentPath)) {
+          if (JSONApiDocumentStructure.isRelationshipsPath(currentPath)) {
             log.debug("Attribute: {}", currentPath);
             // we need a constant_keyword in order to get the type from the ES mapping
             if (property.isConstantKeyword()) {
@@ -274,10 +275,10 @@ public class ESSearchService implements SearchService {
             } else {
               log.debug("skipping : {}. Only constant_keyword are supported on relationships", currentPath);
             }
-          } else if(JsonApiDocumentHelper.isAttributesPath(currentPath)) {
+          } else if(JSONApiDocumentStructure.isAttributesPath(currentPath)) {
             // compute name for properties that are like determination.verbatimScientificName
-            String computedPropertyName = JsonApiDocumentHelper.removeAttributesPrefix(currentPath).isBlank() ?
-                            propertyName : JsonApiDocumentHelper.removeAttributesPrefix(currentPath) + "." + propertyName;
+            String computedPropertyName = JSONApiDocumentStructure.removeAttributesPrefix(currentPath).isBlank() ?
+                            propertyName : JSONApiDocumentStructure.removeAttributesPrefix(currentPath) + "." + propertyName;
 
             MappingAttribute mappingAttribute = crawlContext.getMappingConfiguration()
                     .getAttribute(crawlContext.getDocumentType(), computedPropertyName);
