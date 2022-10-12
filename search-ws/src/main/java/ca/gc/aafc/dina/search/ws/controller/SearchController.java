@@ -86,8 +86,7 @@ public class SearchController {
       validateHtmlSafe(query);
       validateAlphanumericInputs(indexName);
       return new ResponseEntity<>(searchService.count(indexName, query), HttpStatus.ACCEPTED);
-    }
-    catch (SearchApiException e) {
+    } catch (SearchApiException e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
