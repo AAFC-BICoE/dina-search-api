@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 @RequestMapping(value = "/search-ws", produces = "application/json")
 public class SearchController {
 
-  private static final Pattern ALPHA_NUM_PATTERN = Pattern.compile("^[-\\w]*$");
+  private static final Pattern ALPHA_NUM_PATTERN = Pattern.compile("^[-.\\w]*$");
 
   private final SearchService searchService;
 
