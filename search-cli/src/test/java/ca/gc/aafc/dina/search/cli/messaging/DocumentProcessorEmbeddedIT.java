@@ -1,26 +1,23 @@
 package ca.gc.aafc.dina.search.cli.messaging;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collections;
-import java.util.concurrent.TimeUnit;
-
+import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.config.CacheConfiguration;
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
+import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.CacheableApiAccess;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import ca.gc.aafc.dina.search.cli.indexing.DocumentIndexer;
+import ca.gc.aafc.dina.search.cli.indexing.OperationStatus;
+import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
+import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
+import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
-
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,34 +33,23 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.RestTemplate;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
-import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
-import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
-import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
-import ca.gc.aafc.dina.search.cli.indexing.DocumentIndexer;
-import ca.gc.aafc.dina.search.cli.indexing.OperationStatus;
-import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
-import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
-import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import co.elastic.clients.elasticsearch.core.SearchResponse;
-import lombok.SneakyThrows;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @ExtendWith(MockServerExtension.class) 
 @MockServerSettings(ports = {1080, 8081, 8082})
 public class DocumentProcessorEmbeddedIT {
 
-  private static final String DINA_AGENT_INDEX = "dina_agent_index";
+  public static final String DINA_AGENT_INDEX = "dina_agent_index";
   private static final String EMBEDDED_ORG_NAME = "Integration";
   private static final String EMBEDDED_ORG_NAME_AFTER_UPDATE = "Integration Updated";
 
@@ -155,11 +141,8 @@ public class DocumentProcessorEmbeddedIT {
     assertNotNull(docToIndex);
 
     // For testing, we will be using the agent index.
-    addIndexMapping(
-        "src/test/resources/elastic-configurator-settings/agent-index",
-        "/dina_agent_index_settings.json",
-        DINA_AGENT_INDEX
-    );
+    ElasticSearchTestUtils.sendMapping(builder, "src/test/resources/elastic-configurator-settings/agent-index/dina_agent_index_settings.json",
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_AGENT_INDEX);
 
     // The other indices must exist, but can be empty for this test. Use the endpoint to generate them.
     serviceEndpointProperties.getEndpoints().values().forEach(desc -> {
@@ -193,7 +176,7 @@ public class DocumentProcessorEmbeddedIT {
 
     int foundDocument = ElasticSearchTestUtils
         .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
-    Assert.assertEquals(1, foundDocument);
+    assertEquals(1, foundDocument);
 
     SearchResponse<JsonNode> searchResponse = elasticSearchClient.search(s -> s
         .index(DINA_AGENT_INDEX)
@@ -222,7 +205,7 @@ public class DocumentProcessorEmbeddedIT {
     // Retrieve the document from elasticsearch
     foundDocument = ElasticSearchTestUtils
         .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
-    Assert.assertEquals(1, foundDocument);
+    assertEquals(1, foundDocument);
 
     // Get the document straight from Elastic search, we should have the
     // embedded organization updated
@@ -266,7 +249,7 @@ public class DocumentProcessorEmbeddedIT {
     // Retrieve the document from elasticsearch
     foundDocument = ElasticSearchTestUtils
         .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
-    Assert.assertEquals(1, foundDocument);
+    assertEquals(1, foundDocument);
 
     // Get the document straight from Elastic search, we should have the
     // embedded organization updated
@@ -291,14 +274,6 @@ public class DocumentProcessorEmbeddedIT {
         EMBEDDED_DOCUMENT_INCLUDED_ID));
     assertNotNull(objFromCache);
   }
-  
-  private HttpHeaders buildJsonHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
-  }
 
   /**
    * Utility method to generate cache eky the same was Spring is doing it using custom KeyGenerator.
@@ -313,19 +288,6 @@ public class DocumentProcessorEmbeddedIT {
     // dummy instance only used to generate the key
     CacheableApiAccess cacheableApiAccess = new CacheableApiAccess(null);
     return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", EndpointDescriptor.class, String.class), endpointDescriptor, objectId).toString();
-  }
-
-  private void addIndexMapping(String indexFilePath, String indexFileName, String indexName) throws IOException, JsonProcessingException, JsonMappingException, URISyntaxException {
-    JsonNode jsonNode;
-    Path filename = Path.of(indexFilePath + indexFileName);
-    String documentContent = Files.readString(filename);
-
-    jsonNode = JsonTestUtils.readJson(documentContent);
-    URI uri = new URI("http://localhost:9200/" + indexName);
-
-    HttpEntity<?> entity = new HttpEntity<>(jsonNode.toString(), buildJsonHeaders());
-    RestTemplate restTemplate = builder.build();
-    restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
   }
 
 }
