@@ -191,31 +191,13 @@
                 "type": "nested",
                 "properties": {
                   "uuid": {
-                    "type": "text",
-                    "fields": {
-                      "keyword": {
-                        "type": "keyword",
-                        "ignore_above": 256
-                      }
-                    }
+                    "type": "keyword"
                   },
                   "name": {
-                    "type": "text",
-                    "fields": {
-                      "keyword": {
-                        "type": "keyword",
-                        "ignore_above": 256
-                      }
-                    }
+                    "type": "keyword"
                   },
                   "rank": {
-                    "type": "text",
-                    "fields": {
-                      "keyword": {
-                        "type": "keyword",
-                        "ignore_above": 256
-                      }
-                    }
+                    "type": "integer"
                   }
                 }
               }
