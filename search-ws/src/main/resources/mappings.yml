@@ -23,6 +23,8 @@ mappings:
       type: object
     - name: hostOrganism.name
       type: text
+    - name: extensionValues
+      type: object
 
   collecting-event:
     - name: createdBy
@@ -45,6 +47,10 @@ mappings:
       type: date
     - name: host
       type: text
+    - name: managedAttributes
+      type: object
+    - name: extensionValues
+      type: object
 
   organism:
     - name: determination.verbatimScientificName
