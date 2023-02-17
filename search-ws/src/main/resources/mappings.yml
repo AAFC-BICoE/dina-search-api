@@ -47,10 +47,6 @@ mappings:
       type: date
     - name: host
       type: text
-    - name: managedAttributes
-      type: object
-    - name: extensionValues
-      type: object
 
   organism:
     - name: determination.verbatimScientificName
