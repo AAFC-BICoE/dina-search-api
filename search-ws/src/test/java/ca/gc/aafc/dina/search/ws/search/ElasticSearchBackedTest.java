@@ -69,12 +69,12 @@ public abstract class ElasticSearchBackedTest {
   }
 
   protected void sendMapping(String mappingJsonFile, String esHttpHostAddress, String indexName) throws IOException, URISyntaxException {
-    String matSampleEsSettings = TestResourceHelper
+    String esSettings = TestResourceHelper
             .readContentAsString(mappingJsonFile);
 
     URI uri = new URI("http://" + esHttpHostAddress + "/" + indexName);
 
-    HttpEntity<?> entity = new HttpEntity<>(matSampleEsSettings, buildJsonHeaders());
+    HttpEntity<?> entity = new HttpEntity<>(esSettings, buildJsonHeaders());
     RestTemplate restTemplate = builder.build();
     restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
   }

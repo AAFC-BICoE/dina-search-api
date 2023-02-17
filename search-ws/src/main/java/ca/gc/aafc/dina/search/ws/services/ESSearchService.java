@@ -219,7 +219,7 @@ public class ESSearchService implements SearchService {
 
       MappingCrawlContext crawlContext = MappingCrawlContext.builder()
               .mappingConfiguration(mappingObjectAttributes)
-                      .documentType(docType).build();
+              .documentType(docType).build();
 
       mappingProperties.forEach((propertyName, property) -> {
         Stack<String> pathStack = new Stack<>();
@@ -276,27 +276,9 @@ public class ESSearchService implements SearchService {
               log.debug("skipping : {}. Only constant_keyword are supported on relationships", currentPath);
             }
           } else if(JSONApiDocumentStructure.isAttributesPath(currentPath)) {
-            // compute name for properties that are like determination.verbatimScientificName
-            String computedPropertyName = JSONApiDocumentStructure.removeAttributesPrefix(currentPath).isBlank() ?
-                            propertyName : JSONApiDocumentStructure.removeAttributesPrefix(currentPath) + "." + propertyName;
-
-            MappingAttribute mappingAttribute = crawlContext.getMappingConfiguration()
-                    .getAttribute(crawlContext.getDocumentType(), computedPropertyName);
-
-            // if no mapping attribute is found try to match as object
-            if(mappingAttribute == null) {
-              mappingAttribute = crawlContext.getMappingConfiguration()
-                      .getObjectAttribute(crawlContext.getDocumentType(), computedPropertyName);
-            }
-
-            if(mappingAttribute != null) {
-              String type = property._kind().jsonValue();
-              responseBuilder.attribute(IndexMappingResponse.Attribute.builder()
-                      .name(propertyName)
-                      .path(currentPath)
-                      .type(type)
-                      .distinctTermAgg(mappingAttribute.getDistinctTermAgg())
-                      .build());
+            IndexMappingResponse.Attribute attribute = handleDataProperty(currentPath, propertyName, property._kind().jsonValue(), crawlContext);
+            if (attribute != null) {
+              responseBuilder.attribute(attribute);
             }
           } else {
             log.debug("skipping : {} : not a part of attributes or relationships", currentPath);
@@ -307,6 +289,42 @@ public class ESSearchService implements SearchService {
       }
       path.pop();
     });
+  }
+
+  /**
+   * Method responsible to create an Attribute based on path, property and configuration.
+   * It will allow attributes that are defined as object to be dynamically added and others that
+   * are not defined to be excluded.
+   * @param currentPath
+   * @param propertyName
+   * @param type
+   * @param crawlContext
+   * @return
+   */
+  private static IndexMappingResponse.Attribute handleDataProperty(String currentPath, String propertyName, String type,
+                                                           MappingCrawlContext crawlContext) {
+    // compute name for properties that are like determination.verbatimScientificName
+    String computedPropertyName = JSONApiDocumentStructure.removeAttributesPrefix(currentPath).isBlank() ?
+            propertyName : JSONApiDocumentStructure.removeAttributesPrefix(currentPath) + "." + propertyName;
+
+    MappingAttribute mappingAttribute = crawlContext.getMappingConfiguration()
+            .getAttribute(crawlContext.getDocumentType(), computedPropertyName);
+
+    // if no mapping attribute is found try to match as object
+    if (mappingAttribute == null) {
+      mappingAttribute = crawlContext.getMappingConfiguration()
+              .getObjectAttribute(crawlContext.getDocumentType(), computedPropertyName);
+    }
+
+    if (mappingAttribute != null) {
+      return IndexMappingResponse.Attribute.builder()
+              .name(propertyName)
+              .path(currentPath)
+              .type(type)
+              .distinctTermAgg(mappingAttribute.getDistinctTermAgg())
+              .build();
+    }
+    return null;
   }
 
   /**

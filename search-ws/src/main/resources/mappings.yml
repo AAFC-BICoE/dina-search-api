@@ -23,6 +23,8 @@ mappings:
       type: object
     - name: hostOrganism.name
       type: text
+    - name: extensionValues
+      type: object
 
   collecting-event:
     - name: createdBy

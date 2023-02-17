@@ -1,0 +1,164 @@
+{
+  "data": {
+    "id": "3eeb5d51-2a2b-4f32-bd83-5159cb11ea51",
+    "type": "material-sample",
+    "attributes": {
+      "version": 0,
+      "group": "aafc",
+      "createdOn": "2023-02-17T14:41:36.960607Z",
+      "createdBy": "dina-admin",
+      "dwcCatalogNumber": null,
+      "dwcOtherCatalogNumbers": null,
+      "materialSampleName": null,
+      "materialSampleType": null,
+      "materialSampleChildren": [],
+      "preparationDate": null,
+      "preservationType": null,
+      "preparationFixative": null,
+      "preparationMaterials": null,
+      "preparationSubstrate": null,
+      "managedAttributes": {
+        "text_material_sample_attribute_test": "material-sample-test"
+      },
+      "extensionValues": {
+        "agronomy_ontology_v1": {
+          "crop": "test1",
+          "grain_nitrogen_content": "test2"
+        }
+      },
+      "preparationRemarks": null,
+      "dwcDegreeOfEstablishment": null,
+      "hierarchy": [
+        {
+          "uuid": "3eeb5d51-2a2b-4f32-bd83-5159cb11ea51",
+          "rank": 1
+        }
+      ],
+      "barcode": null,
+      "publiclyReleasable": true,
+      "notPubliclyReleasableReason": null,
+      "tags": null,
+      "materialSampleState": null,
+      "materialSampleRemarks": null,
+      "stateChangedOn": null,
+      "stateChangeRemarks": null,
+      "associations": [],
+      "allowDuplicateName": false,
+      "restrictionFieldsExtension": null,
+      "isRestricted": false,
+      "restrictionRemarks": null
+    },
+    "relationships": {
+      "preparationMethod": {
+        "data": null
+      },
+      "projects": {
+        "data": []
+      },
+      "organism": {
+        "data": []
+      },
+      "collection": {
+        "data": null
+      },
+      "collectingEvent": {
+        "data": {
+          "id": "ea23aa24-3d87-4c6a-8dff-4f12ac2ac92d",
+          "type": "collecting-event"
+        }
+      },
+      "storageUnit": {
+        "data": null
+      },
+      "preparedBy": {
+        "data": []
+      },
+      "attachment": {
+        "data": []
+      },
+      "preparationType": {
+        "data": null
+      },
+      "assemblages": {
+        "data": []
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "ea23aa24-3d87-4c6a-8dff-4f12ac2ac92d",
+      "type": "collecting-event",
+      "attributes": {
+        "version": 0,
+        "dwcFieldNumber": null,
+        "dwcRecordNumber": null,
+        "otherRecordNumbers": null,
+        "group": "aafc",
+        "createdBy": "dina-admin",
+        "createdOn": "2023-02-17T14:41:35.818499Z",
+        "geoReferenceAssertions": [
+          {
+            "dwcDecimalLatitude": null,
+            "dwcDecimalLongitude": null,
+            "dwcCoordinateUncertaintyInMeters": null,
+            "createdOn": "2023-02-17T14:41:35.657522887Z",
+            "dwcGeoreferencedDate": null,
+            "georeferencedBy": null,
+            "literalGeoreferencedBy": null,
+            "dwcGeoreferenceProtocol": null,
+            "dwcGeoreferenceSources": null,
+            "dwcGeoreferenceRemarks": null,
+            "dwcGeodeticDatum": null,
+            "isPrimary": true,
+            "dwcGeoreferenceVerificationStatus": null
+          }
+        ],
+        "eventGeom": null,
+        "dwcVerbatimCoordinates": null,
+        "dwcRecordedBy": null,
+        "startEventDateTime": null,
+        "endEventDateTime": null,
+        "verbatimEventDateTime": null,
+        "dwcVerbatimLocality": null,
+        "host": null,
+        "managedAttributes": {
+          "text_collecting_event_attribute_test": "collecting-event-test"
+        },
+        "dwcVerbatimLatitude": null,
+        "dwcVerbatimLongitude": null,
+        "dwcVerbatimCoordinateSystem": null,
+        "dwcVerbatimSRS": "WGS84 (EPSG:4326)",
+        "dwcVerbatimElevation": null,
+        "dwcVerbatimDepth": null,
+        "dwcCountry": null,
+        "dwcCountryCode": null,
+        "dwcStateProvince": null,
+        "habitat": null,
+        "dwcMinimumElevationInMeters": null,
+        "dwcMinimumDepthInMeters": null,
+        "dwcMaximumElevationInMeters": null,
+        "dwcMaximumDepthInMeters": null,
+        "substrate": null,
+        "remarks": null,
+        "publiclyReleasable": true,
+        "notPubliclyReleasableReason": null,
+        "tags": null,
+        "geographicPlaceNameSource": null,
+        "geographicPlaceNameSourceDetail": null,
+        "extensionValues": {
+          "mixs_soil_v4": {
+            "project_name": "test3"
+          },
+          "mixs_water_v4": {
+            "ammonium": "test2",
+            "alkyl_diethers": "test1"
+          }
+        }
+      }
+    }
+  ],
+  "meta": {
+    "totalResourceCount": 1,
+    "moduleVersion": "0.72-SNAPSHOT"
+  }
+}
