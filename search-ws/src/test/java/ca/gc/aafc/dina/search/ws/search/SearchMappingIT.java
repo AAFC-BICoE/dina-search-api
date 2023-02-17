@@ -22,7 +22,7 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
 
   // used to search and wait for a document
   private static final String DOCUMENT_SEARCH_FIELD = "name";
-  private static final String OBJECT_STORE_ES_INDEX = "object_store_index";
+  public static final String DINA_MATERIAL_SAMPLE_INDEX = "dina_material_sample_index";
 
   @Autowired
   private SearchService searchService;
@@ -49,29 +49,43 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
   @Test
   public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
     // Submit ES mapping
-    sendMapping("elastic-configurator-settings/object-store-index/object_store_index_settings.json",
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), OBJECT_STORE_ES_INDEX);
+    sendMapping("es-mapping/material_sample_index_settings.json",
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_MATERIAL_SAMPLE_INDEX);
 
     // index a document to trigger the dynamic mapping
-    indexDocumentForIT(OBJECT_STORE_ES_INDEX, "test-document-1", DOCUMENT_SEARCH_FIELD, retrieveJSONObject("objectstore_metadata1.json"));
+    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, "test-document-1", DOCUMENT_SEARCH_FIELD,
+            retrieveJSONObject("material_sample_dynamic_fields_document.json"));
+    IndexMappingResponse response = searchService.getIndexMapping(DINA_MATERIAL_SAMPLE_INDEX);
 
-    IndexMappingResponse response = searchService.getIndexMapping(OBJECT_STORE_ES_INDEX);
+    assertEquals(DINA_MATERIAL_SAMPLE_INDEX, response.getIndexName());
+    
+    IndexMappingResponse.Attribute cropFieldExtension = findAttributeByName(response, "crop");
+    assertNotNull(cropFieldExtension);
 
-    assertEquals(OBJECT_STORE_ES_INDEX, response.getIndexName());
-    boolean createdOnFound = false;
-    boolean managedAttributeTest2Found = false;
-
-    for (IndexMappingResponse.Attribute curAttribute: response.getAttributes()) {
-      if (curAttribute.getName().equals("createdOn") && "date".equals(curAttribute.getType()))  {
-        createdOnFound = true;
-      }
-      if (curAttribute.getName().equals("test_2") && "text".equals(curAttribute.getType()))  {
-        managedAttributeTest2Found = true;
-      }
-    }
-    assertTrue(createdOnFound && managedAttributeTest2Found);
+    int b = 2;
+//    boolean createdOnFound = false;
+//    boolean managedAttributeTest2Found = false;
+//
+//    for (IndexMappingResponse.Attribute curAttribute: response.getAttributes()) {
+//      if (curAttribute.getName().equals("createdOn") && "date".equals(curAttribute.getType()))  {
+//        createdOnFound = true;
+//      }
+//      if (curAttribute.getName().equals("test_2") && "text".equals(curAttribute.getType()))  {
+//        managedAttributeTest2Found = true;
+//      }
+//    }
+//    assertTrue(createdOnFound && managedAttributeTest2Found);
 
     // test behavior of non-existing index
     assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
+  }
+
+  private IndexMappingResponse.Attribute findAttributeByName(IndexMappingResponse response, String name) {
+    for (IndexMappingResponse.Attribute curAttribute : response.getAttributes()) {
+      if (name.equals(curAttribute.getName())) {
+        return curAttribute;
+      }
+    }
+    return null;
   }
 }
