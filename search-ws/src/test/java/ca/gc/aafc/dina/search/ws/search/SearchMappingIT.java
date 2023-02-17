@@ -58,24 +58,15 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
     IndexMappingResponse response = searchService.getIndexMapping(DINA_MATERIAL_SAMPLE_INDEX);
 
     assertEquals(DINA_MATERIAL_SAMPLE_INDEX, response.getIndexName());
-    
+
     IndexMappingResponse.Attribute cropFieldExtension = findAttributeByName(response, "crop");
     assertNotNull(cropFieldExtension);
+    assertEquals("text", cropFieldExtension.getType());
 
-    int b = 2;
-//    boolean createdOnFound = false;
-//    boolean managedAttributeTest2Found = false;
-//
-//    for (IndexMappingResponse.Attribute curAttribute: response.getAttributes()) {
-//      if (curAttribute.getName().equals("createdOn") && "date".equals(curAttribute.getType()))  {
-//        createdOnFound = true;
-//      }
-//      if (curAttribute.getName().equals("test_2") && "text".equals(curAttribute.getType()))  {
-//        managedAttributeTest2Found = true;
-//      }
-//    }
-//    assertTrue(createdOnFound && managedAttributeTest2Found);
-
+    IndexMappingResponse.Attribute createdOnFieldExtension = findAttributeByName(response, "createdOn");
+    assertNotNull(createdOnFieldExtension);
+    assertEquals("date", createdOnFieldExtension.getType());
+    
     // test behavior of non-existing index
     assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
   }
