@@ -25,6 +25,9 @@ mappings:
       type: text
     - name: extensionValues
       type: object
+    - name: restrictionFieldsExtension
+      type: object
+      distinctTermAgg: true
 
   collecting-event:
     - name: createdBy
@@ -46,6 +49,8 @@ mappings:
     - name: endEventDateTime
       type: date
     - name: host
+      type: text
+    - name: dwcVerbatimLocality
       type: text
 
   organism:

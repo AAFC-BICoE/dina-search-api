@@ -18,7 +18,8 @@
       "preparationMaterials": null,
       "preparationSubstrate": null,
       "managedAttributes": {
-        "text_material_sample_attribute_test": "material-sample-test"
+        "text_material_sample_attribute_test": "material-sample-test",
+        "number_material_sample_attribute_test": "18"
       },
       "extensionValues": {
         "agronomy_ontology_v1": {
