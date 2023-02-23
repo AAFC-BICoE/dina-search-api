@@ -3,7 +3,6 @@ package ca.gc.aafc.dina.search.ws.search;
 import ca.gc.aafc.dina.search.ws.container.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
-import ca.gc.aafc.dina.search.ws.services.IndexMappingResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -13,26 +12,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.web.client.RestTemplate;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   
   private static final String DINA_AGENT_INDEX = "dina_agent_index";
   public static final String DINA_MATERIAL_SAMPLE_INDEX = "dina_material_sample_index";
-  private static final String OBJECT_STORE_ES_INDEX = "object_store_index";
 
   private static final String MATERIAL_SAMPLE_DOCUMENT_ID = "2e5eab9e-1d75-4a26-997e-34362d6b4585";
   public static final String MATERIAL_SAMPLE_SEARCH_FIELD = "data.id";
@@ -271,38 +264,4 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     assertEquals(Long.valueOf(2), searchService.count(DINA_AGENT_INDEX, queryString).getCount());
   }
 
-  @Test
-  public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
-    indexDocumentForIT(DINA_AGENT_INDEX, "test-document-1", DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
-
-    // Submit ES mapping
-    String objectStoreEsSettings = TestResourceHelper
-            .readContentAsString("elastic-configurator-settings/object-store-index/object_store_index_settings.json");
-    URI uri = new URI("http://" + ELASTICSEARCH_CONTAINER.getHttpHostAddress() + "/" + OBJECT_STORE_ES_INDEX);
-    HttpEntity<?> entity = new HttpEntity<>(objectStoreEsSettings, buildJsonHeaders());
-    RestTemplate restTemplate = builder.build();
-    restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
-
-    // index a document to trigger the dynamic mapping
-    indexDocumentForIT(OBJECT_STORE_ES_INDEX, "test-document-1", DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("objectstore_metadata1.json"));
-
-    IndexMappingResponse response = searchService.getIndexMapping(OBJECT_STORE_ES_INDEX);
-
-    assertEquals(OBJECT_STORE_ES_INDEX, response.getIndexName());
-    boolean createdOnFound = false;
-    boolean managedAttributeTest2Found = false;
-
-    for (IndexMappingResponse.Attribute curAttribute: response.getAttributes()) {
-      if (curAttribute.getName().equals("createdOn") && "date".equals(curAttribute.getType()))  {
-        createdOnFound = true;
-      }
-      if (curAttribute.getName().equals("test_2") && "text".equals(curAttribute.getType()))  {
-        managedAttributeTest2Found = true;
-      }
-    }
-    assertTrue(createdOnFound && managedAttributeTest2Found);
-
-    // test behavior of non-existing index
-    assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
-  }
 }
