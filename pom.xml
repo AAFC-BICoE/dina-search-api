@@ -38,7 +38,7 @@
     <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
     <spotbugs.version>4.5.2</spotbugs.version>
     <maven-spotbugs.version>4.5.0.0</maven-spotbugs.version>
-    <dependency.check.version>7.1.2</dependency.check.version>
+    <dependency.check.version>8.0.2</dependency.check.version>
     <lombok-maven-plugin.version>1.18.20.0</lombok-maven-plugin.version>
 
     <testcontainers.version>1.16.2</testcontainers.version>
