@@ -6,6 +6,8 @@
     }
   },
   "mappings": {
+    "date_detection": false,
+    "numeric_detection": false,
     "dynamic_templates": [
       {
         "includes_as_nested": {
@@ -184,6 +186,20 @@
               },
               "endEventDateTime": {
                 "type": "date"
+              },
+              "hierarchy": {
+                "type": "nested",
+                "properties": {
+                  "uuid": {
+                    "type": "keyword"
+                  },
+                  "name": {
+                    "type": "keyword"
+                  },
+                  "rank": {
+                    "type": "integer"
+                  }
+                }
               }
             }
           },
