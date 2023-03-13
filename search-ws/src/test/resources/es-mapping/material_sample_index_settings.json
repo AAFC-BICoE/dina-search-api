@@ -189,21 +189,19 @@
               "endEventDateTime": {
                 "type": "date"
               },
-              "verbatimDeterminer": {
-                "type": "text",
-                "fields": {
-                  "autocomplete": {
-                    "type": "search_as_you_type",
-                    "max_shingle_size": 3
+              "hierarchy": {
+                "type": "nested",
+                "properties": {
+                  "uuid": {
+                    "type": "keyword"
                   },
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
+                  "name": {
+                    "type": "keyword"
+                  },
+                  "rank": {
+                    "type": "integer"
                   }
                 }
-              },
-              "determination": {
-                "type": "object"
               }
             }
           },
@@ -267,6 +265,82 @@
                       "type": {
                         "type": "constant_keyword",
                         "value": "preparation-type"
+                      }
+                    }
+                  }
+                }
+              },
+              "preparationMethod": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "preparation-method"
+                      }
+                    }
+                  }
+                }
+              },
+              "assemblages": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "assemblage"
+                      }
+                    }
+                  }
+                }
+              },
+              "projects": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "project"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "included" : {
+        "type": "nested",
+        "include_in_parent" : true,
+        "properties" : {
+          "attributes" : {
+            "properties" : {
+              "dwcRecordedBy": {
+                "type": "text",
+                "fields": {
+                  "autocomplete": {
+                    "type": "search_as_you_type",
+                    "max_shingle_size": 3
+                  },
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "determination" : {
+                "properties" : {
+                  "verbatimDeterminer": {
+                    "type": "text",
+                    "fields": {
+                      "autocomplete": {
+                        "type": "search_as_you_type",
+                        "max_shingle_size": 3
+                      },
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
                       }
                     }
                   }
