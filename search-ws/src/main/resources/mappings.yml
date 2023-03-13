@@ -122,3 +122,9 @@ mappings:
       distinctTermAgg: true
     - name: managedAttributes
       type: object
+  
+  transaction:
+    - name: materialDirection
+      type: text
+      distinctTermAgg: true
+
