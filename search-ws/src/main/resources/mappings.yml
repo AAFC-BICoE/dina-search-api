@@ -127,4 +127,27 @@ mappings:
     - name: materialDirection
       type: text
       distinctTermAgg: true
+    - name: transactionNumber
+      type: text
+    - name: otherIdentifiers
+      type: text
+    - name: transactionType
+      type: text
+    - name: status
+      type: text
+    - name: openedDate
+      type: date
+    - name: closedDate
+      type: date
+    - name: dueDate
+      type: date
+    - name: managedAttributes 
+      type: object
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date
+
+    
+
 
