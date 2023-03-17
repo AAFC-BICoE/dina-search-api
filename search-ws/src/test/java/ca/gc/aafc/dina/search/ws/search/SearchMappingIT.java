@@ -66,6 +66,12 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
     IndexMappingResponse.Attribute createdOnFieldExtension = findAttributeByName(response, "createdOn");
     assertNotNull(createdOnFieldExtension);
     assertEquals("date", createdOnFieldExtension.getType());
+
+    // Check dynamic type
+    IndexMappingResponse.Attribute managedAttributeNumber = findAttributeByNameAndPath(response,
+            "number_material_sample_attribute_test", "data.attributes.managedAttributes");
+    assertNotNull(managedAttributeNumber);
+    assertEquals("long", managedAttributeNumber.getType());
     
     // test behavior of non-existing index
     assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
@@ -74,6 +80,15 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
   private IndexMappingResponse.Attribute findAttributeByName(IndexMappingResponse response, String name) {
     for (IndexMappingResponse.Attribute curAttribute : response.getAttributes()) {
       if (name.equals(curAttribute.getName())) {
+        return curAttribute;
+      }
+    }
+    return null;
+  }
+
+  private IndexMappingResponse.Attribute findAttributeByNameAndPath(IndexMappingResponse response, String name, String path) {
+    for (IndexMappingResponse.Attribute curAttribute : response.getAttributes()) {
+      if (name.equals(curAttribute.getName()) && path.equals(curAttribute.getPath())) {
         return curAttribute;
       }
     }

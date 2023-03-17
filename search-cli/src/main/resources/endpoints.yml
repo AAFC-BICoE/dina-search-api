@@ -54,3 +54,4 @@ endpoints:
     indexName: dina_loan_transaction_index
     relationships:
       - involvedAgents
+      - materialSamples
