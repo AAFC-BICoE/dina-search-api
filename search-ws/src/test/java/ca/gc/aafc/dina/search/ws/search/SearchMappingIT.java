@@ -22,7 +22,6 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
 
   // used to search and wait for a document
   private static final String DOCUMENT_SEARCH_FIELD = "name";
-  public static final String DINA_MATERIAL_SAMPLE_INDEX = "dina_material_sample_index";
 
   @Autowired
   private SearchService searchService;
@@ -49,15 +48,15 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
   @Test
   public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
     // Submit ES mapping
-    sendMapping("es-mapping/material_sample_index_settings.json",
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_MATERIAL_SAMPLE_INDEX);
+    sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
 
     // index a document to trigger the dynamic mapping
-    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, "test-document-1", DOCUMENT_SEARCH_FIELD,
+    indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, "test-document-1", DOCUMENT_SEARCH_FIELD,
             retrieveJSONObject("material_sample_dynamic_fields_document.json"));
-    IndexMappingResponse response = searchService.getIndexMapping(DINA_MATERIAL_SAMPLE_INDEX);
+    IndexMappingResponse response = searchService.getIndexMapping(TestConstants.MATERIAL_SAMPLE_INDEX);
 
-    assertEquals(DINA_MATERIAL_SAMPLE_INDEX, response.getIndexName());
+    assertEquals(TestConstants.MATERIAL_SAMPLE_INDEX, response.getIndexName());
 
     IndexMappingResponse.Attribute cropFieldExtension = findAttributeByName(response, "crop");
     assertNotNull(cropFieldExtension);

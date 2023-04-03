@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
 
-import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.DINA_MATERIAL_SAMPLE_INDEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 

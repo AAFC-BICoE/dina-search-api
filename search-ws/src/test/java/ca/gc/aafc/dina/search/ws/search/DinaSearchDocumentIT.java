@@ -18,14 +18,15 @@ import org.testcontainers.junit.jupiter.Container;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 
+import static ca.gc.aafc.dina.search.ws.search.TestConstants.MATERIAL_SAMPLE_INDEX;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   
   private static final String DINA_AGENT_INDEX = "dina_agent_index";
-  public static final String DINA_MATERIAL_SAMPLE_INDEX = "dina_material_sample_index";
 
   private static final String MATERIAL_SAMPLE_DOCUMENT_ID = "2e5eab9e-1d75-4a26-997e-34362d6b4585";
   public static final String MATERIAL_SAMPLE_SEARCH_FIELD = "data.id";
@@ -67,17 +68,17 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   public void testSearchNestedObjects() throws Exception { 
 
     try {
-      sendMapping("es-mapping/material_sample_index_settings.json",
-              ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_MATERIAL_SAMPLE_INDEX);
+      sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+              ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
 
       // Let's add a document into the elasticsearch cluster
-      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+      indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
           retrieveJSONObject("nested_document1.json"));
-      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT2_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+      indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT2_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
           retrieveJSONObject("nested_document2.json"));
-      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT3_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+      indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT3_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
           retrieveJSONObject("nested_document3.json"));
-      indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT4_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+      indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT4_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
           retrieveJSONObject("nested_document4.json"));
 
       String queryStringTemplate = TestResourceHelper
@@ -88,7 +89,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
                                 .replace("@type@", "storage-unit")
                                 .replace("@locality@", "Gatineau");
       // Get All search, there should be 0 search results.
-      String result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, noResultsQuery);
+      String result = searchService.search(TestConstants.MATERIAL_SAMPLE_INDEX, noResultsQuery);
 
       assertNotNull(result);
       assertTrue(result.contains("\"total\":{\"value\":0,\"relation\":\"eq\"}"));
@@ -98,19 +99,19 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
                                 .replace("@type@", "collecting-event")
                                 .replace("@locality@", "Ottawa"); 
 
-      result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, threeResultsQuery);
+      result = searchService.search(TestConstants.MATERIAL_SAMPLE_INDEX, threeResultsQuery);
       assertNotNull(result);
       assertTrue(result.contains("\"total\":{\"value\":3,\"relation\":\"eq\"}"));
 
       // validate with the count
-      assertEquals(Long.valueOf(3), searchService.count(DINA_MATERIAL_SAMPLE_INDEX, threeResultsQuery).getCount());
+      assertEquals(Long.valueOf(3), searchService.count(TestConstants.MATERIAL_SAMPLE_INDEX, threeResultsQuery).getCount());
 
       // collecting-event and Gatineau
       String oneResultQuery = queryStringTemplate
                                 .replace("@type@", "collecting-event")
                                 .replace("@locality@", "Gatineau"); 
 
-      result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, oneResultQuery);
+      result = searchService.search(TestConstants.MATERIAL_SAMPLE_INDEX, oneResultQuery);
 
       assertNotNull(result);
       assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
@@ -120,7 +121,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
           .replace("@type@", "storage-unit")
           .replace("@locality@", "Ottawa");
 
-      result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, noResultsQuery);
+      result = searchService.search(TestConstants.MATERIAL_SAMPLE_INDEX, noResultsQuery);
 
       assertNotNull(result);
       assertTrue(result.contains("\"total\":{\"value\":0,\"relation\":\"eq\"}"));
@@ -164,14 +165,14 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   @Test
   public void testSearchAutoCompleteMaterialSampleDocument() throws Exception { 
     // Let's add a document into the elasticsearch cluster 
-    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
+    indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
 
     String textToMatch = "yv";
     String autoCompleteField = "data.attributes.determination.verbatimDeterminer";
     String additionalField = "";
     String restrictedField = "";
     String restrictedFieldValue = "";
-    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, null, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, TestConstants.MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, null, restrictedField, restrictedFieldValue);
 
     assertNotNull(searchResponse.getHits());
     assertEquals(1, searchResponse.getHits().size());
@@ -182,26 +183,26 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   @Test
   public void testSearchAutoCompleteMaterialSampleRestrictedMatch() throws Exception { 
     // Let's add a document into the elasticsearch cluster 
-    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
+    indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
 
     String textToMatch = "yv";
     String autoCompleteField = "data.attributes.determination.verbatimDeterminer";
     String additionalField = "";
     String restrictedField = "data.attributes.group.keyword";
     String restrictedFieldValue = "cnc";
-    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, null, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, TestConstants.MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, null, restrictedField, restrictedFieldValue);
 
     assertNotNull(searchResponse.getHits());
     assertEquals(1, searchResponse.getHits().size());
 
     //try using the group parameter
-    searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedFieldValue, null, null);
+    searchResponse = searchService.autoComplete(textToMatch, TestConstants.MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, restrictedFieldValue, null, null);
 
     assertNotNull(searchResponse.getHits());
     assertEquals(1, searchResponse.getHits().size());
 
     //try using another group (nothing should match)
-    searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, "abc", null, null);
+    searchResponse = searchService.autoComplete(textToMatch, TestConstants.MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, "abc", null, null);
 
     assertNotNull(searchResponse.getHits());
     assertEquals(0, searchResponse.getHits().size());
@@ -211,14 +212,14 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   @Test
   public void testSearchAutoCompleteMaterialSampleRestrictedNoMatch() throws Exception { 
     // Let's add a document into the elasticsearch cluster 
-    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
+    indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
 
     String textToMatch = "yv";
     String autoCompleteField = "data.attributes.determination.verbatimDeterminer";
     String additionalField = "";
     String restrictedField = "data.attributes.group.keyword";
     String restrictedFieldValue = "cnc-no-match";
-    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, DINA_MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, null, restrictedField, restrictedFieldValue);
+    AutocompleteResponse searchResponse = searchService.autoComplete(textToMatch, TestConstants.MATERIAL_SAMPLE_INDEX, autoCompleteField, additionalField, null, restrictedField, restrictedFieldValue);
 
     assertNotNull(searchResponse.getHits());
     assertEquals(0, searchResponse.getHits().size());
@@ -262,6 +263,29 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
     // try with the count
     assertEquals(Long.valueOf(2), searchService.count(DINA_AGENT_INDEX, queryString).getCount());
+  }
+
+  @Test
+  public void testPartialMatch() {
+    try {
+      sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+          ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
+
+      indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, UUID.randomUUID().toString(), "name",
+          retrieveJSONObject("material_sample_dynamic_fields_document.json"));
+
+      String query = "{\"query\": {\n" +
+          "    \"match\": {\n" +
+          "      \"data.attributes.materialSampleName.ngram\": {\n" +
+          "        \"query\": \"9483\"" +
+          "      }" +
+          "    }" +
+          "  }}";
+      String result = searchService.search(MATERIAL_SAMPLE_INDEX, query);
+      assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
+    } catch (Exception e) {
+      fail(e);
+    }
   }
 
 }
