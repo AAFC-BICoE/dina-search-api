@@ -78,6 +78,22 @@ public abstract class ElasticSearchBackedTest {
     restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
   }
 
+  static String buildMatchQueryString(String field, String value) {
+    return String.format("""
+        {"query": {
+            "match": {
+              "%s": {
+                "query": "%s"      }    }  }}""", field, value);
+  }
+
+  static String buildPrefixQueryString(String field, String prefix) {
+    return String.format("""
+        {"query": {
+            "prefix" : { "%s" : "%s" }
+          }
+        }""", field, prefix);
+  }
+
   /**
    * Index a document for integration test purpose and wait until the document is indexed.
    * @throws IOException

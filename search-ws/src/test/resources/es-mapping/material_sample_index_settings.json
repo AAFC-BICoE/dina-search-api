@@ -9,6 +9,10 @@
       "analyzer": {
         "ngram_analyzer": {
           "tokenizer": "ngram_tokenizer"
+        },
+        "keyword_lowercase_analyzer" : {
+          "tokenizer": "keyword",
+          "filter": [ "lowercase" ]
         }
       },
       "tokenizer": {
@@ -115,7 +119,15 @@
                     "type": "keyword",
                     "ignore_above": 256
                   },
-                  "ngram": {
+                  "prefix": {
+                    "type": "text",
+                    "analyzer": "keyword_lowercase_analyzer",
+                    "index_prefixes": {
+                      "min_chars" : 1,
+                      "max_chars" : 10
+                    }
+                  },
+                  "infix": {
                     "type": "text",
                     "analyzer": "ngram_analyzer",
                     "search_analyzer": "standard"

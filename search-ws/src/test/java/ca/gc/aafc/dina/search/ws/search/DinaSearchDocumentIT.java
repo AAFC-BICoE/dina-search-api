@@ -274,15 +274,15 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
       indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, UUID.randomUUID().toString(), "name",
           retrieveJSONObject("material_sample_dynamic_fields_document.json"));
 
-      String query = "{\"query\": {\n" +
-          "    \"match\": {\n" +
-          "      \"data.attributes.materialSampleName.ngram\": {\n" +
-          "        \"query\": \"9483\"" +
-          "      }" +
-          "    }" +
-          "  }}";
+      String query = buildMatchQueryString("data.attributes.materialSampleName.infix", "9483");
       String result = searchService.search(MATERIAL_SAMPLE_INDEX, query);
       assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
+
+      // Test prefix search
+      query = buildPrefixQueryString("data.attributes.materialSampleName.prefix", "abc-");
+      result = searchService.search(MATERIAL_SAMPLE_INDEX, query);
+      assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
+
     } catch (Exception e) {
       fail(e);
     }
