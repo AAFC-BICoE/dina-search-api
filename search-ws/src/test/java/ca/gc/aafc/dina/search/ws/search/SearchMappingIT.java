@@ -12,6 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -71,7 +73,16 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
             "number_material_sample_attribute_test", "data.attributes.managedAttributes");
     assertNotNull(managedAttributeNumber);
     assertEquals("long", managedAttributeNumber.getType());
-    
+
+    // Check fields
+    IndexMappingResponse.Attribute matSampleNameMapping = findAttributeByNameAndPath(response,
+        "materialSampleName", "data.attributes");
+    assertNotNull(matSampleNameMapping);
+    assertThat(
+        matSampleNameMapping.getFields(),
+        containsInAnyOrder("prefix_reverse", "prefix", "infix", "keyword")
+    );
+
     // test behavior of non-existing index
     assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
   }
