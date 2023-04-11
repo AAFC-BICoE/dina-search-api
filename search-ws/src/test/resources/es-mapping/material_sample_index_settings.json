@@ -13,6 +13,10 @@
         "keyword_lowercase_analyzer" : {
           "tokenizer": "keyword",
           "filter": [ "lowercase" ]
+        },
+        "keyword_lowercase_reverse_analyzer" : {
+          "tokenizer": "keyword",
+          "filter": [ "lowercase", "reverse" ]
         }
       },
       "tokenizer": {
@@ -131,6 +135,14 @@
                     "type": "text",
                     "analyzer": "ngram_analyzer",
                     "search_analyzer": "standard"
+                  },
+                  "prefix_reverse": {
+                    "type": "text",
+                    "analyzer": "keyword_lowercase_reverse_analyzer",
+                    "index_prefixes": {
+                      "min_chars" : 1,
+                      "max_chars" : 10
+                    }
                   }
                 }
               },

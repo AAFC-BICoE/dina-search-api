@@ -267,6 +267,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
   @Test
   public void testPartialMatch() {
+    // Indexed test value: materialSampleName = ABC-94837563
     try {
       sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
           ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
@@ -278,11 +279,16 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
       String result = searchService.search(MATERIAL_SAMPLE_INDEX, query);
       assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
 
-      // Test prefix search
+      // Test prefix search (we need to lowercase the input since it's a term-level search and inputs are not analyzed)
+      // https://www.elastic.co/guide/en/elasticsearch/reference/current/term-level-queries.html
       query = buildPrefixQueryString("data.attributes.materialSampleName.prefix", "abc-");
       result = searchService.search(MATERIAL_SAMPLE_INDEX, query);
       assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
 
+      // Test suffix search (we need to reverse/lowercase the input since it's a term-level search and inputs are not analyzed)
+      query = buildPrefixQueryString("data.attributes.materialSampleName.prefix_reverse", "3657");
+      result = searchService.search(MATERIAL_SAMPLE_INDEX, query);
+      assertTrue(result.contains("\"total\":{\"value\":1,\"relation\":\"eq\"}"));
     } catch (Exception e) {
       fail(e);
     }
