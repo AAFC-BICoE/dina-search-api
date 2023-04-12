@@ -1,6 +1,5 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.DINA_MATERIAL_SAMPLE_INDEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -46,10 +45,10 @@ public class SearchControllerIT extends ElasticSearchBackedTest {
 
   @Test
   public void autocompleteWithFieldnameUsingNonAlphaCharacter() throws Exception {
-    sendMapping("es-mapping/material_sample_index_settings.json",
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_MATERIAL_SAMPLE_INDEX);
+    sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
 
-    mvc.perform(get("/search-ws/auto-complete?prefix=a&autoCompleteField=a.b&indexName=" + DINA_MATERIAL_SAMPLE_INDEX)
+    mvc.perform(get("/search-ws/auto-complete?prefix=a&autoCompleteField=a.b&indexName=" + TestConstants.MATERIAL_SAMPLE_INDEX)
                     .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk());
   }

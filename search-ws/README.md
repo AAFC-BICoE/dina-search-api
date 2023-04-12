@@ -96,6 +96,7 @@ Response: The structure contained in the body section of the payload is made up 
         {
             "name": "verbatimDeterminer",
             "type": "text",
+            "fields" : ["keyword"]
             "path": "data.attributes"
         },
         {
@@ -117,7 +118,7 @@ Response: The structure contained in the body section of the payload is made up 
                 },
                 {
                     "name": "createdBy",
-                    "type": "date",
+                    "type": "text",
                     "path": "attributes"
                 }
             ]
@@ -138,6 +139,7 @@ Attributes section is made of the following fields
 
 - `name` = name of the attribute
 - `type` = Elasticsearch type of the attribute
+- `fields` = Elasticsearch fields of the attribute if [multi-fields](https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-fields.html) is used
 - `path` = Relative path to get to the attribute value within a document. Fully qualified path is built from 
            the relationship path + attribute path + attribute name (path + path + name) 
 
