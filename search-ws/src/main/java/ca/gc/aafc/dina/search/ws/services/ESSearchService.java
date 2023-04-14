@@ -248,10 +248,9 @@ public class ESSearchService implements SearchService {
     Map<String, Property> propertiesToProcess;
     if (propertyToCrawl.isNested()) { // included section is nested
       propertiesToProcess = propertyToCrawl.nested().properties();
-    } else if(propertyToCrawl.isObject()) { // data, relationships and meta sections are object
+    } else if (propertyToCrawl.isObject()) { // data, relationships and meta sections are object
       propertiesToProcess = propertyToCrawl.object().properties();
-    } // not part of regular JSON:API document, skip
-    else {
+    } else { // not part of regular JSON:API document, skip
       return;
     }
 
