@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.aafc-bicoe</groupId>
   <artifactId>search-api-parent</artifactId>
-  <version>0.24-SNAPSHOT</version>
+  <version>0.25-SNAPSHOT</version>
 
   <packaging>pom</packaging>
 
@@ -14,7 +14,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.7.7</version>
+    <version>2.7.10</version>
   </parent>
 
   <modules>
@@ -30,7 +30,7 @@
 
     <elasticsearch.version>7.17.6</elasticsearch.version>
     <jakarta.json.version>2.0.1</jakarta.json.version>
-    <dina-base-api.version>0.95</dina-base-api.version>
+    <dina-base-api.version>0.104</dina-base-api.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>

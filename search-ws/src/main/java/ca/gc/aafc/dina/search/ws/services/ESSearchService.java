@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -36,6 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.Stack;
 
 @Log4j2
@@ -244,10 +246,12 @@ public class ESSearchService implements SearchService {
                                    IndexMappingResponse.IndexMappingResponseBuilder responseBuilder) {
 
     Map<String, Property> propertiesToProcess;
-    if (propertyToCrawl.isNested()) {
+    if (propertyToCrawl.isNested()) { // included section is nested
       propertiesToProcess = propertyToCrawl.nested().properties();
-    } else {
+    } else if (propertyToCrawl.isObject()) { // data, relationships and meta sections are object
       propertiesToProcess = propertyToCrawl.object().properties();
+    } else { // not part of regular JSON:API document, skip
+      return;
     }
 
     propertiesToProcess.forEach((propertyName, property) -> {
@@ -276,7 +280,8 @@ public class ESSearchService implements SearchService {
               log.debug("skipping : {}. Only constant_keyword are supported on relationships", currentPath);
             }
           } else if(JSONApiDocumentStructure.isAttributesPath(currentPath)) {
-            IndexMappingResponse.Attribute attribute = handleDataProperty(currentPath, propertyName, property._kind().jsonValue(), crawlContext);
+            IndexMappingResponse.Attribute attribute = handleDataProperty(currentPath, propertyName,
+                property._kind().jsonValue(), fieldsFromProperty(property), crawlContext);
             if (attribute != null) {
               responseBuilder.attribute(attribute);
             }
@@ -292,16 +297,29 @@ public class ESSearchService implements SearchService {
   }
 
   /**
+   * If the Property is a text, extract fields and return them as a Set otherwise return an empty set.
+   * @param prop
+   * @return
+   */
+  private static Set<String> fieldsFromProperty(Property prop) {
+    if (prop.isText()) {
+      return prop.text().fields().keySet();
+    }
+    return Set.of();
+  }
+
+  /**
    * Method responsible to create an Attribute based on path, property and configuration.
    * It will allow attributes that are defined as object to be dynamically added and others that
    * are not defined to be excluded.
    * @param currentPath
    * @param propertyName
+   * @param fields optional, only used on text type
    * @param type
    * @param crawlContext
    * @return
    */
-  private static IndexMappingResponse.Attribute handleDataProperty(String currentPath, String propertyName, String type,
+  private static IndexMappingResponse.Attribute handleDataProperty(String currentPath, String propertyName, String type, Set<String> fields,
                                                            MappingCrawlContext crawlContext) {
     // compute name for properties that are like determination.verbatimScientificName
     String computedPropertyName = JSONApiDocumentStructure.removeAttributesPrefix(currentPath).isBlank() ?
@@ -321,6 +339,7 @@ public class ESSearchService implements SearchService {
               .name(propertyName)
               .path(currentPath)
               .type(type)
+              .fields(CollectionUtils.isEmpty(fields) ? null : fields)
               .distinctTermAgg(mappingAttribute.getDistinctTermAgg())
               .build();
     }
