@@ -28,7 +28,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>17</java.version>
 
-    <elasticsearch.version>7.17.6</elasticsearch.version>
+    <elasticsearch.version>7.17.10</elasticsearch.version>
     <jakarta.json.version>2.0.1</jakarta.json.version>
     <dina-base-api.version>0.104</dina-base-api.version>
 
