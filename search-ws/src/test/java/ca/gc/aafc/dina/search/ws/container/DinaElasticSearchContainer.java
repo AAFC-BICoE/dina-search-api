@@ -11,7 +11,7 @@ public class DinaElasticSearchContainer extends ElasticsearchContainer {
   private static final String CLUSTER_NAME = "cluster_name";
   private static final String ELASTIC_SEARCH = "elasticsearch";
   private static final DockerImageName ES_IMAGE =
-      DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.17.6");
+      DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.17.10");
 
   public DinaElasticSearchContainer() {
     super(ES_IMAGE);
