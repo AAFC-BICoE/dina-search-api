@@ -1,10 +1,9 @@
-package ca.gc.aafc.dina.search.cli.messaging;
+package ca.gc.aafc.dina.search.cli.indexing;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +20,6 @@ import org.testcontainers.junit.jupiter.Container;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
 
@@ -33,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @ExtendWith(MockServerExtension.class) 
 @MockServerSettings(ports = {1080, 8081, 8082})
-public class DocumentProcessorIT {
+public class DocumentManagerIT {
 
   private ClientAndServer client;
 
@@ -41,7 +39,7 @@ public class DocumentProcessorIT {
   private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
 
   @Autowired
-  private DocumentProcessor documentProcessor;
+  private DocumentManager documentManager;
 
   private static final String DOCUMENT_TYPE = "person";
   private static final String DOCUMENT_ID = "9df388de-71b5-45be-9613-b70674439773";
@@ -98,7 +96,7 @@ public class DocumentProcessorIT {
             .withDelay(TimeUnit.SECONDS, 1));
 
     // Create a request for the document processor.
-    JsonNode jsonMessage = documentProcessor.indexDocument(DOCUMENT_TYPE, DOCUMENT_ID);
+    JsonNode jsonMessage = documentManager.indexDocument(DOCUMENT_TYPE, DOCUMENT_ID);
 
     // Test to ensure the person message was properly assembled.
     assertEquals(DOCUMENT_ID, jsonMessage.at("/data/id").asText());

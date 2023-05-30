@@ -1,14 +1,11 @@
-package ca.gc.aafc.dina.search.cli.messaging;
+package ca.gc.aafc.dina.search.cli.indexing;
 
-import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.config.CacheConfiguration;
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.CacheableApiAccess;
-import ca.gc.aafc.dina.search.cli.indexing.DocumentIndexer;
-import ca.gc.aafc.dina.search.cli.indexing.OperationStatus;
 import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
 import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
@@ -47,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @ExtendWith(MockServerExtension.class) 
 @MockServerSettings(ports = {1080, 8081, 8082})
-public class DocumentProcessorEmbeddedIT {
+public class DocumentManagerEmbeddedIT {
 
   public static final String DINA_AGENT_INDEX = "dina_agent_index";
   private static final String EMBEDDED_ORG_NAME = "Integration";
@@ -68,7 +65,7 @@ public class DocumentProcessorEmbeddedIT {
   private ServiceEndpointProperties serviceEndpointProperties;
 
   @Autowired
-  private DocumentProcessor documentProcessor;
+  private DocumentManager documentManager;
 
   @Autowired
   private DocumentIndexer documentIndexer;
@@ -197,7 +194,7 @@ public class DocumentProcessorEmbeddedIT {
     // Trigger process embedded document, should retrieve the newly updated organization.
     // Name has been updated to "Integration Updated" (See Get Organization mock)
     try {
-      documentProcessor.processEmbeddedDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
+      documentManager.processEmbeddedDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
     } catch (SearchApiException e) {
       fail(e);
     }
@@ -240,8 +237,8 @@ public class DocumentProcessorEmbeddedIT {
     // Delete from elasticsearch and process document.
     // Simulate what send deleted message would do..
     try {
-      documentProcessor.deleteDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
-      documentProcessor.processEmbeddedDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
+      documentManager.deleteDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
+      documentManager.processEmbeddedDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
     } catch (SearchApiException e) {
       fail(e);
     }
