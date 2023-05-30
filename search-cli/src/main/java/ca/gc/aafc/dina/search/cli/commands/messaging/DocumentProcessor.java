@@ -61,7 +61,8 @@ public class DocumentProcessor implements IMessageProcessor {
         break;
 
       case UPDATE:
-        documentManager.indexDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());
+        // on update, we ignore the unknown type. It allows to process embedded document alone (e.g. collecting-event)
+        documentManager.indexDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId(), true);
 
         // Handle update to document that maybe embedded in others
         documentManager.processEmbeddedDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());

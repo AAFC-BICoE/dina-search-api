@@ -45,16 +45,28 @@ public class DocumentManager {
         indexList.add(desc.getIndexName());
       }
     });
-
   }
 
   /**
-   * Index or re-index the document identified by the type and documentId
+   * See {@link #indexDocument(String, String, boolean)}
    */
   public JsonNode indexDocument(String type, String documentId) throws SearchApiException {
-    JsonNode jsonNode;
+    return indexDocument(type, documentId, false);
+  }
+
+  /**
+   * Index or re-index the document identified by the type and documentId.
+   * @param type the type of document (json:api type)
+   * @param documentId the identifier of the document
+   * @param ignoreUnknownType if the type is unknown, should this method throw an exception or simply ignore the document?
+   */
+  public JsonNode indexDocument(String type, String documentId, boolean ignoreUnknownType) throws SearchApiException {
+
     if (!svcEndpointProps.getEndpoints().containsKey(type)) {
-      throw new SearchApiException("Unsupported endpoint type:" + type);
+      if (!ignoreUnknownType) {
+        throw new SearchApiException("Unsupported endpoint type:" + type);
+      }
+      log.debug("Unsupported endpoint type:" + type);
     }
 
     // Step #1: get the document
@@ -64,7 +76,7 @@ public class DocumentManager {
 
     // Step #2: Assemble the document into a JSON map
     log.info("Assembling document id:{}", documentId);
-
+    JsonNode jsonNode;
     try {
       jsonNode = indexableDocumentHandler.assembleDocument(documentToIndex);
     } catch (JsonProcessingException ex) {
@@ -101,7 +113,7 @@ public class DocumentManager {
   }
 
   /**
-   * Processing of embedded dcoument will take the reverse direction of the relationships defined
+   * Processing of embedded document will take the reverse direction of the relationships defined
    * in the endpoints.yml
    * For example material-sample --> collecting-event (Means that material-sample contains collecting-event)
    * So when a collecting-event is updated, we will have to look for its presence the material-sample index
@@ -111,13 +123,10 @@ public class DocumentManager {
   public void processEmbeddedDocument(String documentType, String documentId) throws SearchApiException {
 
     try {
-
       // TODO: handle paging
       SearchResponse<JsonNode> embeddedDocuments = indexer.search(indexList, documentType, documentId);
 
       List<DocumentInfo> documentsToIndex = processSearchResults(embeddedDocuments);
-
-      // mapTypeToId, contains the list of documents for reindexing.
       if (!documentsToIndex.isEmpty()) {
         log.debug("re-indexing document triggered by document type:{}, id:{} update",
             documentType, documentId);
@@ -155,7 +164,7 @@ public class DocumentManager {
    * @param documentsToIndex document type as key and DocumentInfo as value
    */
   public void reIndexDocuments(List<DocumentInfo> documentsToIndex) {
-    documentsToIndex.forEach((docInfo) -> {
+    documentsToIndex.forEach(docInfo -> {
       // re-index the document.
       try {
         indexDocument(docInfo.type(), docInfo.id());
