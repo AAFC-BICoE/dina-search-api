@@ -1,10 +1,10 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
-import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentInfo;
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
+import ca.gc.aafc.dina.search.cli.json.JSONApiDocumentStructure;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,9 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * DocumentManager is responsible for:
@@ -114,15 +112,16 @@ public class DocumentManager {
 
     try {
 
+      // TODO: handle paging
       SearchResponse<JsonNode> embeddedDocuments = indexer.search(indexList, documentType, documentId);
 
-      Map<String, DocumentInfo> mapIdToType = processSearchResults(embeddedDocuments);
+      List<DocumentInfo> documentsToIndex = processSearchResults(embeddedDocuments);
 
       // mapTypeToId, contains the list of documents for reindexing.
-      if (!mapIdToType.isEmpty()) {
+      if (!documentsToIndex.isEmpty()) {
         log.debug("re-indexing document triggered by document type:{}, id:{} update",
             documentType, documentId);
-        reIndexDocuments(mapIdToType);
+        reIndexDocuments(documentsToIndex);
       }
 
     } catch (SearchApiException e) {
@@ -131,37 +130,43 @@ public class DocumentManager {
     }
   }
 
-  private Map<String, DocumentInfo> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
-    Map<String, DocumentInfo> mapIdToType = new HashMap<>();
+  /**
+   *
+   * @param embeddedDocuments
+   * @return
+   */
+  private List<DocumentInfo> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
+    List<DocumentInfo> documentsToIndex = new ArrayList<>();
     if (embeddedDocuments != null && embeddedDocuments.hits() != null) {
       List<Hit<JsonNode>> results = embeddedDocuments.hits().hits();
       if (!results.isEmpty()) {
         results.forEach(curHit -> {
-          mapIdToType.put(
-            curHit.source().get("data").get("id").asText(), 
-            new DocumentInfo(
-              curHit.source().get("data").get("type").asText(),
-              curHit.index()));
+          JsonNode dataNode = curHit.source().get(JSONApiDocumentStructure.DATA);
+          documentsToIndex.add(new DocumentInfo(dataNode.get(JSONApiDocumentStructure.TYPE).asText(),
+              dataNode.get(JSONApiDocumentStructure.ID).asText()));
         });
       }
     }
-    return mapIdToType;
+    return documentsToIndex;
   }
 
   /**
-   * Triggers an indexDocument for the provided type/uuid
-   * @param mapIdToType document type as key and DocumentInfo as value
+   * Triggers an indexDocument for the provided {@link DocumentInfo}
+   * @param documentsToIndex document type as key and DocumentInfo as value
    */
-  public void reIndexDocuments(Map<String, DocumentInfo> mapIdToType) {
-    mapIdToType.forEach((key, value) -> {
+  public void reIndexDocuments(List<DocumentInfo> documentsToIndex) {
+    documentsToIndex.forEach((docInfo) -> {
       // re-index the document.
       try {
-        indexDocument(value.getType(), key);
+        indexDocument(docInfo.type(), docInfo.id());
       } catch (SearchApiException e) {
-        log.error("Document id {} of type {} could not be re-indexed. (Reason:{})", key, value,
+        log.error("Document id {} of type {} could not be re-indexed. (Reason:{})", docInfo.id(), docInfo.type(),
             e.getMessage());
       }
     });
+  }
+
+  record DocumentInfo(String type, String id) {
   }
 
 }
