@@ -48,30 +48,23 @@ public class DocumentManager {
   }
 
   /**
-   * See {@link #indexDocument(String, String, boolean)}
-   */
-  public JsonNode indexDocument(String type, String documentId) throws SearchApiException {
-    return indexDocument(type, documentId, false);
-  }
-
-  /**
    * Index or re-index the document identified by the type and documentId.
    * @param type the type of document (json:api type)
    * @param documentId the identifier of the document
-   * @param ignoreUnknownType if the type is unknown, should this method throw an exception or simply ignore the document?
+   * @return the assembled document or null if ignoreUnknown and the type/index is unknown
    */
-  public JsonNode indexDocument(String type, String documentId, boolean ignoreUnknownType) throws SearchApiException {
+  public JsonNode indexDocument(String type, String documentId) throws SearchApiException {
 
-    if (!svcEndpointProps.getEndpoints().containsKey(type)) {
-      if (!ignoreUnknownType) {
-        throw new SearchApiException("Unsupported endpoint type:" + type);
-      }
-      log.debug("Unsupported endpoint type:" + type);
+    // Validate the type
+    if (!isTypeConfigured(type)) {
+      throw new SearchApiException("Unsupported endpoint type: " + type);
     }
+
+    EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
 
     // Step #1: get the document
     log.info("Retrieving document id:{}", documentId);
-    EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
+
     String documentToIndex = aClient.getDataFromUrl(endpointDescriptor, documentId);
 
     // Step #2: Assemble the document into a JSON map
@@ -84,10 +77,8 @@ public class DocumentManager {
     }
 
     // Step #3: Indexing the document into elasticsearch
-    if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
-      log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
-      indexer.indexDocument(documentId, jsonNode, endpointDescriptor.getIndexName());
-    }
+    log.info("Sending document id:{} to specific index {}", documentId, endpointDescriptor.getIndexName());
+    indexer.indexDocument(documentId, jsonNode, endpointDescriptor.getIndexName());
 
     return jsonNode;
   }
@@ -157,6 +148,25 @@ public class DocumentManager {
       }
     }
     return documentsToIndex;
+  }
+
+  /**
+   * Checks if a type is configured for indexing in its own index.
+   * @param type
+   * @return
+   */
+  public boolean isTypeConfigured(String type) {
+    if (!svcEndpointProps.getEndpoints().containsKey(type)) {
+      log.debug("Unsupported endpoint type:" + type);
+      return false;
+    }
+
+    // Do we have an index defined for the type ?
+    if (StringUtils.isBlank(svcEndpointProps.getEndpoints().get(type).getIndexName())) {
+      log.debug("Undefined index for: " + type);
+      return false;
+    }
+    return true;
   }
 
   /**

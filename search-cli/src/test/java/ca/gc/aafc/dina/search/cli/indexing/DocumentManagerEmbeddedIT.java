@@ -40,7 +40,9 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -115,6 +117,11 @@ public class DocumentManagerEmbeddedIT {
   public void processEmbedded_Document() {
     MockKeyCloakAuthentication mockKeycloakAuthentication = new MockKeyCloakAuthentication(client);
 
+    // Here we register an endpoint for organization since this test assumes organization is an external relationship
+    EndpointDescriptor organizationDescriptor = new EndpointDescriptor();
+    organizationDescriptor.setTargetUrl("http://localhost:8082/api/v1/organization");
+    serviceEndpointProperties.getEndpoints().put("organization", organizationDescriptor);
+
     // Mock the person request/response.
     addMockGetResponse(mockKeycloakAuthentication, EMBEDDED_DOCUMENT_TYPE, EMBEDDED_DOCUMENT_ID,
         List.of(Pair.of("include", "organizations")), EMBEDDED_PERSON_RESPONSE_PATH);
@@ -128,32 +135,22 @@ public class DocumentManagerEmbeddedIT {
     ElasticSearchTestUtils.sendMapping(builder, "src/test/resources/elastic-configurator-settings/agent-index/dina_agent_index_settings.json",
             ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_AGENT_INDEX);
 
+    // Agent index can be skipped since it already has been added above.
+    Set<String> indices = serviceEndpointProperties.getEndpoints().values().stream()
+        .map(EndpointDescriptor::getIndexName)
+        .filter(index -> !DINA_AGENT_INDEX.equals(index))
+            .collect(Collectors.toSet());
+
     // The other indices must exist, but can be empty for this test. Use the endpoint to generate them.
-    serviceEndpointProperties.getEndpoints().values().forEach(desc -> {
-      if (StringUtils.isNotBlank (desc.getIndexName())) {
-
-        // Agent index can be skipped since it already has been added above.
-        if (desc.getIndexName().trim().equals(DINA_AGENT_INDEX)) return;
-
-        // Create the indices in elastic search.
-        try {
-          elasticSearchClient.indices().create(c -> c.index(desc.getIndexName().trim()));
-        } catch (ElasticsearchException e) {
-          fail(e);
-          e.printStackTrace();
-        } catch (IOException e) {
-          fail(e);
-        }
-      }
-    });
+    createIndices(indices);
 
     // Index the document within elastic search. The initial document is an assembled
     // person document with the original organization name set to "Integration"
     JsonNode docToIndex = JsonTestUtils.readJson(Files.readString(EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH));
     assertNotNull(docToIndex);
-    OperationStatus result;
+
     try {
-      result = documentIndexer.indexDocument(EMBEDDED_DOCUMENT_ID, docToIndex, DINA_AGENT_INDEX);
+      OperationStatus result = documentIndexer.indexDocument(EMBEDDED_DOCUMENT_ID, docToIndex, DINA_AGENT_INDEX);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
     } catch (SearchApiException e) {
@@ -231,13 +228,8 @@ public class DocumentManagerEmbeddedIT {
 
     // Get the document straight from Elastic search, we should have the
     // embedded organization updated
-    searchResponse = elasticSearchClient.search(s -> s
-        .index(DINA_AGENT_INDEX)
-        .query(q -> q
-            .term(t -> t
-                .field("data.id")
-                .value(v -> v.stringValue(EMBEDDED_DOCUMENT_ID)))),
-        JsonNode.class);
+    searchResponse = ElasticSearchTestUtils.search(elasticSearchClient, DINA_AGENT_INDEX,
+        "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
     docFromElasticSearch = searchResponse.hits().hits().get(0).source();
@@ -252,6 +244,8 @@ public class DocumentManagerEmbeddedIT {
         EMBEDDED_DOCUMENT_INCLUDED_ID));
     assertNotNull(objFromCache);
   }
+
+
 
   /**
    * Add a mock request to the client ({@link ClientAndServer}) to respond with the content of the provided file.
@@ -278,6 +272,26 @@ public class DocumentManagerEmbeddedIT {
             .withStatusCode(200)
             .withBody(Files.readString(jsonFileResponse))
             .withDelay(TimeUnit.SECONDS, 1));
+  }
+
+  private void createIndices(Set<String> indices) {
+    serviceEndpointProperties.getEndpoints().values().forEach(desc -> {
+      if (StringUtils.isNotBlank (desc.getIndexName())) {
+
+        // Agent index can be skipped since it already has been added above.
+        if (desc.getIndexName().trim().equals(DINA_AGENT_INDEX)) return;
+
+        // Create the indices in elastic search.
+        try {
+          elasticSearchClient.indices().create(c -> c.index(desc.getIndexName().trim()));
+        } catch (ElasticsearchException e) {
+          fail(e);
+          e.printStackTrace();
+        } catch (IOException e) {
+          fail(e);
+        }
+      }
+    });
   }
 
   /**

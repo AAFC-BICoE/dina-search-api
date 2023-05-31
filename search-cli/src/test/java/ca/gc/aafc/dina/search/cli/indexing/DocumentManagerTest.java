@@ -115,8 +115,6 @@ public class DocumentManagerTest {
 
     assertNotNull(documentManager);
     try {
-
-      
       when(indexer.search(anyList(), any(String.class), any(String.class))).thenReturn(mockResponse);
       when(mockListHitsJson.isEmpty()).thenReturn(true);
 
