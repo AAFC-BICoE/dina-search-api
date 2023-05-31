@@ -15,6 +15,7 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,7 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.mock.Expectation;
+import org.mockserver.model.HttpRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -37,6 +39,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -113,29 +116,13 @@ public class DocumentManagerEmbeddedIT {
     MockKeyCloakAuthentication mockKeycloakAuthentication = new MockKeyCloakAuthentication(client);
 
     // Mock the person request/response.
-    client.when(mockKeycloakAuthentication.setupMockRequest()
-        .withMethod("GET")
-        .withPath("/api/v1/" + EMBEDDED_DOCUMENT_TYPE + "/" + EMBEDDED_DOCUMENT_ID)
-        .withQueryStringParameter("include", "organizations"))
-        .respond(mockKeycloakAuthentication.setupMockResponse()
-            .withStatusCode(200)
-            .withBody(Files.readString(EMBEDDED_PERSON_RESPONSE_PATH))
-            .withDelay(TimeUnit.SECONDS, 1));
+    addMockGetResponse(mockKeycloakAuthentication, EMBEDDED_DOCUMENT_TYPE, EMBEDDED_DOCUMENT_ID,
+        List.of(Pair.of("include", "organizations")), EMBEDDED_PERSON_RESPONSE_PATH);
 
     // Mock the organization request after an update. That mock will be used 
     // indirectly by the re-index operation from the processEmbedded.
-    Expectation[] orgSuccess = client.when(mockKeycloakAuthentication.setupMockRequest()
-    .withMethod("GET")
-    .withPath("/api/v1/" + EMBEDDED_DOCUMENT_INCLUDED_TYPE + "/" + EMBEDDED_DOCUMENT_INCLUDED_ID))
-    .respond(mockKeycloakAuthentication.setupMockResponse()
-        .withStatusCode(200)
-        .withBody(Files.readString(EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH))
-        .withDelay(TimeUnit.SECONDS, 1));
-
-    // Index the document within elastic search. The initial document is an assembled 
-    // person document with he original organization name set to "Integration"
-    JsonNode docToIndex = JsonTestUtils.readJson(Files.readString(EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH));
-    assertNotNull(docToIndex);
+    Expectation[] orgSuccess = addMockGetResponse(mockKeycloakAuthentication, EMBEDDED_DOCUMENT_INCLUDED_TYPE,
+        EMBEDDED_DOCUMENT_INCLUDED_ID, List.of(), EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH);
 
     // For testing, we will be using the agent index.
     ElasticSearchTestUtils.sendMapping(builder, "src/test/resources/elastic-configurator-settings/agent-index/dina_agent_index_settings.json",
@@ -160,28 +147,26 @@ public class DocumentManagerEmbeddedIT {
       }
     });
 
-    // Index the original document with organization set to "Integration"
+    // Index the document within elastic search. The initial document is an assembled
+    // person document with the original organization name set to "Integration"
+    JsonNode docToIndex = JsonTestUtils.readJson(Files.readString(EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH));
+    assertNotNull(docToIndex);
     OperationStatus result;
     try {
       result = documentIndexer.indexDocument(EMBEDDED_DOCUMENT_ID, docToIndex, DINA_AGENT_INDEX);
-
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
     } catch (SearchApiException e) {
       fail(e);
     }
 
+    // allows to wait until we get the correct count
     int foundDocument = ElasticSearchTestUtils
         .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
     assertEquals(1, foundDocument);
 
-    SearchResponse<JsonNode> searchResponse = elasticSearchClient.search(s -> s
-        .index(DINA_AGENT_INDEX)
-        .query(q -> q
-            .term(t -> t
-                .field("data.id")
-                .value(v -> v.stringValue(EMBEDDED_DOCUMENT_ID)))),
-        JsonNode.class);
+    SearchResponse<JsonNode> searchResponse = ElasticSearchTestUtils.search(elasticSearchClient, DINA_AGENT_INDEX,
+        "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
     JsonNode docFromElasticSearch = searchResponse.hits().hits().get(0).source();
@@ -206,13 +191,8 @@ public class DocumentManagerEmbeddedIT {
 
     // Get the document straight from Elastic search, we should have the
     // embedded organization updated
-    searchResponse = elasticSearchClient.search(s -> s
-        .index(DINA_AGENT_INDEX)
-        .query(q -> q
-            .term(t -> t
-                .field("data.id")
-                .value(v -> v.stringValue(EMBEDDED_DOCUMENT_ID)))),
-        JsonNode.class);
+    searchResponse = ElasticSearchTestUtils.search(elasticSearchClient, DINA_AGENT_INDEX,
+        "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
     docFromElasticSearch = searchResponse.hits().hits().get(0).source();
@@ -220,6 +200,7 @@ public class DocumentManagerEmbeddedIT {
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
     assertEquals(EMBEDDED_ORG_NAME_AFTER_UPDATE,
         docFromElasticSearch.at("/included/0/attributes/names/0/name").asText());
+
 
     // Mock the organization request after an update. That mock will be used
     // indirectly by the re-index operation from the processEmbedded.
@@ -270,6 +251,33 @@ public class DocumentManagerEmbeddedIT {
         serviceEndpointProperties.getEndpoints().get(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
         EMBEDDED_DOCUMENT_INCLUDED_ID));
     assertNotNull(objFromCache);
+  }
+
+  /**
+   * Add a mock request to the client ({@link ClientAndServer}) to respond with the content of the provided file.
+   * @param mockKeycloakAuthentication
+   * @param docType
+   * @param docIdentifier
+   * @param queryParams
+   * @param jsonFileResponse
+   * @return
+   * @throws IOException
+   */
+  private Expectation[] addMockGetResponse(MockKeyCloakAuthentication mockKeycloakAuthentication, String docType, String docIdentifier,
+                               List<Pair<String, String>> queryParams, Path jsonFileResponse) throws IOException {
+
+    HttpRequest req = mockKeycloakAuthentication.setupMockRequest()
+        .withMethod("GET")
+        .withPath("/api/v1/" + docType + "/" + docIdentifier);
+
+    for (Pair<String, String> q : queryParams) {
+      req.withQueryStringParameter(q.getKey(), q.getValue());
+    }
+
+    return client.when(req).respond(mockKeycloakAuthentication.setupMockResponse()
+            .withStatusCode(200)
+            .withBody(Files.readString(jsonFileResponse))
+            .withDelay(TimeUnit.SECONDS, 1));
   }
 
   /**
