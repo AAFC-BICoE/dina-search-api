@@ -1,6 +1,5 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
-import ca.gc.aafc.dina.search.cli.messaging.DocumentProcessorEmbeddedIT;
 import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
 import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -81,7 +80,7 @@ public class DinaIndexDocumentIT {
   public void indexDocumentTestDataMappingDetection() throws IOException, URISyntaxException, SearchApiException {
     // For testing, we will be using the agent index where we set "date_detection": false
     ElasticSearchTestUtils.sendMapping(builder, "src/test/resources/elastic-configurator-settings/agent-index/dina_agent_index_settings.json",
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DocumentProcessorEmbeddedIT.DINA_AGENT_INDEX);
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DocumentManagerEmbeddedIT.DINA_AGENT_INDEX);
 
     String docToIndex = Files.readString(GET_PERSON_RESPONSE_PATH);
     assertNotNull(docToIndex);
@@ -91,14 +90,14 @@ public class DinaIndexDocumentIT {
     // here we force an incorrect value that would match the dynamic_date_formats (if enable) so the dynamic_mapping
     // would select date instead of text
     attributes.replace("webpage", "2022-12-12");
-    OperationStatus result = documentIndexer.indexDocument(UUID.randomUUID().toString(), docAsMap, DocumentProcessorEmbeddedIT.DINA_AGENT_INDEX);
+    OperationStatus result = documentIndexer.indexDocument(UUID.randomUUID().toString(), docAsMap, DocumentManagerEmbeddedIT.DINA_AGENT_INDEX);
     assertNotNull(result);
     assertEquals(OperationStatus.SUCCEEDED, result);
 
     // make sure we can index the real document now and that the type of "webpage" is not date
     JsonNode docToIndex2 = JsonTestUtils.readJson(Files.readString(GET_PERSON_RESPONSE_PATH));
     assertNotNull(docToIndex2);
-    result = documentIndexer.indexDocument(UUID.randomUUID().toString(), docToIndex2, DocumentProcessorEmbeddedIT.DINA_AGENT_INDEX);
+    result = documentIndexer.indexDocument(UUID.randomUUID().toString(), docToIndex2, DocumentManagerEmbeddedIT.DINA_AGENT_INDEX);
     assertNotNull(result);
     assertEquals(OperationStatus.SUCCEEDED, result);
   }

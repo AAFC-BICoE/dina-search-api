@@ -1,6 +1,7 @@
-package ca.gc.aafc.dina.search.cli.json;
+package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.search.cli.http.CacheableApiAccess;
+import ca.gc.aafc.dina.search.cli.json.JSONApiDocumentStructure;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;

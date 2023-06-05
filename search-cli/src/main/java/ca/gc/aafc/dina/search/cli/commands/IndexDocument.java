@@ -1,23 +1,22 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.cli.indexing.DocumentManager;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
 
-import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
-
 @Log4j2
 @Component
 @ShellComponent
 public class IndexDocument {
 
-  private final DocumentProcessor documentProcessor;
+  private final DocumentManager documentManager;
 
-  public IndexDocument(DocumentProcessor documentProcessor) {
-    this.documentProcessor = documentProcessor;
+  public IndexDocument(DocumentManager documentManager) {
+    this.documentManager = documentManager;
   }
 
   @ShellMethod(value = "Index a document into elasticsearch", key = "index-document")
@@ -26,7 +25,7 @@ public class IndexDocument {
                   @ShellOption(help = "Unique object identifier", value = { "-i", "--documentId" }) String documentId) {
 
     try {
-      documentProcessor.indexDocument(type, documentId);
+      documentManager.indexDocument(type, documentId);
     } catch (SearchApiException e) {
       log.error("Indexing error: ", e);
     }

@@ -1,4 +1,4 @@
-package ca.gc.aafc.dina.search.cli.messaging;
+package ca.gc.aafc.dina.search.cli.indexing;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -19,15 +19,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 
-import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
-import ca.gc.aafc.dina.search.cli.indexing.ElasticSearchDocumentIndexer;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
 import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
 
 @SpringBootTest(properties = { "spring.shell.interactive.enabled=false" })
-public class DocumentProcessorTest {
+public class DocumentManagerTest {
 
   @MockBean
   private SearchResponse<JsonNode> mockResponse;
@@ -46,7 +44,7 @@ public class DocumentProcessorTest {
 
   @SpyBean
   @Autowired
-  private DocumentProcessor documentProcessor;
+  private DocumentManager documentManager;
   
   @MockBean
   private ElasticSearchDocumentIndexer indexer;
@@ -55,10 +53,10 @@ public class DocumentProcessorTest {
   @Test
   public void processEmbeddedDocumentInvalidDocumentType() {
 
-    assertNotNull(documentProcessor);
+    assertNotNull(documentManager);
     try {
-      documentProcessor.processEmbeddedDocument("documentType", "documentId");
-      verify(documentProcessor, times(0)).indexDocument(any(String.class), any(String.class));
+      documentManager.processEmbeddedDocument("documentType", "documentId");
+      verify(documentManager, times(0)).indexDocument(any(String.class), any(String.class));
 
     } catch (SearchApiException e) {
       fail();
@@ -69,10 +67,10 @@ public class DocumentProcessorTest {
   @Test
   public void processEmbeddedDocumentNonEmbeddedDocumentType() {
 
-    assertNotNull(documentProcessor);
+    assertNotNull(documentManager);
     try {
-      documentProcessor.processEmbeddedDocument("material-sample", "documentId");
-      verify(documentProcessor, times(0)).indexDocument(any(String.class), any(String.class));
+      documentManager.processEmbeddedDocument("material-sample", "documentId");
+      verify(documentManager, times(0)).indexDocument(any(String.class), any(String.class));
     } catch (SearchApiException e) {
       fail();
     }
@@ -82,10 +80,10 @@ public class DocumentProcessorTest {
   @Test
   public void processEmbeddedDocumentValidEmbeddedDocumentType() {
 
-    assertNotNull(documentProcessor);
+    assertNotNull(documentManager);
     try {
-      documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
-      verify(documentProcessor, times(0)).indexDocument(any(String.class), any(String.class));
+      documentManager.processEmbeddedDocument("collecting-event", "documentId");
+      verify(documentManager, times(0)).indexDocument(any(String.class), any(String.class));
     } catch (SearchApiException e) {
       fail();
     }
@@ -95,15 +93,15 @@ public class DocumentProcessorTest {
   @Test
   public void processEmbeddedDocumentInvalidSearchResults() {
 
-    assertNotNull(documentProcessor);
+    assertNotNull(documentManager);
     try {
 
       when(indexer.search(anyList(), any(String.class), any(String.class))).thenReturn(null);
 
-      documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
+      documentManager.processEmbeddedDocument("collecting-event", "documentId");
       
-      verify(documentProcessor, times(0)).indexDocument(any(String.class), any(String.class));
-      verify(documentProcessor, times(0)).reIndexDocuments(any());
+      verify(documentManager, times(0)).indexDocument(any(String.class), any(String.class));
+      verify(documentManager, times(0)).reIndexDocuments(any());
 
     } catch (SearchApiException e) {
       fail();
@@ -115,17 +113,15 @@ public class DocumentProcessorTest {
   @Test
   public void processEmbeddedDocumentInvalidHits() {
 
-    assertNotNull(documentProcessor);
+    assertNotNull(documentManager);
     try {
-
-      
       when(indexer.search(anyList(), any(String.class), any(String.class))).thenReturn(mockResponse);
       when(mockListHitsJson.isEmpty()).thenReturn(true);
 
-      documentProcessor.processEmbeddedDocument("collecting-event", "documentId");
+      documentManager.processEmbeddedDocument("collecting-event", "documentId");
       
-      verify(documentProcessor, times(0)).indexDocument(any(String.class), any(String.class));
-      verify(documentProcessor, times(0)).reIndexDocuments(any());
+      verify(documentManager, times(0)).indexDocument(any(String.class), any(String.class));
+      verify(documentManager, times(0)).reIndexDocuments(any());
 
     } catch (SearchApiException e) {
       fail();
