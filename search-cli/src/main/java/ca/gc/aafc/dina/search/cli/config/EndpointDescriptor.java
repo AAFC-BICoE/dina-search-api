@@ -20,8 +20,8 @@ public class EndpointDescriptor {
    * @return
    */
   public boolean containsRelationshipsType(String type) {
-    if(relationshipsType == null) {
-       return false;
+    if (relationshipsType == null) {
+      return false;
     }
     return relationshipsType.contains(type);
   }
