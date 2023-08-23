@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * DocumentManager is responsible for:
@@ -104,6 +106,16 @@ public class DocumentManager {
   }
 
   /**
+   * Same as {@link #processEmbeddedDocument(List, String, String)} but for all indices.
+   * @param documentType
+   * @param documentId
+   * @throws SearchApiException
+   */
+  public void processEmbeddedDocument(String documentType, String documentId) throws SearchApiException {
+    processEmbeddedDocument(indexList, documentType, documentId);
+  }
+
+  /**
    * Processing of embedded document will take the reverse direction of the relationships defined
    * in the endpoints.yml
    * For example material-sample --> collecting-event (Means that material-sample contains collecting-event)
@@ -111,11 +123,11 @@ public class DocumentManager {
    * and re-index document with that specific collecting-events embedded.
    * 
    */
-  public void processEmbeddedDocument(String documentType, String documentId) throws SearchApiException {
+  public void processEmbeddedDocument(List<String> indices, String documentType, String documentId) throws SearchApiException {
 
     try {
       // TODO: handle paging
-      SearchResponse<JsonNode> embeddedDocuments = indexer.search(indexList, documentType, documentId);
+      SearchResponse<JsonNode> embeddedDocuments = indexer.search(indices, documentType, documentId);
 
       List<DocumentInfo> documentsToIndex = processSearchResults(embeddedDocuments);
       if (!documentsToIndex.isEmpty()) {
@@ -167,6 +179,20 @@ public class DocumentManager {
       return false;
     }
     return true;
+  }
+
+  /**
+   * Get a list of distinct index name that are using the provided type in relationship.
+   * @param type
+   * @return list of unique index or empty list
+   */
+  public List<String> getIndexForRelationshipType(String type) {
+    return svcEndpointProps.getEndpoints().values()
+        .stream()
+        .filter(endpointDescriptor -> endpointDescriptor.containsRelationshipsType(type))
+        .map(EndpointDescriptor::getIndexName)
+        .distinct()
+        .collect(Collectors.toList());
   }
 
   /**

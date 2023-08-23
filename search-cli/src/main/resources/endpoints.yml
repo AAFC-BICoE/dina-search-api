@@ -13,7 +13,8 @@
 #
 #
 endpoints:
-  material-sample: 
+  material-sample:
+    indexName: dina_material_sample_index
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
     relationships:
       - collectingEvent
@@ -27,14 +28,18 @@ endpoints:
       - assemblages
       - projects
       - hierarchy
-    indexName: dina_material_sample_index
-  metadata: 
-    targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
+    relationshipsType:
+      - collecting-event
+  metadata:
     indexName: dina_object_store_index
+    targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
     relationships:
       - acMetadataCreator
       - dcCreator
       - derivatives
+    relationshipsType:
+      - person
+      - derivative
   person: 
     targetUrl: ${PERSON_URL:http://localhost:8082/api/v1/person}
     indexName: dina_agent_index
