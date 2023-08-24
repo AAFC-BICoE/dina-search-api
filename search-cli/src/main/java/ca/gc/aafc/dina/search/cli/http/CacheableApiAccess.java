@@ -5,8 +5,6 @@ import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Nullable;
-
 /**
  * Adds an indirection around {@link OpenIDHttpClient} to allow caching of the API response.
  *
@@ -22,8 +20,15 @@ public class CacheableApiAccess {
     client = aClient;
   }
 
+  /**
+   *
+   * @param endpointDescriptor
+   * @param objectId can be null
+   * @return
+   * @throws SearchApiException
+   */
   @Cacheable(cacheNames = CACHE_NAME)
-  public String getFromApi(EndpointDescriptor endpointDescriptor, @Nullable String objectId)
+  public String getFromApi(EndpointDescriptor endpointDescriptor, String objectId)
       throws SearchApiException {
     return client.getDataFromUrl(endpointDescriptor, objectId);
   }
