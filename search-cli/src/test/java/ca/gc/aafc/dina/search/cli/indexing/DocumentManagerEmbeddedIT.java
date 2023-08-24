@@ -1,12 +1,12 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
+import ca.gc.aafc.dina.search.cli.TestConstants;
 import ca.gc.aafc.dina.search.cli.config.CacheConfiguration;
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.CacheableApiAccess;
-import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
 import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
 import ca.gc.aafc.dina.search.cli.utils.MockServerTestUtils;
@@ -28,15 +28,15 @@ import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.mock.Expectation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -45,13 +45,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
+import ca.gc.aafc.dina.testsupport.elasticsearch.*;
 
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
+@EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 @ExtendWith(MockServerExtension.class) 
 @MockServerSettings(ports = {1080, 8081, 8082})
 public class DocumentManagerEmbeddedIT {
 
-  public static final String DINA_AGENT_INDEX = "dina_agent_index";
   private static final String EMBEDDED_ORG_NAME = "Integration";
   private static final String EMBEDDED_ORG_NAME_AFTER_UPDATE = "Integration Updated";
 
@@ -81,9 +82,6 @@ public class DocumentManagerEmbeddedIT {
   private static final String EMBEDDED_DOCUMENT_INCLUDED_TYPE = "organization";
   private static final String EMBEDDED_DOCUMENT_INCLUDED_ID = "f9e10a21-d8b6-4d9b-8c99-953bdc940862";
 
-  @Autowired 
-  private RestTemplateBuilder builder;
-  
   // Document to index into elastic search
   private static final Path EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH = Path.of("src/test/resources/person_embedded_assemble_response.json");
 
@@ -112,7 +110,7 @@ public class DocumentManagerEmbeddedIT {
   }
 
   @DisplayName("Integration Test process embedded document")
-  @SneakyThrows({ IOException.class, URISyntaxException.class, InterruptedException.class })
+  @SneakyThrows({ IOException.class, InterruptedException.class })
   @Test
   public void processEmbedded_Document() {
     MockKeyCloakAuthentication mockKeycloakAuthentication = new MockKeyCloakAuthentication(client);
@@ -134,13 +132,12 @@ public class DocumentManagerEmbeddedIT {
         EMBEDDED_DOCUMENT_INCLUDED_ID, List.of(), EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH);
 
     // For testing, we will be using the agent index.
-    ElasticSearchTestUtils.sendMapping(builder, "src/test/resources/elastic-configurator-settings/agent-index/dina_agent_index_settings.json",
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_AGENT_INDEX);
+    ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
 
     // Agent index can be skipped since it already has been added above.
     Set<String> indices = serviceEndpointProperties.getEndpoints().values().stream()
         .map(EndpointDescriptor::getIndexName)
-        .filter(index -> !DINA_AGENT_INDEX.equals(index))
+        .filter(index -> !TestConstants.AGENT_INDEX.equals(index))
             .collect(Collectors.toSet());
 
     // The other indices must exist, but can be empty for this test. Use the endpoint to generate them.
@@ -152,7 +149,7 @@ public class DocumentManagerEmbeddedIT {
     assertNotNull(docToIndex);
 
     try {
-      OperationStatus result = documentIndexer.indexDocument(EMBEDDED_DOCUMENT_ID, docToIndex, DINA_AGENT_INDEX);
+      OperationStatus result = documentIndexer.indexDocument(EMBEDDED_DOCUMENT_ID, docToIndex, TestConstants.AGENT_INDEX);
       assertNotNull(result);
       assertEquals(OperationStatus.SUCCEEDED, result);
     } catch (SearchApiException e) {
@@ -160,12 +157,12 @@ public class DocumentManagerEmbeddedIT {
     }
 
     // allows to wait until we get the correct count
-    int foundDocument = ElasticSearchTestUtils
-        .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
+    int foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
+        .searchForCount(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
     assertEquals(1, foundDocument);
 
-    SearchResponse<JsonNode> searchResponse = ElasticSearchTestUtils.search(elasticSearchClient, DINA_AGENT_INDEX,
-        "data.id", EMBEDDED_DOCUMENT_ID);
+    SearchResponse<JsonNode> searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
+        .search(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
     JsonNode docFromElasticSearch = searchResponse.hits().hits().get(0).source();
@@ -184,13 +181,13 @@ public class DocumentManagerEmbeddedIT {
     }
 
     // Retrieve the document from elasticsearch
-    foundDocument = ElasticSearchTestUtils
-        .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
+    foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
+        .searchForCount(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
     assertEquals(1, foundDocument);
 
     // Get the document straight from Elastic search, we should have the
     // embedded organization updated
-    searchResponse = ElasticSearchTestUtils.search(elasticSearchClient, DINA_AGENT_INDEX,
+    searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(elasticSearchClient, TestConstants.AGENT_INDEX,
         "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
@@ -224,13 +221,13 @@ public class DocumentManagerEmbeddedIT {
     }
 
     // Retrieve the document from elasticsearch
-    foundDocument = ElasticSearchTestUtils
-        .searchForCount(elasticSearchClient, DINA_AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
+    foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
+        .searchForCount(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
     assertEquals(1, foundDocument);
 
     // Get the document straight from Elastic search, we should have the
     // embedded organization updated
-    searchResponse = ElasticSearchTestUtils.search(elasticSearchClient, DINA_AGENT_INDEX,
+    searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(elasticSearchClient, TestConstants.AGENT_INDEX,
         "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
@@ -252,7 +249,7 @@ public class DocumentManagerEmbeddedIT {
       if (StringUtils.isNotBlank (desc.getIndexName())) {
 
         // Agent index can be skipped since it already has been added above.
-        if (desc.getIndexName().trim().equals(DINA_AGENT_INDEX)) return;
+        if (desc.getIndexName().trim().equals(TestConstants.AGENT_INDEX)) return;
 
         // Create the indices in elastic search.
         try {
@@ -275,7 +272,7 @@ public class DocumentManagerEmbeddedIT {
    * @return
    */
   @SneakyThrows
-  private String getCacheableApiAccessCacheKey(EndpointDescriptor endpointDescriptor, String objectId) {
+  public static String getCacheableApiAccessCacheKey(EndpointDescriptor endpointDescriptor, String objectId) {
     CacheConfiguration.MethodBasedKeyGenerator keyGen = new CacheConfiguration.MethodBasedKeyGenerator();
     // dummy instance only used to generate the key
     CacheableApiAccess cacheableApiAccess = new CacheableApiAccess(null);

@@ -1,6 +1,6 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
-import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
+import ca.gc.aafc.dina.search.cli.TestConstants;
 import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.AfterAll;
@@ -8,8 +8,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
@@ -28,9 +29,11 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
 
+import ca.gc.aafc.dina.testsupport.elasticsearch.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
+@EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 public class DinaIndexDocumentIT {
 
   private static final String INDEX_NAME = "index";
@@ -42,9 +45,6 @@ public class DinaIndexDocumentIT {
 
   // Template of response to be receive after process embedded
   private static final Path GET_PERSON_RESPONSE_PATH = Path.of("src/test/resources/get_person_response.json");
-
-  @Autowired
-  protected RestTemplateBuilder builder;
 
   @Autowired
   private DocumentIndexer documentIndexer;
@@ -79,8 +79,7 @@ public class DinaIndexDocumentIT {
   @Test
   public void indexDocumentTestDataMappingDetection() throws IOException, URISyntaxException, SearchApiException {
     // For testing, we will be using the agent index where we set "date_detection": false
-    ElasticSearchTestUtils.sendMapping(builder, "src/test/resources/elastic-configurator-settings/agent-index/dina_agent_index_settings.json",
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DocumentManagerEmbeddedIT.DINA_AGENT_INDEX);
+    ElasticSearchTestUtils.createIndex(client, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
 
     String docToIndex = Files.readString(GET_PERSON_RESPONSE_PATH);
     assertNotNull(docToIndex);
@@ -90,14 +89,14 @@ public class DinaIndexDocumentIT {
     // here we force an incorrect value that would match the dynamic_date_formats (if enable) so the dynamic_mapping
     // would select date instead of text
     attributes.replace("webpage", "2022-12-12");
-    OperationStatus result = documentIndexer.indexDocument(UUID.randomUUID().toString(), docAsMap, DocumentManagerEmbeddedIT.DINA_AGENT_INDEX);
+    OperationStatus result = documentIndexer.indexDocument(UUID.randomUUID().toString(), docAsMap, TestConstants.AGENT_INDEX);
     assertNotNull(result);
     assertEquals(OperationStatus.SUCCEEDED, result);
 
     // make sure we can index the real document now and that the type of "webpage" is not date
     JsonNode docToIndex2 = JsonTestUtils.readJson(Files.readString(GET_PERSON_RESPONSE_PATH));
     assertNotNull(docToIndex2);
-    result = documentIndexer.indexDocument(UUID.randomUUID().toString(), docToIndex2, DocumentManagerEmbeddedIT.DINA_AGENT_INDEX);
+    result = documentIndexer.indexDocument(UUID.randomUUID().toString(), docToIndex2, TestConstants.AGENT_INDEX);
     assertNotNull(result);
     assertEquals(OperationStatus.SUCCEEDED, result);
   }
@@ -115,7 +114,7 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = ElasticSearchTestUtils
+      int foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
           .searchForCount(client, INDEX_NAME, "name", INITIAL_MSG, 1);
       assertEquals(1, foundDocument);
 
@@ -133,7 +132,7 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = ElasticSearchTestUtils
+      int foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
           .searchForCount(client, INDEX_NAME, "name", INITIAL_MSG, 1);
       assertEquals(1, foundDocument);
 
@@ -142,7 +141,7 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve updated document from elasticsearch
-      foundDocument = ElasticSearchTestUtils
+      foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
           .searchForCount(client, INDEX_NAME, "name", UPDATED_MSG, 1);
       assertEquals(1, foundDocument);
 
@@ -163,7 +162,7 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve the document from elasticsearch
-      int foundDocument = ElasticSearchTestUtils
+      int foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
           .searchForCount(client, INDEX_NAME, "name", INITIAL_MSG, 1);
       assertEquals(1, foundDocument);
 
@@ -173,7 +172,7 @@ public class DinaIndexDocumentIT {
       assertEquals(OperationStatus.SUCCEEDED, result);
 
       // Retrieve deleted document from elasticsearch
-      foundDocument = ElasticSearchTestUtils
+      foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
           .searchForCount(client, INDEX_NAME, "name", INITIAL_MSG, 0);
       assertEquals(0, foundDocument);
 

@@ -1,0 +1,59 @@
+{
+  "data": {
+    "id": "bdae3b3a-b5a6-4b36-89dc-52634f9e044f",
+    "type": "person",
+    "attributes": {
+      "displayName": "test user",
+      "email": "test@canada.ca",
+      "createdBy": "test user",
+      "createdOn": "1985-04-12T23:20:50.52Z",
+      "givenNames": "Jane",
+      "familyNames": "Doe",
+      "webpage": "https://github.com/DINA-Web",
+      "remarks": "this is a mock remark",
+      "aliases": [
+        "Jane Roe",
+        "Janie Doe"
+      ],
+      "identifiers": [
+        {
+          "type": "WIKIDATA",
+          "uri": "https://www.wikidata.org/wiki/Q51044"
+        },
+        {
+          "type": "WIKIDATA",
+          "uri": "https://www.wikidata.org/wiki/Q2013"
+        }
+      ]
+    },
+    "relationships": {
+      "organizations": {
+        "data": [
+          {
+            "type": "organization",
+            "id": "3c7018ce-cf47-418a-9a15-bf5867a6c320"
+          }
+        ]
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "3c7018ce-cf47-418a-9a15-bf5867a6c320",
+      "type": "organization",
+      "attributes": {
+        "displayName": "test org"
+      }
+    }
+  ],
+  "meta": {
+    "totalResourceCount": 1,
+    "external": [
+      {
+        "type": "person",
+        "href": "Agent/api/v1/person"
+      }
+    ],
+    "moduleVersion": "0.14"
+  }
+}

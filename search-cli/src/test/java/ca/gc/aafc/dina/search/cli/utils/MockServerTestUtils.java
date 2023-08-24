@@ -24,7 +24,7 @@ public class MockServerTestUtils {
    * Adds a mock request to the provided MockServer client to respond with the content of the provided JSON file.
    *
    * @param client           The MockServer client instance.
-   * @param authMock         The MockKeyCloakAuthentication instance for setting up authentication.
+   * @param mockKeycloakAuthentication         The MockKeyCloakAuthentication instance for setting up authentication.
    * @param docType          The type of the document.
    * @param docIdentifier    The identifier of the document.
    * @param queryParams      The list of query parameters to be added to the request.

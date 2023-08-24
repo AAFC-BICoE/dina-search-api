@@ -5,19 +5,8 @@ import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Collections;
 
 /**
  * Utility class to simply tests with ElasticSearch.
@@ -29,14 +18,6 @@ public class ElasticSearchTestUtils {
 
   private ElasticSearchTestUtils() {
     // utility class
-  }
-
-  public static HttpHeaders buildJsonHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
   }
 
   /**
@@ -61,16 +42,6 @@ public class ElasticSearchTestUtils {
       nCount++;
     }
     return foundDocument;
-  }
-
-  public static void sendMapping(RestTemplateBuilder builder, String mappingJsonFile, String esHttpHostAddress, String indexName) throws IOException, URISyntaxException {
-    String esSettings = Files.readString(Path.of(mappingJsonFile));
-
-    URI uri = new URI("http://" + esHttpHostAddress + "/" + indexName);
-
-    HttpEntity<?> entity = new HttpEntity<>(esSettings, buildJsonHeaders());
-    RestTemplate restTemplate = builder.build();
-    restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
   }
 
   public static SearchResponse<JsonNode> search(ElasticsearchClient client, String indexName, String fieldName, String searchValue)
@@ -100,7 +71,5 @@ public class ElasticSearchTestUtils {
     );
     return (int) countResponse.count();
   }
-
-
 
 }
