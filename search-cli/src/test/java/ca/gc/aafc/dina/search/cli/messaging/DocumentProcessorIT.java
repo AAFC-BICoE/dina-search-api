@@ -42,7 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     "messaging.isConsumer=true"
 })
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
-@EnableRabbit
 @ExtendWith(MockServerExtension.class)
 @MockServerSettings(ports = { 1080, 8081, 8082 })
 public class DocumentProcessorIT {
