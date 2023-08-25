@@ -21,11 +21,12 @@ public class CacheableApiAccess {
   }
 
   /**
+   * Retrieves data from the API based on the provided endpoint descriptor and object ID.
    *
-   * @param endpointDescriptor
-   * @param objectId can be null
-   * @return
-   * @throws SearchApiException
+   * @param endpointDescriptor The descriptor for the API endpoint.
+   * @param objectId           The ID of the object to retrieve data for. Can be null.
+   * @return The data retrieved from the API.
+   * @throws SearchApiException If an error occurs while interacting with the Search API.
    */
   @Cacheable(cacheNames = CACHE_NAME)
   public String getFromApi(EndpointDescriptor endpointDescriptor, String objectId)
