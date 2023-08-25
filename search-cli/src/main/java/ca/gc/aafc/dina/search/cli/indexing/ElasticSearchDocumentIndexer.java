@@ -140,7 +140,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
           .storedFields(SEARCH_FIELDS_TO_RETURN)
           .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(SEARCH_FIELDS_TO_RETURN))), JsonNode.class);
 
-    } catch (IOException ex) {
+    } catch (IOException | ElasticsearchException ex) {
       throw new SearchApiException("Error during search processing", ex);
     }
   }
