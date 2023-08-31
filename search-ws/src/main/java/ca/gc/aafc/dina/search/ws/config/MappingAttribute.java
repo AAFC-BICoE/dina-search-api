@@ -11,7 +11,7 @@ import javax.validation.constraints.NotBlank;
 @Setter
 public class MappingAttribute {
 
-  public enum DateSubtype {LOCAL_DATE, LOCAL_DATE_TIME, DATE_TIME, DATE_TIME_OPTIONAL_TZ}
+  public enum DateSubtype { LOCAL_DATE, LOCAL_DATE_TIME, DATE_TIME, DATE_TIME_OPTIONAL_TZ }
 
   @NotBlank
   private String name;

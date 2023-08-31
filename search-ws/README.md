@@ -142,7 +142,8 @@ Attributes section is made of the following fields
 - `fields` = Elasticsearch fields of the attribute if [multi-fields](https://www.elastic.co/guide/en/elasticsearch/reference/current/multi-fields.html) is used
 - `path` = Relative path to get to the attribute value within a document. Fully qualified path is built from 
            the relationship path + attribute path + attribute name (path + path + name)
-- `subtype` = More specific type on top of Elasticsearch type. Mostly used for dates to know if the time and timezone can be sued for search.
+- `subtype` = More specific type on top of Elasticsearch type. Mostly used for dates to know if the time and timezone can be used for search. Possible values: `local_date`, `local_date_time`, `date_time` and `date_time_optional_tz`
+  See [User Guide](https://aafc-bicoe.github.io/dina-documentation/#date-time) for definitions.
 
 ## Examples
 
