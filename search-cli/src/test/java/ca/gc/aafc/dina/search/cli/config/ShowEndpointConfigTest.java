@@ -4,17 +4,24 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import ca.gc.aafc.dina.testsupport.DatabaseSupportService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import ca.gc.aafc.dina.search.cli.commands.ShowEndpointConfig;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 
 /**
  * Unit test for show endpoint cli command.
  */
 @SpringBootTest(properties = { "spring.shell.interactive.enabled=false" })
+@EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 public class ShowEndpointConfigTest {
 
   @Autowired

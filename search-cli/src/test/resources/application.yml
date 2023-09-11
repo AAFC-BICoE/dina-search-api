@@ -2,6 +2,7 @@ spring:
   shell.command.history.enabled: false
   rabbitmq.listener.simple.default-requeue-rejected: false
 keycloak:
+  enabled: false
   openid_auth_server: http://localhost:1080/auth/realms/dina/protocol/openid-connect/token
   client_id: objectstore
   username: cnc-cm

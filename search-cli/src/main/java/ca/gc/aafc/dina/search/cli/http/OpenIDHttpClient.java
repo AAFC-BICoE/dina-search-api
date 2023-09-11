@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nullable;
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -73,7 +71,7 @@ public class OpenIDHttpClient {
    * 
    * @throws SearchApiException in case of communication errors.
    */
-  public String getDataFromUrl(EndpointDescriptor endpointDescriptor, @Nullable String objectId)
+  public String getDataFromUrl(EndpointDescriptor endpointDescriptor, String objectId)
       throws SearchApiException {
 
     HttpUrl route = validateArgumentAndCreateRoute(endpointDescriptor, objectId);

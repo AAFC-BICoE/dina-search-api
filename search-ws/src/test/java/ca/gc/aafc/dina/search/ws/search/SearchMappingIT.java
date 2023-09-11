@@ -83,6 +83,12 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
         containsInAnyOrder("prefix_reverse", "prefix", "infix", "keyword")
     );
 
+    //check date subtype
+    IndexMappingResponse.Attribute preparationDateMapping = findAttributeByName(response, "preparationDate");
+    assertNotNull(preparationDateMapping);
+    assertEquals("date", preparationDateMapping.getType());
+    assertEquals("local_date", preparationDateMapping.getSubtype());
+
     // test behavior of non-existing index
     assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
   }

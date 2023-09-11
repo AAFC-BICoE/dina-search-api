@@ -19,6 +19,7 @@ mappings:
       type: text
     - name: preparationDate
       type: date
+      dateSubtype: LOCAL_DATE
     - name: managedAttributes
       type: object
     - name: hostOrganism.name
@@ -109,6 +110,9 @@ mappings:
       type: text
     - name: originalFilename
       type: text
+    - name: fileExtension
+      type: text
+      distinctTermAgg: true
     - name: createdOn
       type: date
     - name: dcType
@@ -120,6 +124,12 @@ mappings:
     - name: xmpRightsWebStatement
       type: text
       distinctTermAgg: true
+    - name: xmpMetadataDate
+      type: date
+    - name: publiclyReleasable
+      type: boolean
+    - name: acTags
+      type: text
     - name: managedAttributes
       type: object
   

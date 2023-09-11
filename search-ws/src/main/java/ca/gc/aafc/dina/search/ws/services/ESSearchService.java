@@ -341,6 +341,7 @@ public class ESSearchService implements SearchService {
               .type(type)
               .fields(CollectionUtils.isEmpty(fields) ? null : fields)
               .distinctTermAgg(mappingAttribute.getDistinctTermAgg())
+              .subtype(mappingAttribute.getDateSubtype() != null ? mappingAttribute.getDateSubtype().toString().toLowerCase() : null)
               .build();
     }
     return null;

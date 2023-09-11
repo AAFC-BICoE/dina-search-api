@@ -19,6 +19,8 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -40,6 +42,7 @@ import static org.mockito.Mockito.verify;
     "rabbitmq.host=localhost",
     "rabbitmq.port=15672"
   })
+@EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 @EnableRabbit
 class DinaMessageProducerConsumerIT {
 
