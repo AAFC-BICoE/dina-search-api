@@ -36,12 +36,15 @@ public class IndexMappingResponse {
     @JsonProperty("distinct_term_agg")
     private final Boolean distinctTermAgg;
 
-    private Attribute(String name, String type, Set<String> fields, String path, Boolean distinctTermAgg) {
+    private final String subtype;
+
+    private Attribute(String name, String type, Set<String> fields, String path, Boolean distinctTermAgg, String subtype) {
       this.name = name;
       this.type = type;
       this.fields = fields;
       this.path = path;
       this.distinctTermAgg = distinctTermAgg;
+      this.subtype = subtype;
     }
   }
 

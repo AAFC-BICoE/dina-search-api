@@ -11,12 +11,14 @@ import org.springframework.stereotype.Component;
 import ca.gc.aafc.dina.search.common.config.YamlPropertySourceFactory;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 
 @Component
 @ConfigurationProperties
 @PropertySource(value = "classpath:mappings.yml", factory = YamlPropertySourceFactory.class)
 @RequiredArgsConstructor
 @Getter
+@Validated
 public class MappingObjectAttributes {
   private final Map<String, List<MappingAttribute>> mappings;
 

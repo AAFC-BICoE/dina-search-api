@@ -19,6 +19,7 @@ mappings:
       type: text
     - name: preparationDate
       type: date
+      dateSubtype: LOCAL_DATE
     - name: managedAttributes
       type: object
     - name: hostOrganism.name
