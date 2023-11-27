@@ -29,6 +29,8 @@ mappings:
     - name: restrictionFieldsExtension
       type: object
       distinctTermAgg: true
+    - name: publiclyReleasable
+      type: boolean
 
   collecting-event:
     - name: createdBy
@@ -102,8 +104,6 @@ mappings:
       distinctTermAgg: true
 
   metadata:
-    - name: bucket
-      type: text
     - name: createdBy
       type: text
     - name: acCaption
@@ -125,6 +125,8 @@ mappings:
       type: text
       distinctTermAgg: true
     - name: xmpMetadataDate
+      type: date
+    - name: acDigitizationDate
       type: date
     - name: publiclyReleasable
       type: boolean
