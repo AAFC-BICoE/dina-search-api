@@ -82,6 +82,7 @@ public class SearchController {
   @PostMapping(path = "/count", consumes = "application/json")
   public ResponseEntity<?> count(@RequestBody String query, @RequestParam String indexName) {
     log.info("indexName={}, query={}", indexName, query);
+
     try {
       validateHtmlSafe(query);
       validateAlphanumericInputs(indexName);
