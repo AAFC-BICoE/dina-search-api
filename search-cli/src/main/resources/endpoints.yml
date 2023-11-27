@@ -3,7 +3,7 @@
 # Endpoints are closely related to the JSONSpec DINA objects defined in
 # DINA schemas.
 #
-# Entries declared in the relationships section correspond to objects to
+# Entries declared in the relationships' section correspond to objects to
 # be included during the retrieval of their parent object.
 #
 # For example in the material-sample example, without an entry for collectingEvent
@@ -13,7 +13,8 @@
 #
 #
 endpoints:
-  material-sample: 
+  material-sample:
+    indexName: dina_material_sample_index
     targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
     relationships:
       - collectingEvent
@@ -26,21 +27,26 @@ endpoints:
       - preparationMethod
       - assemblages
       - projects
-    indexName: dina_material_sample_index       
-  metadata: 
-    targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
+      - hierarchy
+    relationshipsType:
+      - collecting-event
+  metadata:
     indexName: dina_object_store_index
+    targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
     relationships:
       - acMetadataCreator
       - dcCreator
       - derivatives
-  organization: 
-    targetUrl: ${ORGANIZATION_URL:http://localhost:8082/api/v1/organization}
+    relationshipsType:
+      - person
+      - derivative
   person: 
     targetUrl: ${PERSON_URL:http://localhost:8082/api/v1/person}
     indexName: dina_agent_index
     relationships:
       - organizations
+    relationshipsType:
+      - organization
   storage-unit:
     targetUrl: ${STORAGE_UNIT_URL:http://localhost:8085/api/v1/storage-unit}
     indexName: dina_storage_index
@@ -53,3 +59,4 @@ endpoints:
     indexName: dina_loan_transaction_index
     relationships:
       - involvedAgents
+      - materialSamples

@@ -1,64 +1,70 @@
 package ca.gc.aafc.dina.search.cli.messaging;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
-
-import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
+import ca.gc.aafc.dina.search.cli.TestConstants;
+import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
+import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
+import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
+import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
+import ca.gc.aafc.dina.search.cli.utils.MockServerTestUtils;
+import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
+import ca.gc.aafc.dina.search.messaging.types.DocumentOperationType;
+import ca.gc.aafc.dina.testsupport.TestResourceHelper;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import com.fasterxml.jackson.databind.JsonNode;
+import lombok.SneakyThrows;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
+import org.mockserver.mock.Expectation;
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
-import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
-import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
-
-import lombok.SneakyThrows;
+import java.io.IOException;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@SpringBootTest(properties = "spring.shell.interactive.enabled=false")
-@ExtendWith(MockServerExtension.class) 
-@MockServerSettings(ports = {1080, 8081, 8082})
+@SpringBootTest(properties = {
+    "spring.shell.interactive.enabled=false",
+    "messaging.isProducer=true",
+    "messaging.isConsumer=true"
+})
+@EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
+@ExtendWith(MockServerExtension.class)
+@MockServerSettings(ports = { 1080, 8081, 8082 })
 public class DocumentProcessorIT {
+
+  // Organization related constants:
+  private static final String ORGANIZATION_DOCUMENT_ID = "f9e10a21-d8b6-4d9b-8c99-953bdc940862";
+  private static final String ORGANIZATION_DOCUMENT_TYPE = "organization";
 
   private ClientAndServer client;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+  @Autowired
+  private ElasticsearchClient elasticSearchClient;
 
   @Autowired
   private DocumentProcessor documentProcessor;
 
-  private static final String DOCUMENT_TYPE = "person";
-  private static final String DOCUMENT_ID = "9df388de-71b5-45be-9613-b70674439773";
-  private static final String DOCUMENT_INCLUDE_TYPE = "organization";
-  private static final String DOCUMENT_INCLUDE_ID = "3c7018ce-cf47-418a-9a15-bf5867a6c320";
-
-  private static final String TEST_USER = "test user";
-
-  private static final Path PERSON_RESPONSE_PATH = Path.of("src/test/resources/get_person_response.json");
-  private static final Path ORGANIZATION_RESPONSE_PATH = Path.of("src/test/resources/get_organization_response.json");
+  @Container
+  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
 
   @BeforeAll
   static void beforeAll() {
+    // Start elastic search container.
     ELASTICSEARCH_CONTAINER.start();
-
-    assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
-    assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
   }
 
   @AfterAll
@@ -71,45 +77,54 @@ public class DocumentProcessorIT {
     this.client = clientAndServer;
   }
 
-  @DisplayName("Integration Test index document")
-  @SneakyThrows
   @Test
-  public void processMessage_withIncludedData_properlyAssembledMessage() {
-
+  @SneakyThrows({ IOException.class, InterruptedException.class })
+  public void reIndexRelatedDocuments() {
     MockKeyCloakAuthentication mockKeycloakAuthentication = new MockKeyCloakAuthentication(client);
 
-    // Mock the person request.
-    client.when(mockKeycloakAuthentication.setupMockRequest()
-        .withMethod("GET")
-        .withPath("/api/v1/" + DOCUMENT_TYPE + "/" + DOCUMENT_ID)
-        .withQueryStringParameter("include", "organizations"))
-        .respond(mockKeycloakAuthentication.setupMockResponse()
-            .withStatusCode(200)
-            .withBody(Files.readString(PERSON_RESPONSE_PATH))
-            .withDelay(TimeUnit.SECONDS, 1));
+    // Mock the person endpoint
+    Expectation[] expectations = MockServerTestUtils.addMockGetResponse(client, mockKeycloakAuthentication,
+        TestConstants.PERSON_DOCUMENT_TYPE, TestConstants.PERSON_DOCUMENT_ID,
+        List.of(Pair.of("include", "organizations")), TestConstants.PERSON_RESPONSE_PATH);
 
-    // Mock the organization request.
-    client.when(mockKeycloakAuthentication.setupMockRequest()
-        .withMethod("GET")
-        .withPath("/api/v1/" + DOCUMENT_INCLUDE_TYPE + "/" + DOCUMENT_INCLUDE_ID))
-        .respond(mockKeycloakAuthentication.setupMockResponse()
-            .withStatusCode(200)
-            .withBody(Files.readString(ORGANIZATION_RESPONSE_PATH))
-            .withDelay(TimeUnit.SECONDS, 1));
+    // Create the agent index
+    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
+    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.OBJECT_STORE_INDEX, TestConstants.OBJECT_STORE_INDEX_MAPPING_FILE);
 
-    // Create a request for the document processor.
-    JsonNode jsonMessage = documentProcessor.indexDocument(DOCUMENT_TYPE, DOCUMENT_ID);
+    // index a metadata to trigger dynamic mapping
+    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.indexDocument(elasticSearchClient, TestConstants.OBJECT_STORE_INDEX, "2",
+        TestResourceHelper.readContentAsString("get_metadata_document_response.json"));
 
-    // Test to ensure the person message was properly assembled.
-    assertEquals(DOCUMENT_ID, jsonMessage.at("/data/id").asText());
-    assertEquals(DOCUMENT_INCLUDE_ID, jsonMessage.at("/included/0/id").asText());
-    assertEquals(TEST_USER, jsonMessage.at("/data/attributes/displayName").asText());
+    // Send message to index the person with an organization relationship.
+    DocumentOperationNotification personNotification = new DocumentOperationNotification(false, TestConstants.PERSON_DOCUMENT_TYPE,
+        TestConstants.PERSON_DOCUMENT_ID, DocumentOperationType.ADD);
+    documentProcessor.processMessage(personNotification);
 
-    // make sure meta section is there
-    assertFalse(jsonMessage.at("/meta").isMissingNode());
+    // Wait until that person record has been indexed:
+    int foundDocument = ElasticSearchTestUtils
+        .searchForCount(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", TestConstants.PERSON_DOCUMENT_ID, 1);
+    assertEquals(1, foundDocument);
 
-    // Test to ensure included organization was properly assembled.
-    assertEquals(TEST_USER, jsonMessage.at("/included/0/attributes/createdBy").asText());
+    // remove the previous mock response
+    client.clear(expectations[0].getHttpRequest());
+    MockServerTestUtils.addMockGetResponse(client, mockKeycloakAuthentication, TestConstants.PERSON_DOCUMENT_TYPE,
+        TestConstants.PERSON_DOCUMENT_ID,
+        List.of(Pair.of("include", "organizations")), TestConstants.PERSON_ORG_RESPONSE_PATH);
+
+    // Send message to index the organization, which should trigger the person to re-update.
+    DocumentOperationNotification organizationNotification = new DocumentOperationNotification(false, ORGANIZATION_DOCUMENT_TYPE,
+        ORGANIZATION_DOCUMENT_ID, DocumentOperationType.ADD);
+    documentProcessor.processMessage(organizationNotification);
+
+    Thread.sleep(1000);
+
+    //get_metadata_document_response.json
+    SearchResponse<JsonNode> searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(elasticSearchClient, TestConstants.AGENT_INDEX,
+        "data.id", TestConstants.PERSON_DOCUMENT_ID);
+
+    assertEquals(1, searchResponse.hits().hits().size());
+    JsonNode doc = searchResponse.hits().hits().get(0).source();
+
+    assertEquals("test org", doc.at("/included/0/attributes/displayName").asText());
   }
-
 }

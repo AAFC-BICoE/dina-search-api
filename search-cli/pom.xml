@@ -5,7 +5,7 @@
   <parent>
     <artifactId>search-api-parent</artifactId>
     <groupId>io.github.aafc-bicoe</groupId>
-    <version>0.22-SNAPSHOT</version>
+    <version>0.27-SNAPSHOT</version>
   </parent>
 
   <artifactId>search-cli</artifactId>
@@ -13,7 +13,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spring.shell.version>2.1.1</spring.shell.version>
+    <spring.shell.version>2.1.8</spring.shell.version>
     <okhttp.version>4.9.0</okhttp.version>
     <java-jwt.version>3.11.0</java-jwt.version>
     <json-path.version>2.5.0</json-path.version>
@@ -29,7 +29,7 @@
     <dependency>
       <groupId>io.github.aafc-bicoe</groupId>
       <artifactId>search-messaging</artifactId>
-      <version>0.22-SNAPSHOT</version>
+      <version>0.27-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.shell</groupId>
@@ -124,6 +124,12 @@
       <groupId>org.testcontainers</groupId>
       <artifactId>elasticsearch</artifactId>
       <version>${testcontainers.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.aafc-bicoe</groupId>
+      <artifactId>dina-test-support</artifactId>
+      <version>${dina-base-api.version}</version>
       <scope>test</scope>
     </dependency>
   

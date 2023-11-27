@@ -2,10 +2,35 @@
   "settings": {
     "index": {
       "number_of_shards": "1",
-      "number_of_replicas": "1"
+      "number_of_replicas": "1",
+      "max_ngram_diff": "10"
+    },
+    "analysis": {
+      "analyzer": {
+        "ngram_analyzer": {
+          "tokenizer": "ngram_tokenizer"
+        },
+        "keyword_lowercase_analyzer" : {
+          "tokenizer": "keyword",
+          "filter": [ "lowercase" ]
+        },
+        "keyword_lowercase_reverse_analyzer" : {
+          "tokenizer": "keyword",
+          "filter": [ "lowercase", "reverse" ]
+        }
+      },
+      "tokenizer": {
+        "ngram_tokenizer": {
+          "type": "ngram",
+          "min_gram": 3,
+          "max_gram": 10
+        }
+      }
     }
   },
   "mappings": {
+    "date_detection": true,
+    "numeric_detection": true,
     "dynamic_templates": [
       {
         "includes_as_nested": {
@@ -31,6 +56,14 @@
           "match":   "type",
           "mapping": {
             "type": "keyword"
+          }
+        }
+      },
+      {
+        "verbatim_as_text": {
+          "match": "*verbatim*",
+          "mapping": {
+            "type": "text"
           }
         }
       }
@@ -89,6 +122,27 @@
                   "keyword": {
                     "type": "keyword",
                     "ignore_above": 256
+                  },
+                  "prefix": {
+                    "type": "text",
+                    "analyzer": "keyword_lowercase_analyzer",
+                    "index_prefixes": {
+                      "min_chars" : 1,
+                      "max_chars" : 10
+                    }
+                  },
+                  "infix": {
+                    "type": "text",
+                    "analyzer": "ngram_analyzer",
+                    "search_analyzer": "standard"
+                  },
+                  "prefix_reverse": {
+                    "type": "text",
+                    "analyzer": "keyword_lowercase_reverse_analyzer",
+                    "index_prefixes": {
+                      "min_chars" : 1,
+                      "max_chars" : 10
+                    }
                   }
                 }
               },
@@ -179,21 +233,19 @@
               "endEventDateTime": {
                 "type": "date"
               },
-              "verbatimDeterminer": {
-                "type": "text",
-                "fields": {
-                  "autocomplete": {
-                    "type": "search_as_you_type",
-                    "max_shingle_size": 3
+              "hierarchy": {
+                "type": "nested",
+                "properties": {
+                  "uuid": {
+                    "type": "keyword"
                   },
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
+                  "name": {
+                    "type": "keyword"
+                  },
+                  "rank": {
+                    "type": "integer"
                   }
                 }
-              },
-              "determination": {
-                "type": "object"
               }
             }
           },
@@ -261,6 +313,82 @@
                     }
                   }
                 }
+              },
+              "preparationMethod": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "preparation-method"
+                      }
+                    }
+                  }
+                }
+              },
+              "assemblages": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "assemblage"
+                      }
+                    }
+                  }
+                }
+              },
+              "projects": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "project"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "included" : {
+        "type": "nested",
+        "include_in_parent" : true,
+        "properties" : {
+          "attributes" : {
+            "properties" : {
+              "dwcRecordedBy": {
+                "type": "text",
+                "fields": {
+                  "autocomplete": {
+                    "type": "search_as_you_type",
+                    "max_shingle_size": 3
+                  },
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "determination" : {
+                "properties" : {
+                  "verbatimDeterminer": {
+                    "type": "text",
+                    "fields": {
+                      "autocomplete": {
+                        "type": "search_as_you_type",
+                        "max_shingle_size": 3
+                      },
+                      "keyword": {
+                        "type": "keyword",
+                        "ignore_above": 256
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -276,6 +404,15 @@
                 "ignore_above": 256
               }
             }
+          }
+        }
+      },
+      "nonjsonapi" : {
+        "type" : "text",
+        "fields" : {
+          "keyword" : {
+            "type" : "keyword",
+            "ignore_above" : 256
           }
         }
       }

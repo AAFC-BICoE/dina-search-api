@@ -6,6 +6,8 @@
     }
   },
   "mappings": {
+    "date_detection": true,
+    "numeric_detection": true,
     "dynamic_templates": [
       {
         "includes_as_nested": {
@@ -31,6 +33,14 @@
           "match":   "type",
           "mapping": {
             "type": "keyword"
+          }
+        }
+      },
+      {
+        "verbatim_as_text": {
+          "match": "*verbatim*",
+          "mapping": {
+            "type": "text"
           }
         }
       }
@@ -184,6 +194,20 @@
               },
               "endEventDateTime": {
                 "type": "date"
+              },
+              "hierarchy": {
+                "type": "nested",
+                "properties": {
+                  "uuid": {
+                    "type": "keyword"
+                  },
+                  "name": {
+                    "type": "keyword"
+                  },
+                  "rank": {
+                    "type": "integer"
+                  }
+                }
               }
             }
           },

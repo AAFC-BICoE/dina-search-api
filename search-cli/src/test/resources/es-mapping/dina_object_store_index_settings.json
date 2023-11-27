@@ -6,13 +6,13 @@
     }
   },
   "mappings": {
-    "date_detection": true,
-    "numeric_detection": true,
+    "date_detection": false,
+    "numeric_detection": false,
     "dynamic_templates": [
       {
         "includes_as_nested": {
           "match_mapping_type": "object",
-          "match": "included",
+          "match":   "included",
           "mapping": {
             "type": "nested"
           }
@@ -21,7 +21,7 @@
       {
         "id_as_keywords": {
           "match_mapping_type": "string",
-          "match": "id",
+          "match":   "id",
           "mapping": {
             "type": "keyword"
           }
@@ -30,17 +30,9 @@
       {
         "type_as_keywords": {
           "match_mapping_type": "string",
-          "match": "type",
+          "match":   "type",
           "mapping": {
             "type": "keyword"
-          }
-        }
-      },
-      {
-        "verbatim_as_text": {
-          "match": "*verbatim*",
-          "mapping": {
-            "type": "text"
           }
         }
       }
@@ -48,10 +40,6 @@
     "properties": {
       "data": {
         "properties": {
-          "type": {
-            "type": "constant_keyword",
-            "value": "transaction"
-          },
           "attributes": {
             "properties": {
               "createdBy": {
@@ -65,39 +53,19 @@
               },
               "createdOn": {
                 "type": "date"
-              },
-              "group": {
-                "type": "text",
-                "fields": {
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                  }
-                }
-              },
-              "transactionNumber": {
-                "type": "text",
-                "fields": {
-                  "keyword": {
-                    "type": "keyword",
-                    "ignore_above": 256
-                  }
-                }
-              },
-              "openedDate": {
-                "type": "date"
               }
             }
           }
         }
       },
-      "included": {
-        "type": "nested",
+      "meta": {
         "properties": {
-          "attributes": {
-            "properties": {
-              "materialSamples": {
-                "type": "keyword"
+          "moduleVersion": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
               }
             }
           }

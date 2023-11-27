@@ -19,10 +19,16 @@ mappings:
       type: text
     - name: preparationDate
       type: date
+      dateSubtype: LOCAL_DATE
     - name: managedAttributes
       type: object
     - name: hostOrganism.name
       type: text
+    - name: extensionValues
+      type: object
+    - name: restrictionFieldsExtension
+      type: object
+      distinctTermAgg: true
 
   collecting-event:
     - name: createdBy
@@ -44,6 +50,8 @@ mappings:
     - name: endEventDateTime
       type: date
     - name: host
+      type: text
+    - name: dwcVerbatimLocality
       type: text
 
   organism:
@@ -102,6 +110,9 @@ mappings:
       type: text
     - name: originalFilename
       type: text
+    - name: fileExtension
+      type: text
+      distinctTermAgg: true
     - name: createdOn
       type: date
     - name: dcType
@@ -113,5 +124,40 @@ mappings:
     - name: xmpRightsWebStatement
       type: text
       distinctTermAgg: true
+    - name: xmpMetadataDate
+      type: date
+    - name: publiclyReleasable
+      type: boolean
+    - name: acTags
+      type: text
     - name: managedAttributes
       type: object
+  
+  transaction:
+    - name: materialDirection
+      type: text
+      distinctTermAgg: true
+    - name: transactionNumber
+      type: text
+    - name: otherIdentifiers
+      type: text
+    - name: transactionType
+      type: text
+    - name: status
+      type: text
+    - name: openedDate
+      type: date
+    - name: closedDate
+      type: date
+    - name: dueDate
+      type: date
+    - name: managedAttributes 
+      type: object
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date
+
+    
+
+

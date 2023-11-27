@@ -3,6 +3,8 @@ package ca.gc.aafc.dina.search.cli.utils;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch.core.CountResponse;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.io.IOException;
 
@@ -36,13 +38,26 @@ public class ElasticSearchTestUtils {
     int nCount = 0;
     while (foundDocument != expectedCount && nCount < MAX_RETRY) {
       Thread.sleep(WAIT_BETWEEN_MS);
-      foundDocument = search(client,  indexName, fieldName, searchValue);
+      foundDocument = count(client,  indexName, fieldName, searchValue);
       nCount++;
     }
     return foundDocument;
   }
 
-  private static int search(ElasticsearchClient client, String indexName, String fieldName, String searchValue)
+  public static SearchResponse<JsonNode> search(ElasticsearchClient client, String indexName, String fieldName, String searchValue)
+      throws IOException {
+    // Get the document straight from Elastic search, we should have the
+    // embedded organization updated
+    return client.search(s -> s
+            .index(indexName)
+            .query(q -> q
+                .term(t -> t
+                    .field(fieldName)
+                    .value(v -> v.stringValue(searchValue)))),
+        JsonNode.class);
+  }
+
+  private static int count(ElasticsearchClient client, String indexName, String fieldName, String searchValue)
       throws IOException {
     // Count the total number of search results.
     CountResponse countResponse = client.count(builder -> builder
@@ -56,4 +71,5 @@ public class ElasticSearchTestUtils {
     );
     return (int) countResponse.count();
   }
+
 }

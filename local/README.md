@@ -12,14 +12,14 @@ The DINA Search API docker-compose local deployment is made of the following ser
 ```
 cd local
 cp docker-compose.yml.example docker-compose.yml
-docker-compose up
+docker compose up
 ```
 
 **Verify that all components are up and running**
 
 From the local directory execute the following command:
 
-`docker-compose ps`
+`docker compose ps`
 
 The status for the following services should be `Up`
 - local_elasticsearch-dina_1

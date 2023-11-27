@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.junit.jupiter.Container;
 
-import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.DINA_MATERIAL_SAMPLE_INDEX;
+import static ca.gc.aafc.dina.search.ws.search.TestConstants.MATERIAL_SAMPLE_INDEX;
 import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.MATERIAL_SAMPLE_SEARCH_FIELD;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -51,29 +51,29 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
   public void testSearchSortWithICUField() throws Exception {
 
     sendMapping("es-mapping/material_sample_index_icu_settings.json",
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_MATERIAL_SAMPLE_INDEX);
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), MATERIAL_SAMPLE_INDEX);
 
-    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+    indexDocumentForIT(MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
             retrieveJSONObject("icu/matSampleName1.json"));
-    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT2_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+    indexDocumentForIT(MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT2_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
             retrieveJSONObject("icu/matSampleName2.json"));
-    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT3_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+    indexDocumentForIT(MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT3_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
             retrieveJSONObject("icu/matSampleName3.json"));
-    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT4_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+    indexDocumentForIT(MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT4_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
             retrieveJSONObject("icu/matSampleName4.json"));
 
     // Sort on "keyword" (alphabetical sort)
     String queryStringKeywordAsc = "{\"sort\":[{ \"data.attributes.materialSampleName.keyword\" : \"asc\" }]" + "}";
-    String result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, queryStringKeywordAsc);
+    String result = searchService.search(MATERIAL_SAMPLE_INDEX, queryStringKeywordAsc);
     assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC00044", "CNC101", "CNC22", "CNC3")));
 
     // Sort on "sort" (alphanumeric natural sort)
     String queryStringAsc = "{\"sort\":[{ \"data.attributes.materialSampleName.sort\" : \"asc\" }]" + "}";
-    result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, queryStringAsc);
+    result = searchService.search(MATERIAL_SAMPLE_INDEX, queryStringAsc);
     assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC3", "CNC22", "CNC00044", "CNC101")));
 
     String queryStringDesc = "{\"sort\":[{ \"data.attributes.materialSampleName.sort\" : \"desc\" }]" + "}";
-    result = searchService.search(DINA_MATERIAL_SAMPLE_INDEX, queryStringDesc);
+    result = searchService.search(MATERIAL_SAMPLE_INDEX, queryStringDesc);
     assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC101", "CNC00044", "CNC22", "CNC3")));
 
 
@@ -82,12 +82,12 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
   @Test
   public void testMappingResponseWithICUPlugin() throws Exception {
     sendMapping("es-mapping/material_sample_index_icu_settings.json",
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), DINA_MATERIAL_SAMPLE_INDEX);
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), MATERIAL_SAMPLE_INDEX);
 
-    indexDocumentForIT(DINA_MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
+    indexDocumentForIT(MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
             retrieveJSONObject("icu/matSampleName1.json"));
 
-    assertNotNull(searchService.getIndexMapping(DINA_MATERIAL_SAMPLE_INDEX));
+    assertNotNull(searchService.getIndexMapping(MATERIAL_SAMPLE_INDEX));
   }
 
 }

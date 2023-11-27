@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Map;
 
-import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.DINA_MATERIAL_SAMPLE_INDEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -69,14 +68,30 @@ public abstract class ElasticSearchBackedTest {
   }
 
   protected void sendMapping(String mappingJsonFile, String esHttpHostAddress, String indexName) throws IOException, URISyntaxException {
-    String matSampleEsSettings = TestResourceHelper
+    String esSettings = TestResourceHelper
             .readContentAsString(mappingJsonFile);
 
     URI uri = new URI("http://" + esHttpHostAddress + "/" + indexName);
 
-    HttpEntity<?> entity = new HttpEntity<>(matSampleEsSettings, buildJsonHeaders());
+    HttpEntity<?> entity = new HttpEntity<>(esSettings, buildJsonHeaders());
     RestTemplate restTemplate = builder.build();
     restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
+  }
+
+  static String buildMatchQueryString(String field, String value) {
+    return String.format("""
+        {"query": {
+            "match": {
+              "%s": {
+                "query": "%s"      }    }  }}""", field, value);
+  }
+
+  static String buildPrefixQueryString(String field, String prefix) {
+    return String.format("""
+        {"query": {
+            "prefix" : { "%s" : "%s" }
+          }
+        }""", field, prefix);
   }
 
   /**
