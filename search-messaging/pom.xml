@@ -17,8 +17,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-amqp</artifactId>
+      <groupId>io.github.aafc-bicoe</groupId>
+      <artifactId>dina-messaging</artifactId>
+      <version>0.113-SNAPSHOT</version>
     </dependency>
 
     <!-- TEST Scope-->

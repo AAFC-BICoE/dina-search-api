@@ -23,31 +23,37 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest(
   properties = {
     "spring.shell.interactive.enabled=false",
-    "messaging.isProducer=true",
-    "messaging.isConsumer=true",
+      "dina.messaging.isProducer=true",
+      "dina.messaging.isConsumer=true",
     "rabbitmq.queue=dina.search.queue",
     "rabbitmq.exchange=dina.search.exchange",
     "rabbitmq.routingkey=dina.search.routingkey",
-    "rabbitmq.username=guest",
-    "rabbitmq.password=guest",
-    "rabbitmq.host=localhost",
-    "rabbitmq.port=15672"
   })
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 @EnableRabbit
 class DinaMessageProducerConsumerIT {
 
-  static int RABBIT_PORT_1 = 5672;
-  static int RABBIT_PORT_2 = 15672;
+  @Container
+  private static final RabbitMQContainer rabbitMQContainer = new DinaRabbitMQContainer();
+
+  @DynamicPropertySource
+  static void registerRabbitMQProperties(DynamicPropertyRegistry registry) {
+    registry.add("rabbitmq.host", rabbitMQContainer::getHost);
+    registry.add("rabbitmq.port", rabbitMQContainer::getAmqpPort);
+    registry.add("rabbitmq.username", rabbitMQContainer::getAdminUsername);
+    registry.add("rabbitmq.password", rabbitMQContainer::getAdminPassword);
+  }
 
   @Autowired
   private MessageProducer messageProducer;
@@ -66,15 +72,10 @@ class DinaMessageProducerConsumerIT {
   @Autowired
   private DocumentProcessor documentProcessor;
 
-  @Container
-  private static final RabbitMQContainer rabbitMQContainer = new DinaRabbitMQContainer();
-
   @BeforeAll
   static void beforeAll() {
     rabbitMQContainer.start();
-
-    assertEquals(RABBIT_PORT_1, rabbitMQContainer.getMappedPort(RABBIT_PORT_1).intValue());
-    assertEquals(RABBIT_PORT_2, rabbitMQContainer.getMappedPort(RABBIT_PORT_2).intValue());
+    assertTrue(rabbitMQContainer.isRunning());
   }
 
   @AfterAll

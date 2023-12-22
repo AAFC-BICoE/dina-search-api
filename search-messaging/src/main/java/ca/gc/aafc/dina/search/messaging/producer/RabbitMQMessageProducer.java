@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
  * RabbitMQ based message producer
  */
 @Service
-@ConditionalOnProperty(prefix = "messaging", name = "isProducer", havingValue = "true")
+@ConditionalOnProperty(prefix = "dina.messaging", name = "isProducer", havingValue = "true")
 public class RabbitMQMessageProducer implements MessageProducer {
   private static final String EXCHANGE = "exchange";
   private static final String ROUTING_KEY = "routingkey";
