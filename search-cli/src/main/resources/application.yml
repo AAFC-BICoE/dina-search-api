@@ -10,9 +10,11 @@ keycloak:
   password: cnc-cm
 elasticsearch:
   server_address: ${ELASTICSEARCH_URL:localhost}
-  protocol: http
+  protocol: https
   port_1: 9200
   port_2: 9300
+  username: elastic
+  password: changeme
 rabbitmq:
   queue: dina.search.queue
   exchange: dina.search.exchange

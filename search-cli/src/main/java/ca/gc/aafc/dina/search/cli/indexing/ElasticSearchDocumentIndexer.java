@@ -16,23 +16,24 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+
 @Log4j2
 @Service
 public class ElasticSearchDocumentIndexer implements DocumentIndexer {
-
-  private final ElasticsearchClient client;
+  
+  @Autowired
+  @Qualifier("customElasticsearchClient")
+  private ElasticsearchClient customElasticsearchClient;
 
   private static final List<String> SEARCH_FIELDS_TO_RETURN = List.of("data.id", "data.type");
-
-  public ElasticSearchDocumentIndexer(ElasticsearchClient client) {
-    this.client = client;
-  }
 
   @Override
   public OperationStatus indexDocument(String documentId, Object payload, String indexName) throws SearchApiException {
@@ -44,7 +45,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
     try {
       // Make the call to elastic to index the document.
-      IndexResponse response = client.index(builder -> builder
+      IndexResponse response = customElasticsearchClient.index(builder -> builder
         .id(documentId)
         .index(indexName)
         .document(payload)
@@ -69,7 +70,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   @Override
   public void releaseResources() {
     try {
-      client._transport().close();
+      customElasticsearchClient._transport().close();
       log.info("Indexer client closed");
     } catch (IOException ioEx) {
       log.error("exception during client closure...");
@@ -85,7 +86,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
     try {
       // Make the call to elastic to delete the document from the index.
-      DeleteResponse deleteResponse = client.delete(builder -> builder
+      DeleteResponse deleteResponse = customElasticsearchClient.delete(builder -> builder
         .id(documentId)
         .index(indexName)
       );
@@ -134,7 +135,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
                                                           .query(QueryBuilders.bool()
                                                           .must(matchPhraseQueries).build()._toQuery()); 
 
-      return client.search(searchBuilder -> searchBuilder
+      return customElasticsearchClient.search(searchBuilder -> searchBuilder
           .index(indexNames)
           .query(nestedIncluded.build()._toQuery())
           .storedFields(SEARCH_FIELDS_TO_RETURN)

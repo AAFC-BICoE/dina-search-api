@@ -14,7 +14,7 @@ import co.elastic.clients.elasticsearch.core.CountRequest;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
-import co.elastic.clients.json.JsonpMapper;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.json.stream.JsonGenerator;
 import lombok.extern.log4j.Log4j2;
@@ -43,14 +43,13 @@ public class ESSearchService implements SearchService {
   private static final String GROUP_FIELD = "data.attributes.group.keyword"; //use the keyword version since we do a term filter
 
   private final ElasticsearchClient client;
-  private final JsonpMapper jsonpMapper;
 
   @Autowired
   private MappingObjectAttributes mappingObjectAttributes;
   
   public ESSearchService(@Autowired ElasticsearchClient client) {
     this.client = client;
-    this.jsonpMapper = client._jsonpMapper();
+   
   }
 
   @Override
@@ -132,8 +131,8 @@ public class ESSearchService implements SearchService {
 
       SearchResponse<?> response = client.search(sr, JsonNode.class);
       StringWriter writer = new StringWriter();
-      try (JsonGenerator generator = jsonpMapper.jsonProvider().createGenerator(writer)) {
-        jsonpMapper.serialize(response, generator);
+      try (JsonGenerator generator = client._jsonpMapper().jsonProvider().createGenerator(writer)) {
+        client._jsonpMapper().serialize(response, generator);
       }
       return writer.toString();
     } catch (IOException e) {
