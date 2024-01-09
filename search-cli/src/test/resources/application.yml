@@ -9,9 +9,13 @@ keycloak:
   password: cnc-cm
 elasticsearch:
   server_address: localhost
-  protocol: http
+  protocol: https
   port_1: 9200
   port_2: 9300
+  username: elastic
+  password: changeme
+  socketTimeout: 10000
+  connectionTimeout: 60000
 rabbitmq:
   queue: dina.search.queue
   exchange: dina.search.exchange

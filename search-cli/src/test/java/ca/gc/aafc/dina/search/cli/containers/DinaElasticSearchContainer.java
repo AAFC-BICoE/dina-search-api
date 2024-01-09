@@ -12,8 +12,8 @@ public class DinaElasticSearchContainer extends ElasticsearchContainer {
 
   public DinaElasticSearchContainer() {
     super(ES_IMAGE);
-    this.withPassword(ELASTICSEARCH_DEFAULT_PASSWORD);
-    this.getEnvMap().remove("xpack.security.enabled");
+    //this.withPassword(ELASTICSEARCH_DEFAULT_PASSWORD);
+    //this.getEnvMap().remove("xpack.security.enabled");
     this.addFixedExposedPort(9200, 9200);
     this.addFixedExposedPort(9300, 9300);
     this.addEnv(CLUSTER_NAME, ELASTIC_SEARCH);
