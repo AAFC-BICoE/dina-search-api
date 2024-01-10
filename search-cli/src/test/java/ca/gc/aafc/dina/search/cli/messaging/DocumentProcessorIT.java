@@ -25,6 +25,7 @@ import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.mock.Expectation;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -53,7 +54,8 @@ public class DocumentProcessorIT {
   private ClientAndServer client;
 
   @Autowired
-  private ElasticsearchClient elasticSearchClient;
+  @Qualifier("customElasticsearchClient")
+  private ElasticsearchClient customElasticsearchClient;
 
   @Autowired
   private DocumentProcessor documentProcessor;
@@ -88,11 +90,11 @@ public class DocumentProcessorIT {
         List.of(Pair.of("include", "organizations")), TestConstants.PERSON_RESPONSE_PATH);
 
     // Create the agent index
-    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
-    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.OBJECT_STORE_INDEX, TestConstants.OBJECT_STORE_INDEX_MAPPING_FILE);
+    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(customElasticsearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
+    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(customElasticsearchClient, TestConstants.OBJECT_STORE_INDEX, TestConstants.OBJECT_STORE_INDEX_MAPPING_FILE);
 
     // index a metadata to trigger dynamic mapping
-    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.indexDocument(elasticSearchClient, TestConstants.OBJECT_STORE_INDEX, "2",
+    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.indexDocument(customElasticsearchClient, TestConstants.OBJECT_STORE_INDEX, "2",
         TestResourceHelper.readContentAsString("get_metadata_document_response.json"));
 
     // Send message to index the person with an organization relationship.
@@ -102,7 +104,7 @@ public class DocumentProcessorIT {
 
     // Wait until that person record has been indexed:
     int foundDocument = ElasticSearchTestUtils
-        .searchForCount(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", TestConstants.PERSON_DOCUMENT_ID, 1);
+        .searchForCount(customElasticsearchClient, TestConstants.AGENT_INDEX, "data.id", TestConstants.PERSON_DOCUMENT_ID, 1);
     assertEquals(1, foundDocument);
 
     // remove the previous mock response
@@ -119,7 +121,7 @@ public class DocumentProcessorIT {
     Thread.sleep(1000);
 
     //get_metadata_document_response.json
-    SearchResponse<JsonNode> searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(elasticSearchClient, TestConstants.AGENT_INDEX,
+    SearchResponse<JsonNode> searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(customElasticsearchClient, TestConstants.AGENT_INDEX,
         "data.id", TestConstants.PERSON_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
