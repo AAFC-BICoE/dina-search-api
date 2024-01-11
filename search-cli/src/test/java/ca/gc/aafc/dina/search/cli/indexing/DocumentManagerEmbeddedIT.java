@@ -56,8 +56,7 @@ public class DocumentManagerEmbeddedIT {
   private static final String EMBEDDED_ORG_NAME = "Integration";
   private static final String EMBEDDED_ORG_NAME_AFTER_UPDATE = "Integration Updated";
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+  static DinaElasticSearchContainer ELASTICSEARCH_CONTAINER =  DinaElasticSearchContainer.getInstance();
 
   private ClientAndServer client;
 

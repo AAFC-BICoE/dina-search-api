@@ -38,8 +38,7 @@ public class DocumentManagerIT {
 
   private ClientAndServer client;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+  static DinaElasticSearchContainer ELASTICSEARCH_CONTAINER =  DinaElasticSearchContainer.getInstance();
 
   @Autowired
   private DocumentManager documentManager;

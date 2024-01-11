@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import static ca.gc.aafc.dina.search.ws.search.TestConstants.MATERIAL_SAMPLE_INDEX;
+import static ca.gc.aafc.dina.search.ws.search.TestConstants.MATERIAL_SAMPLE_ICU_INDEX_MAPPING_FILE;
 import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.MATERIAL_SAMPLE_SEARCH_FIELD;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,7 +53,7 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
   public void testSearchSortWithICUField() throws Exception {
 
 	if (!indexExists(TestConstants.MATERIAL_SAMPLE_INDEX)){
-        sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+        sendMapping(TestConstants.MATERIAL_SAMPLE_ICU_INDEX_MAPPING_FILE,
                 ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
     }
    
@@ -86,7 +87,7 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
   @Test
   public void testMappingResponseWithICUPlugin() throws Exception {
 	if (!indexExists(TestConstants.MATERIAL_SAMPLE_INDEX)){
-        sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+        sendMapping(TestConstants.MATERIAL_SAMPLE_ICU_INDEX_MAPPING_FILE,
                 ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
     }
     indexDocumentForIT(MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,

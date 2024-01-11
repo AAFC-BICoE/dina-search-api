@@ -60,8 +60,7 @@ public class DocumentProcessorIT {
   @Autowired
   private DocumentProcessor documentProcessor;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+  static DinaElasticSearchContainer ELASTICSEARCH_CONTAINER =  DinaElasticSearchContainer.getInstance();
 
   @BeforeAll
   static void beforeAll() {

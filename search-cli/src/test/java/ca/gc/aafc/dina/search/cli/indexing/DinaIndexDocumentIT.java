@@ -5,6 +5,7 @@ import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,13 +53,13 @@ public class DinaIndexDocumentIT {
   @Autowired
   private ElasticsearchClient client;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+  static DinaElasticSearchContainer ELASTICSEARCH_CONTAINER =  DinaElasticSearchContainer.getInstance();
 
-  @BeforeAll
-  static void beforeAll() {
-    ELASTICSEARCH_CONTAINER.start();
-
+  @BeforeEach
+  void beforeEach() {
+    if(!ELASTICSEARCH_CONTAINER.isRunning()){
+    	ELASTICSEARCH_CONTAINER.start();
+  	}
     assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
     assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
   }
