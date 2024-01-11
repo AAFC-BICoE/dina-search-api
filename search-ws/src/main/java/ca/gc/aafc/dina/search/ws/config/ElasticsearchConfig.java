@@ -39,10 +39,10 @@ public class ElasticsearchConfig {
   private String host;
 
   @Value("${elasticsearch.port_1}")
-  private int port_1;
+  private int port1;
 
   @Value("${elasticsearch.port_2}")
-  private int port_2;
+  private int port2;
 
   @Value("${elasticsearch.socketTimeout}")
   private int socketTimeout;
@@ -85,11 +85,11 @@ public class ElasticsearchConfig {
     RestClientBuilder restClient = RestClient.builder(
       new HttpHost(
         host, 
-        port_1,protocol
+        port1,protocol
       ),
       new HttpHost(
         host, 
-        port_2,protocol
+        port2,protocol
       )
     )
     .setHttpClientConfigCallback(new HttpClientConfigCallback() {
