@@ -11,9 +11,11 @@ public class DinaElasticSearchContainer extends ElasticsearchContainer {
   private static final String CLUSTER_NAME = "cluster_name";
   private static final String ELASTIC_SEARCH = "elasticsearch";
   private static final DockerImageName ES_IMAGE =
-      DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:7.17.10");
+      DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch:8.11.3");
 
-  public DinaElasticSearchContainer() {
+  private static DinaElasticSearchContainer ES_INSTANCE;
+
+  private DinaElasticSearchContainer() {
     super(ES_IMAGE);
 
     this.addFixedExposedPort(9200, 9200);
@@ -33,4 +35,12 @@ public class DinaElasticSearchContainer extends ElasticsearchContainer {
     this.withCopyFileToContainer(MountableFile.forHostPath(file.toPath()), "/usr/share/elasticsearch/config/dina_agent_index");
 
   } 
+
+  public static DinaElasticSearchContainer getInstance() {
+    if (ES_INSTANCE == null) {
+      ES_INSTANCE = new DinaElasticSearchContainer();
+      ES_INSTANCE.start();
+    }
+    return ES_INSTANCE;
+  }
 }

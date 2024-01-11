@@ -15,7 +15,7 @@ services:
 
   elasticsearch-dina:
     # we need a plugin so a custom image is built (to ensure an immutable Docker image)
-    image: elasticsearch_icu:7.17.10
+    image: elasticsearch_icu:8.11.3
     build: elasticsearch/
     environment:
       - xpack.security.enabled=false

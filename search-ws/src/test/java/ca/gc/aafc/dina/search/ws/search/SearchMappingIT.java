@@ -5,6 +5,7 @@ import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.IndexMappingResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,8 @@ import org.testcontainers.junit.jupiter.Container;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.AfterAll;
 
 /**
  * Test focussing on the mapping response of search-ws.
@@ -28,13 +31,13 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
   @Autowired
   private SearchService searchService;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+  static DinaElasticSearchContainer ELASTICSEARCH_CONTAINER =  DinaElasticSearchContainer.getInstance();
 
   @BeforeEach
   private void beforeEach() {
-    ELASTICSEARCH_CONTAINER.start();
-
+    if(!ELASTICSEARCH_CONTAINER.isRunning()){
+    	ELASTICSEARCH_CONTAINER.start();
+  	}
     // configuration of the sear-ws will expect 9200
     assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
     assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
@@ -42,8 +45,8 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
     assertNotNull(searchService);
   }
 
-  @AfterEach
-  private void afterEach() {
+  @AfterAll
+  private static void afterEach() {
     ELASTICSEARCH_CONTAINER.stop();
   }
 

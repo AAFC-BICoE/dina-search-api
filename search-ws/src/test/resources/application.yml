@@ -2,7 +2,12 @@ server:
   port: 8085
 elasticsearch:
   host: localhost
-  port: 9200
-  protocol: http
+  port_1: 9200
+  port_2: 9300
+  protocol: https
+  username: elastic
+  password: changeme
+  socketTimeout: 10000
+  connectionTimeout: 60000
 keycloak:
   enabled: false

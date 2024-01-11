@@ -62,12 +62,7 @@
       <version>${dina-base-api.version}</version>
       <scope>test</scope>
     </dependency>
-  
-    <dependency>
-      <groupId>co.elastic.clients</groupId>
-      <artifactId>elasticsearch-java</artifactId>
-      <version>8.11.3</version>
-    </dependency>
+
   </dependencies>
   <build>
     <plugins>

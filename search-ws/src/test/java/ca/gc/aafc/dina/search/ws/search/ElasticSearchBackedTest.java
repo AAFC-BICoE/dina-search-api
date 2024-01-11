@@ -1,24 +1,30 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
+import co.elastic.clients.elasticsearch.indices.ExistsRequest;
+import co.elastic.clients.elasticsearch.indices.GetIndexRequest;
+import co.elastic.clients.elasticsearch.indices.GetIndexResponse;
+import co.elastic.clients.transport.endpoints.BooleanResponse;
+
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.elasticsearch.client.RequestOptions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.net.URI;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,6 +33,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import co.elastic.clients.elasticsearch._types.*;
+
 
 /**
  * Based class for ElasticSearch backed tests
@@ -35,8 +43,12 @@ public abstract class ElasticSearchBackedTest {
 
   protected static final ObjectMapper OM = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+  @Value("${elasticsearch.protocol}")
+  private String protocol;
+  
   @Autowired
-  protected ElasticsearchClient client;
+  @Qualifier("customElasticsearchClient")
+  protected ElasticsearchClient customElasticsearchClient;
 
   @Autowired
   protected RestTemplateBuilder builder;
@@ -48,7 +60,7 @@ public abstract class ElasticSearchBackedTest {
     headers.setContentType(MediaType.APPLICATION_JSON);
     return headers;
   }
-
+  
   @SuppressWarnings("unchecked")
   public static Map<String, Object> retrieveJSONObject(String documentName) {
     try {
@@ -67,15 +79,20 @@ public abstract class ElasticSearchBackedTest {
     return null;
   }
 
-  protected void sendMapping(String mappingJsonFile, String esHttpHostAddress, String indexName) throws IOException, URISyntaxException {
-    String esSettings = TestResourceHelper
-            .readContentAsString(mappingJsonFile);
+  protected boolean sendMapping(String mappingJsonFile, String esHttpHostAddress, String indexName) throws IOException, URISyntaxException {
 
-    URI uri = new URI("http://" + esHttpHostAddress + "/" + indexName);
+    InputStream input = this.getClass().getResourceAsStream("/" + mappingJsonFile);
 
-    HttpEntity<?> entity = new HttpEntity<>(esSettings, buildJsonHeaders());
-    RestTemplate restTemplate = builder.build();
-    restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
+    CreateIndexRequest request = CreateIndexRequest.of(builder -> builder.index(indexName).withJson(input));
+
+    return customElasticsearchClient.indices().create(request).acknowledged();
+
+  }
+
+  protected boolean indexExists(String indexName) throws IOException, URISyntaxException {
+
+    return customElasticsearchClient.indices().exists(ExistsRequest.of(e -> e.index(indexName))).value();
+
   }
 
   static String buildMatchQueryString(String field, String value) {
@@ -104,7 +121,7 @@ public abstract class ElasticSearchBackedTest {
           throws ElasticsearchException, IOException, InterruptedException {
 
     // Make the call to elastic to index the document.
-    IndexResponse response = client.index(builder -> builder
+    IndexResponse response = customElasticsearchClient.index(builder -> builder
             .id(documentId)
             .index(indexName)
             .document(jsonMap)
@@ -117,7 +134,7 @@ public abstract class ElasticSearchBackedTest {
 
   protected int search(String searchValue, String searchField, String indexName) throws ElasticsearchException, IOException {
     // Count the total number of search results.
-    CountResponse countResponse = client.count(builder -> builder
+    CountResponse countResponse = customElasticsearchClient.count(builder -> builder
             .query(queryBuilder -> queryBuilder
                     .match(matchBuilder -> matchBuilder
                             .query(FieldValue.of(searchValue))

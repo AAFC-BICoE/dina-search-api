@@ -9,7 +9,7 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback;
 import org.springframework.context.annotation.Primary;
-
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -52,30 +52,34 @@ import java.security.cert.X509Certificate;
 @Configuration
 public class ElasticsearchConfig {
 
-  private static final String HOST = "server_address";
-  private static final String PORT_1 = "port_1";
-  private static final String PORT_2 = "port_2";
+  @Value("${elasticsearch.server_address}")
+  private String host;
 
+  @Value("${elasticsearch.port_1}")
+  private int port_1;
+
+  @Value("${elasticsearch.port_2}")
+  private int port_2;
 
   @Value("${elasticsearch.socketTimeout}")
-  private static int socketTimeout;
+  private int socketTimeout;
 
   @Value("${elasticsearch.connectionTimeout}")
-  private static int connectionTimeout;
+  private int connectionTimeout;
 
-  private final YAMLConfigProperties yamlConfigProps;
+  @Value("${elasticsearch.username}")
+  private String username;
 
-  public ElasticsearchConfig(YAMLConfigProperties yamlConfigProps) {
-    this.yamlConfigProps = yamlConfigProps;
-  }
+  @Value("${elasticsearch.password}")
+  private String password;
+
+  @Value("${elasticsearch.protocol}")
+  private String protocol;
 
   @Bean
   @Primary
   public ElasticsearchClient customElasticsearchClient() throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
     // Create low level client for the elastic search client to use.
-
-    String username = "elastic";
-    String password = "changeme";
     
     SSLContext sslContext = SSLContext.getInstance("TLS");
 
@@ -97,12 +101,12 @@ public class ElasticsearchConfig {
     
     RestClientBuilder restClient = RestClient.builder(
       new HttpHost(
-        yamlConfigProps.getElasticsearch().get(HOST), 
-        Integer.parseInt(yamlConfigProps.getElasticsearch().get(PORT_1)),"https"
+        host, 
+        port_1,protocol
       ),
       new HttpHost(
-        yamlConfigProps.getElasticsearch().get(HOST), 
-        Integer.parseInt(yamlConfigProps.getElasticsearch().get(PORT_2)),"https"
+        host, 
+        port_2,protocol
       )
     )
     .setHttpClientConfigCallback(new HttpClientConfigCallback() {

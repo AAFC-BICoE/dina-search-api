@@ -11,10 +11,12 @@
           "tokenizer": "ngram_tokenizer"
         },
         "keyword_lowercase_analyzer" : {
+          "type": "custom",
           "tokenizer": "keyword",
           "filter": [ "lowercase" ]
         },
         "keyword_lowercase_reverse_analyzer" : {
+          "type": "custom",
           "tokenizer": "keyword",
           "filter": [ "lowercase", "reverse" ]
         }
@@ -23,7 +25,10 @@
         "ngram_tokenizer": {
           "type": "ngram",
           "min_gram": 3,
-          "max_gram": 10
+          "max_gram": 10,
+          "token_chars": [
+            "letter"
+          ]
         }
       }
     }

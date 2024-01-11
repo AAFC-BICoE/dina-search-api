@@ -1,12 +1,16 @@
 package ca.gc.aafc.dina.search.ws.search;
 
+import ca.gc.aafc.dina.search.ws.container.CustomElasticSearchContainer;
 import ca.gc.aafc.dina.search.ws.container.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,13 +49,14 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   @Autowired
   private SearchService searchService;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
+  static CustomElasticSearchContainer ELASTICSEARCH_CONTAINER = CustomElasticSearchContainer.getInstance();
+
 
   @BeforeEach
   private void beforeEach() {
-    ELASTICSEARCH_CONTAINER.start();
-
+    if(!ELASTICSEARCH_CONTAINER.isRunning()){
+    	ELASTICSEARCH_CONTAINER.start();
+  	}
     // configuration of the sear-ws will expect 9200
     assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
     assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
