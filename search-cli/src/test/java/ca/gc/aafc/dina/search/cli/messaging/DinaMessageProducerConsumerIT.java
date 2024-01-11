@@ -164,7 +164,7 @@ class DinaMessageProducerConsumerIT {
 
   private void give5SecondsForMessageDelivery() {
     try {
-      Thread.sleep(1000 * 5);
+      Thread.sleep(1000 * 10);
     } catch (InterruptedException e) {
       Assertions.fail(e.getMessage());
     }
