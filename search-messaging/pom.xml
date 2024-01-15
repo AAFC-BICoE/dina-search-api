@@ -19,7 +19,7 @@
     <dependency>
       <groupId>io.github.aafc-bicoe</groupId>
       <artifactId>dina-messaging</artifactId>
-      <version>0.113-SNAPSHOT</version>
+      <version>${dina-base-api.version}</version>
     </dependency>
 
     <!-- TEST Scope-->

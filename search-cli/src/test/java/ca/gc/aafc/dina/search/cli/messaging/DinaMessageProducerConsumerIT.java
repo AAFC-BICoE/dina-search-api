@@ -32,14 +32,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest(
-  properties = {
-    "spring.shell.interactive.enabled=false",
-      "dina.messaging.isProducer=true",
-      "dina.messaging.isConsumer=true",
-    "rabbitmq.queue=dina.search.queue",
-    "rabbitmq.exchange=dina.search.exchange",
-    "rabbitmq.routingkey=dina.search.routingkey",
-  })
+    properties = {
+        "spring.shell.interactive.enabled=false",
+        "dina.messaging.isProducer=true",
+        "dina.messaging.isConsumer=true",
+        "rabbitmq.queue=dina.search.queue",
+        "rabbitmq.exchange=dina.search.exchange",
+        "rabbitmq.routingkey=dina.search.routingkey",
+    })
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 @EnableRabbit
 class DinaMessageProducerConsumerIT {
