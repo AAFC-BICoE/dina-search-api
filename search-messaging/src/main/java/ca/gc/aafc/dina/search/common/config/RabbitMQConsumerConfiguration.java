@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
  * Queue/Exchange/Binding for Dead Letter (messages that can't be properly processed)
  */
 @Configuration
-@ConditionalOnProperty(prefix = "messaging", name = "isConsumer", havingValue = "true")
+@ConditionalOnProperty(prefix = "dina.messaging", name = "isConsumer", havingValue = "true")
 public class RabbitMQConsumerConfiguration {
 
   private static final String MQ_EXCHANGE = "exchange";
