@@ -30,12 +30,12 @@
 
     <elasticsearch.version>7.17.10</elasticsearch.version>
     <jakarta.json.version>2.0.1</jakarta.json.version>
-    <dina-base-api.version>0.110</dina-base-api.version>
+    <dina-base-api.version>0.113</dina-base-api.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
     <checkstyle.version>8.44</checkstyle.version>
-    <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
+    <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
     <spotbugs.version>4.5.2</spotbugs.version>
     <maven-spotbugs.version>4.5.0.0</maven-spotbugs.version>
     <dependency.check.version>8.0.2</dependency.check.version>

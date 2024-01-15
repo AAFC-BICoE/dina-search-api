@@ -58,37 +58,39 @@ jobs:
           echo "VERSION_TAG=$(cat version.txt)" >> $GITHUB_ENV
           
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         id: ws-builder
         
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         id: cli-builder
 
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build dina-search-ws Image and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           builder: ${{ steps.ws-builder.outputs.name }}
           context: search-ws/.
           push: true
           tags: aafcbicoe/dina-search-ws:${{ env.VERSION_TAG }}
+          provenance: false
 
       - name: Build dina-search-cli Image and Push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           builder: ${{ steps.cli-builder.outputs.name }}
           context: search-cli/.
           push: true
           tags: aafcbicoe/dina-search-cli:${{ env.VERSION_TAG }}
+          provenance: false
 
   deploy:
     name: Deploy search-messaging to Maven Central

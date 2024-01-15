@@ -20,7 +20,7 @@ rabbitmq:
   username: guest
   password: guest
   host: ${RABBITMQ_HOSTNAME:localhost}
-  port: 15672
-messaging:
-  isConsumer: ${IS_MESSAGE_CONSUMER:false}
-  isProducer: ${IS_MESSAGE_PRODUCER:false}
+dina:
+  messaging:
+    isConsumer: ${IS_MESSAGE_CONSUMER:false}
+    isProducer: ${IS_MESSAGE_PRODUCER:false}
