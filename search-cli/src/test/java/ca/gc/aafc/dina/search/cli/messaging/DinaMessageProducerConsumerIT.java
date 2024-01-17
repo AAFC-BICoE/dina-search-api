@@ -1,8 +1,8 @@
 package ca.gc.aafc.dina.search.cli.messaging;
 
+import ca.gc.aafc.dina.messaging.config.RabbitMQQueueProperties;
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.containers.DinaRabbitMQContainer;
-import ca.gc.aafc.dina.search.common.config.RabbitMQConsumerConfiguration;
 import ca.gc.aafc.dina.search.messaging.consumer.DocumentOperationNotificationConsumer;
 import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;
 import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
@@ -27,6 +27,8 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
+
+import javax.inject.Named;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
@@ -59,7 +61,8 @@ class DinaMessageProducerConsumerIT {
   private MessageProducer messageProducer;
 
   @Autowired
-  private RabbitMQConsumerConfiguration rabbitMQConsumerConfiguration;
+  @Named("searchQueueProperties")
+  private RabbitMQQueueProperties rabbitMQSearchProperties;
 
   @Autowired
   private RabbitTemplate rabbitTemplate;
@@ -102,8 +105,8 @@ class DinaMessageProducerConsumerIT {
     messageProducer.send(expected);
     give5SecondsForMessageDelivery();
 
-    rabbitTemplate.setExchange(rabbitMQConsumerConfiguration.getDeadLetterExchangeName());
-    Message message = rabbitTemplate.receive(rabbitMQConsumerConfiguration.getDeadLetterQueueName());
+    rabbitTemplate.setExchange("");
+    Message message = rabbitTemplate.receive("dina.search.queue.dlq");
 
     if (message == null) {
       Assertions.fail("a message should of been in the que");
