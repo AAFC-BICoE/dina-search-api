@@ -1,7 +1,5 @@
 package ca.gc.aafc.dina.search.messaging.types;
 
-import java.io.Serializable;
-
 import ca.gc.aafc.dina.messaging.DinaMessage;
 import lombok.Builder;
 import lombok.Getter;
