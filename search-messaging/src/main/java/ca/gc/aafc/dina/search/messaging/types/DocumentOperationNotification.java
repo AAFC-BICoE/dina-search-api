@@ -1,7 +1,6 @@
 package ca.gc.aafc.dina.search.messaging.types;
 
-import java.io.Serializable;
-
+import ca.gc.aafc.dina.messaging.DinaMessage;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -11,7 +10,7 @@ import lombok.Getter;
  * 
  */
 @Getter
-public class DocumentOperationNotification implements Serializable {
+public class DocumentOperationNotification implements DinaMessage {
 
   private final boolean dryRun;
   private final String documentId;
