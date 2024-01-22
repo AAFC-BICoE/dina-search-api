@@ -75,12 +75,13 @@
       <artifactId>caffeine</artifactId>
     </dependency>
 
-    <!-- Elastic Search Dependencies -->
+    <!-- Search Dependencies -->
     <dependency>
-      <groupId>co.elastic.clients</groupId>
-      <artifactId>elasticsearch-java</artifactId>
-      <version>${elasticsearch.version}</version>
+      <groupId>io.github.aafc-bicoe</groupId>
+      <artifactId>dina-search</artifactId>
+      <version>${dina-base-api.version}</version>
     </dependency>
+
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
