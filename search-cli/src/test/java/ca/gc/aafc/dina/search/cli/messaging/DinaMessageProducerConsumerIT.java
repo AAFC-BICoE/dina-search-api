@@ -2,6 +2,7 @@ package ca.gc.aafc.dina.search.cli.messaging;
 
 import ca.gc.aafc.dina.messaging.config.RabbitMQQueueProperties;
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
+import ca.gc.aafc.dina.search.cli.config.MessageProcessorTestConfiguration;
 import ca.gc.aafc.dina.search.cli.containers.DinaRabbitMQContainer;
 import ca.gc.aafc.dina.search.messaging.consumer.DocumentOperationNotificationConsumer;
 import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;
@@ -13,8 +14,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -22,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -31,18 +30,16 @@ import org.testcontainers.junit.jupiter.Container;
 import javax.inject.Named;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.verify;
 
 @SpringBootTest(
     properties = {
         "spring.shell.interactive.enabled=false",
         "dina.messaging.isProducer=true",
         "dina.messaging.isConsumer=true",
-        "rabbitmq.queue=dina.search.queue",
-        "rabbitmq.exchange=dina.search.exchange",
-        "rabbitmq.routingkey=dina.search.routingkey",
+        "rabbitmq.queue=dina.search.queue"
     })
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
+@Import(MessageProcessorTestConfiguration.class)
 @EnableRabbit
 class DinaMessageProducerConsumerIT {
 
@@ -61,17 +58,18 @@ class DinaMessageProducerConsumerIT {
   private MessageProducer messageProducer;
 
   @Autowired
+  private LatchBasedMessageProcessor latchBasedMessageProcessor;
+
+  @Autowired
   @Named("searchQueueProperties")
   private RabbitMQQueueProperties rabbitMQSearchProperties;
 
   @Autowired
   private RabbitTemplate rabbitTemplate;
 
-  @SpyBean
   @Autowired
   private DocumentOperationNotificationConsumer documentConsumer;
 
-  @SpyBean
   @Autowired
   private DocumentProcessor documentProcessor;
 
@@ -101,11 +99,13 @@ class DinaMessageProducerConsumerIT {
   void onMessageThatThrowsException_messageSentInDLQ() {
     DocumentOperationNotification expected = new DocumentOperationNotification(false,
       // dryRun = false will fail to connect and throw the needed exception
-      "material-sample", "Invalid", DocumentOperationType.ADD);
+      "material-sample", LatchBasedMessageProcessor.INVALID_DOC_ID, DocumentOperationType.ADD);
     messageProducer.send(expected);
-    give5SecondsForMessageDelivery();
+    //give5SecondsForMessageDelivery();
+    latchBasedMessageProcessor.waitForMessage();
 
     rabbitTemplate.setExchange("");
+    rabbitTemplate.setReceiveTimeout(1000);
     Message message = rabbitTemplate.receive("dina.search.queue.dlq");
 
     if (message == null) {
@@ -142,21 +142,11 @@ class DinaMessageProducerConsumerIT {
    * The method is responsible for sending a message from the producer class. Validating
    * that the message consumer received the expected message.
    *
-   * Nothing is mocked, we are making use of spy objects to validate real code flow.
    *
    */
-  private void validateMessageTransferAndProcessingByConsumer(DocumentOperationNotification docNotification) {
-
-    ArgumentCaptor<DocumentOperationNotification> argumentCaptor = ArgumentCaptor.forClass(DocumentOperationNotification.class);
+  private void validateMessageTransferAndProcessingByConsumer(DocumentOperationNotification docNotification) throws InterruptedException {
     messageProducer.send(docNotification);
-
-    give5SecondsForMessageDelivery();
-
-    verify(documentConsumer).receiveMessage(argumentCaptor.capture());
-    DocumentOperationNotification capturedArgument = argumentCaptor.getValue();
-    assertResult(docNotification, capturedArgument);
-
-    verify(documentProcessor).processMessage(Mockito.any(DocumentOperationNotification.class));
+    assertResult(docNotification, latchBasedMessageProcessor.waitForMessage());
   }
 
   private void assertResult(DocumentOperationNotification docOperation, DocumentOperationNotification fromConsumer) {
@@ -164,14 +154,6 @@ class DinaMessageProducerConsumerIT {
     Assertions.assertEquals(docOperation.getOperationType(), fromConsumer.getOperationType());
     Assertions.assertEquals(docOperation.getDocumentId(), fromConsumer.getDocumentId());
     Assertions.assertEquals(docOperation.getDocumentType(), fromConsumer.getDocumentType());
-  }
-
-  private void give5SecondsForMessageDelivery() {
-    try {
-      Thread.sleep(1000 * 5);
-    } catch (InterruptedException e) {
-      Assertions.fail(e.getMessage());
-    }
   }
 
 }
