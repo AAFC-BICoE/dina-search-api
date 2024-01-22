@@ -9,6 +9,7 @@ keycloak:
   password: cnc-cm
 elasticsearch:
   host: localhost
+  port: 9200
 rabbitmq:
   queue: dina.search.queue
   exchange: dina.search.exchange

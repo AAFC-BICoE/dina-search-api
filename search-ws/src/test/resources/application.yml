@@ -3,6 +3,5 @@ server:
 elasticsearch:
   host: localhost
   port: 9200
-  protocol: http
 keycloak:
   enabled: false
