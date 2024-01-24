@@ -37,16 +37,23 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
     }
   }
 
+  /**
+   * Reset the latch.
+   */
+  public void resetLatch() {
+    latch = new CountDownLatch(1);
+  }
+
   /***
    * Wait until we receive the message and reset the latch (so another message can be received).
    * @return
    */
   public DocumentOperationNotification waitForMessage() throws InterruptedException {
     if(latch.await(MAX_WAIT_SEC, TimeUnit.SECONDS)) {
-      // reset the latch
-      latch = new CountDownLatch(1);
+      resetLatch();
       return message;
     }
+    log.warn("latch timed-out");
     return null;
   }
 

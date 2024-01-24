@@ -11,7 +11,6 @@ import ca.gc.aafc.dina.search.messaging.types.DocumentOperationType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
@@ -29,7 +28,7 @@ import org.testcontainers.junit.jupiter.Container;
 
 import javax.inject.Named;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(
     properties = {
@@ -101,7 +100,6 @@ class DinaMessageProducerConsumerIT {
       // dryRun = false will fail to connect and throw the needed exception
       "material-sample", LatchBasedMessageProcessor.INVALID_DOC_ID, DocumentOperationType.ADD);
     messageProducer.send(expected);
-    //give5SecondsForMessageDelivery();
     latchBasedMessageProcessor.waitForMessage();
 
     rabbitTemplate.setExchange("");
@@ -109,13 +107,13 @@ class DinaMessageProducerConsumerIT {
     Message message = rabbitTemplate.receive("dina.search.queue.dlq");
 
     if (message == null) {
-      Assertions.fail("a message should of been in the que");
+      fail("a message should of been in the queue");
     }
 
     DocumentOperationNotification result = new ObjectMapper().readValue(
       new String(message.getBody()),
       DocumentOperationNotification.class);
-    Assertions.assertEquals(expected.getDocumentId(), result.getDocumentId());
+    assertEquals(expected.getDocumentId(), result.getDocumentId());
   }
 
   @SneakyThrows
@@ -150,10 +148,12 @@ class DinaMessageProducerConsumerIT {
   }
 
   private void assertResult(DocumentOperationNotification docOperation, DocumentOperationNotification fromConsumer) {
-    Assertions.assertEquals(docOperation.isDryRun(), fromConsumer.isDryRun());
-    Assertions.assertEquals(docOperation.getOperationType(), fromConsumer.getOperationType());
-    Assertions.assertEquals(docOperation.getDocumentId(), fromConsumer.getDocumentId());
-    Assertions.assertEquals(docOperation.getDocumentType(), fromConsumer.getDocumentType());
+    assertNotNull(fromConsumer);
+
+    assertEquals(docOperation.isDryRun(), fromConsumer.isDryRun());
+    assertEquals(docOperation.getOperationType(), fromConsumer.getOperationType());
+    assertEquals(docOperation.getDocumentId(), fromConsumer.getDocumentId());
+    assertEquals(docOperation.getDocumentType(), fromConsumer.getDocumentType());
   }
 
 }
