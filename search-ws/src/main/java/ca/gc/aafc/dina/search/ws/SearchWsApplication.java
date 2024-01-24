@@ -8,6 +8,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 
 import ca.gc.aafc.dina.security.KeycloakAuthConfig;
 import ca.gc.aafc.dina.security.KeycloakDisabledAuthConfig;
+import org.springframework.context.annotation.ComponentScan;
 
 // CHECKSTYLE:OFF HideUtilityClassConstructor (Configuration class can not have
 // invisible constructor, ignore the check style error for this case)
@@ -16,6 +17,7 @@ import ca.gc.aafc.dina.security.KeycloakDisabledAuthConfig;
   classes = {KeycloakAuthConfig.class, KeycloakDisabledAuthConfig.class}, 
   exclude = {DataSourceAutoConfiguration.class, JaversSqlAutoConfiguration.class}
 )
+@ComponentScan("ca.gc.aafc.dina.search")
 public class SearchWsApplication {
 
   public static void main(String[] args) {

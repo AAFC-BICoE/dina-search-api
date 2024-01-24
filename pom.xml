@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.aafc-bicoe</groupId>
   <artifactId>search-api-parent</artifactId>
-  <version>0.28</version>
+  <version>0.29</version>
 
   <packaging>pom</packaging>
 
@@ -28,9 +28,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>17</java.version>
 
-    <elasticsearch.version>7.17.10</elasticsearch.version>
     <jakarta.json.version>2.0.1</jakarta.json.version>
-    <dina-base-api.version>0.113</dina-base-api.version>
+    <dina-base-api.version>0.114</dina-base-api.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
@@ -103,7 +102,7 @@
     </dependency>
   </dependencies>
 
-  <!-- Required version needed for elasticsearch 7.16.2 -->
+  <!-- Required version needed for dina-search -->
   <dependencyManagement>
     <dependencies>
       <dependency>
