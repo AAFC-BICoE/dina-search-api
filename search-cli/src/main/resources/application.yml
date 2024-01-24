@@ -9,10 +9,8 @@ keycloak:
   username: cnc-cm
   password: cnc-cm
 elasticsearch:
-  server_address: ${ELASTICSEARCH_URL:localhost}
-  protocol: http
-  port_1: 9200
-  port_2: 9300
+  host: ${ELASTICSEARCH_URL:localhost}
+  port: 9200
 rabbitmq:
   queue: dina.search.queue
   username: guest
