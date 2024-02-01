@@ -13,7 +13,15 @@ for currIndex in ${index_array[@]}; do
 
   indexName=DINA_${currIndex}_INDEX_NAME
   indexFile=DINA_${currIndex}_INDEX_SETTINGS_FILE
+  updateFile=DINA_${currIndex}_INDEX_UPDATE_FILE
 
-  ./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL ${!indexName} ${!indexFile}
-
+  if [ -z "${!updateFile}" ]
+  then
+    # If updateFile is not set, run the script without it
+    ./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL ${!indexName} ${!indexFile}
+  else
+    # If updateFile is set, run the script with it
+    ./wait-for-elasticsearch.sh $INDEX_CREATE_CMD $ELASTIC_SERVER_URL ${!indexName} ${!indexFile} ${!updateFile}
+  fi
+  
 done
