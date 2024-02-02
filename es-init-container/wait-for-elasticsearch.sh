@@ -17,7 +17,13 @@
 set -e
 
 host="$2"
-cmd="$1 $2 $3 $4"
+
+if [ -n "$5" ]
+then
+  cmd="$1 $2 $3 $4 $5"
+else
+  cmd="$1 $2 $3 $4"
+fi
 
 echo $host
 echo $cmd
