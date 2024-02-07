@@ -1,6 +1,6 @@
 FROM alpine:3.12
 
-RUN apk --no-cache add bash curl
+RUN apk add --no-cache jq curl
 
 RUN adduser --disabled-password --shell=/bin/bash user
 

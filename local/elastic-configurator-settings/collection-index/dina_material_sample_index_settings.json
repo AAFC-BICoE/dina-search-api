@@ -6,6 +6,11 @@
     }
   },
   "mappings": {
+    "_meta": {
+      "version": {
+        "number": "0.1"
+      }
+    },
     "date_detection": true,
     "numeric_detection": true,
     "dynamic_templates": [
@@ -112,7 +117,7 @@
                 "type": "date"
               },
               "managedAttributes": {
-                "type": "object"
+                                "type": "object"
               },
               "preparationRemarks": {
                 "type": "text",
