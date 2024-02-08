@@ -5,6 +5,9 @@
       "number_of_replicas": "1"
     }
   },
+  "aliases": {
+    "dina_material_sample_index": {}
+  },
   "mappings": {
     "_meta": {
       "version": {
@@ -117,7 +120,7 @@
                 "type": "date"
               },
               "managedAttributes": {
-                                "type": "object"
+                "type": "object"
               },
               "preparationRemarks": {
                 "type": "text",

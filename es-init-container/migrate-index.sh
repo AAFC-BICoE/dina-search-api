@@ -2,10 +2,12 @@
 
 ###Temporary changes to variables for testing purposes###
 
-HOST="http://192.168.49.2:32439"           # Host name in the url format
-INDEX="dina_material_sample_index"          # ES index name
-SETTINGS_FILE="../local/elastic-configurator-settings/collection-index/dina_material_sample_index_settings.json"  # JSON file path name containing the settings for the index
+HOST="$1"           # Host name in the url format
+INDEX_ALIAS="$2"          # ES index name
+SETTINGS_FILE="$3"  # JSON file path name containing the settings for the index
 OPTIONAL_MAPPING_FILE="$4"   # JSON file path name containing the update for the index
+
+INDEX=$(curl -X GET "$HOST/_alias/$INDEX_ALIAS" | jq -r 'keys[0]')
 
 remote_schema="$(curl -XGET "$HOST/$INDEX/_mapping?pretty")"
 
@@ -23,14 +25,17 @@ echo "Remote version: $remote_version"
 
 if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
 
-  NEW_INDEX=$INDEX'_'$TIMESTAMP
-
+  NEW_INDEX=${INDEX_ALIAS}_${TIMESTAMP}
+  
+  echo "Versions are different. Creating new index."
   #Create new index as 'old_index_name_timestamp'
+  echo $NEW_INDEX
   curl -X PUT "$HOST/$NEW_INDEX/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
 
   #Re-index documents
+  echo "Index created. Re-indexing documents."
 
-  STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$HOST/$INDEX/_reindex?pretty" -d'{
+  STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$HOST/_reindex?pretty" -d'{
     "source": {
       "index": "'$INDEX'"
     },
@@ -41,17 +46,21 @@ if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
 
 if [ "$STATUS_CODE" = '200' ]
 then
+  #Delete old index
+  echo "Documents re-indexed.Deleting old index..."
+    
+  curl -o /dev/null -X DELETE "$HOST/$INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json'
+
   #Add aliases from old to new index
 
-    echo "Documents reindexed. Updating alias..."
+  echo "Updating alias..."
     
-    STATUS_CODE_2=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST $HOST/$INDEX/_aliases?pretty -d'{
+  STATUS_CODE_2=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST $HOST/_aliases?pretty -d'{
     "actions" : [
-        { "add" : { "index" : "'$NEW_INDEX'", "alias" : "'$INDEX'" } }
+        { "add" : { "index" : "'$NEW_INDEX'", "alias" : "'$INDEX_ALIAS'" } }
     ]
   }')
 
-  echo $STATUS_CODE_2
 else
     echo "Error: Reindexing failed. Status code is $STATUS_CODE"
 fi
