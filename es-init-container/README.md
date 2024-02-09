@@ -15,16 +15,11 @@ These declarations will be used to search for environment variables using these 
 - DINA_AGENT_INDEX_SETTINGS_FILE
 - DINA_MATERIAL_SAMPLE_INDEX_NAME
 - DINA_MATERIAL_SAMPLE_INDEX_SETTINGS_FILE
+- DINA_MATERIAL_SAMPLE_OPTIONAL_INDEX_SETTINGS_FILE
 
-### Declare settings file and index name for each Index declaration.
+### Declare settings file and index name for each Index declaration
 
+* `DINA_{YOUR_INDEX_DECLARATION}_INDEX_NAME` defines the index name for this declaration.
+* `DINA_{YOUR_INDEX_DECLARATION}_INDEX_SETTINGS_FILE` defines the index settings file to be used for this index.
+* `DINA_{YOUR_INDEX_DECLARATION}_OPTIONAL_INDEX_SETTINGS_FILE` defines the optional index settings file to be used for this index.
 
-`DINA_{YOUR_INDEX_DECLARATION}_INDEX_NAME` defines the index name for this declaration.
-
-`DINA_{YOUR_INDEX_DECLARATION}_INDEX_SETTINGS_FILE` defines the index settings file to be used for this index.
-
-```
-DINA_AGENT_INDEX_NAME: $DINA_AGENT_INDEX_NAME
-DINA_AGENT_INDEX_SETTINGS_FILE: $DINA_AGENT_INDEX_SETTINGS_FILE
-DINA_MATERIAL_SAMPLE_INDEX_NAME: $DINA_MATERIAL_SAMPLE_INDEX_NAME
-DINA_MATERIAL_SAMPLE_INDEX_SETTINGS_FILE: $DINA_MATERIAL_SAMPLE_INDEX_SETTINGS_FILE

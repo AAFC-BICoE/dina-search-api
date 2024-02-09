@@ -32,15 +32,15 @@ else
   cat "$SETTINGS_FILE"
   curl -X PUT "$HOST/$INDEX_TIMESTAMP/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
 
+  if [ -n "$4" ]
+  then
+    echo "Running update script for optional mapping"
+    exec ./update-index.sh "$HOST" "$INDEX_TIMESTAMP" "$OPTIONAL_MAPPING_FILE"
+  fi
+
 fi
 
 #run migrate-index.sh to check if index needs migration
 
   echo "Running migrate-index script"
   ./migrate-index.sh "$HOST" "$INDEX" "$SETTINGS_FILE"
-
-if [ -n "$4" ]
-then
-  echo "Running update script"
-  exec ./update-index.sh "$HOST" "$INDEX" "$OPTIONAL_MAPPING_FILE"
-fi
