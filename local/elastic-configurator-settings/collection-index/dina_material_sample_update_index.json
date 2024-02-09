@@ -1,0 +1,13 @@
+{
+  "properties": {
+    "data.attributes.managedAttributes.experimental_replicate": {
+      "type": "text",
+      "fields": {
+        "keyword": {
+          "type": "keyword",
+          "ignore_above": 256
+        }
+      }
+    }
+  }
+}

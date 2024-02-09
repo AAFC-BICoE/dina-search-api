@@ -8,6 +8,7 @@
 HOST="$1"           # Host name in the url format
 INDEX="$2"          # ES index name
 SETTINGS_FILE="$3"  # JSON file path name containing the settings for the index
+OPTIONAL_MAPPING_FILE="$4"   # JSON file path name containing the update for the index
 
 index_exist="$(curl -s -o /dev/null -I -w "%{http_code}" "$HOST/$INDEX/?pretty")"
 echo "HTTP Code returned by ElasticSearch: $index_exist"
@@ -19,4 +20,10 @@ else
   echo "Mapping definition:"
   cat "$SETTINGS_FILE"
   curl -X PUT "$HOST/$INDEX/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
+
+  if [ -n "$4" ]
+  then
+    echo "Running update script for optional mapping"
+    exec ./update-index.sh "$HOST" "$INDEX" "$OPTIONAL_MAPPING_FILE"
+  fi
 fi
