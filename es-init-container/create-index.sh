@@ -25,6 +25,6 @@ fi
 
 if [ -n "$4" ]
 then
-  echo "Running update script"
+  echo "Running update script for optional mapping"
   exec ./update-index.sh "$HOST" "$INDEX" "$OPTIONAL_MAPPING_FILE"
 fi

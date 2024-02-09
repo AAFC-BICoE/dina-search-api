@@ -13,12 +13,12 @@ for currIndex in ${index_array[@]}; do
 
   indexName=DINA_${currIndex}_INDEX_NAME
   indexFile=DINA_${currIndex}_INDEX_SETTINGS_FILE
-  updateFile=DINA_${currIndex}_INDEX_UPDATE_FILE
+  optionalMappingFile=DINA_${currIndex}_OPTIONAL_INDEX_SETTINGS_FILE
   
-if [ -v $updateFile ] && [ -n "${!updateFile}" ]
+if [ -v $optionalMappingFile ] && [ -n "${!optionalMappingFile}" ]
 then
   # If updateFile is set and not empty, run the script with it
-  ./wait-for-elasticsearch.sh ./create-index.sh $ELASTIC_SERVER_URL ${!indexName} ${!indexFile} ${!updateFile}
+  ./wait-for-elasticsearch.sh ./create-index.sh $ELASTIC_SERVER_URL ${!indexName} ${!indexFile} ${!optionalMappingFile}
 else
   # If updateFile is not set or is empty, run the script without it
   ./wait-for-elasticsearch.sh ./create-index.sh $ELASTIC_SERVER_URL ${!indexName} ${!indexFile}
