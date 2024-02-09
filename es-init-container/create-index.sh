@@ -20,11 +20,10 @@ else
   echo "Mapping definition:"
   cat "$SETTINGS_FILE"
   curl -X PUT "$HOST/$INDEX/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
-fi
 
-
-if [ -n "$4" ]
-then
-  echo "Running update script for optional mapping"
-  exec ./update-index.sh "$HOST" "$INDEX" "$OPTIONAL_MAPPING_FILE"
+  if [ -n "$4" ]
+  then
+    echo "Running update script for optional mapping"
+    exec ./update-index.sh "$HOST" "$INDEX" "$OPTIONAL_MAPPING_FILE"
+  fi
 fi
