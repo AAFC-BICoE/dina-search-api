@@ -49,9 +49,12 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
 
   @Test
   public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
+    String indexName = TestConstants.MATERIAL_SAMPLE_INDEX + "_123456";
     // Submit ES mapping
     sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), indexName);
+
+    addAlias(indexName, TestConstants.MATERIAL_SAMPLE_INDEX);
 
     // index a document to trigger the dynamic mapping
     indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, "test-document-1", DOCUMENT_SEARCH_FIELD,

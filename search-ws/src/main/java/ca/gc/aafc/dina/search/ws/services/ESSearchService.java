@@ -13,8 +13,10 @@ import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.CountRequest;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import co.elastic.clients.elasticsearch.indices.GetAliasResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
 import co.elastic.clients.json.JsonpMapper;
+import co.elastic.clients.transport.endpoints.BooleanResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.json.stream.JsonGenerator;
 import lombok.extern.log4j.Log4j2;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 
@@ -169,13 +172,21 @@ public class ESSearchService implements SearchService {
     }
   }
 
+  /**
+   * Get the mapping definition of an index
+   * @param indexNameOrAlias the name of the index or an alias pointing to an index.
+   * @return
+   */
   @Override
-  public IndexMappingResponse getIndexMapping(String indexName) throws SearchApiException {
+  public IndexMappingResponse getIndexMapping(String indexNameOrAlias) throws SearchApiException {
 
     IndexMappingResponse.IndexMappingResponseBuilder indexMappingResponseBuilder = IndexMappingResponse.builder();
-    indexMappingResponseBuilder.indexName(indexName);
+    indexMappingResponseBuilder.indexName(indexNameOrAlias);
 
     try {
+      //Check for alias
+      String indexName = getIndexNameFromAlias(indexNameOrAlias).orElse(indexNameOrAlias);
+
       // Retrieve the index mapping from ElasticSearch
       GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
       Map<String, Property> mappingProperties = mappingResponse.result().get(indexName).mappings().properties();
@@ -201,6 +212,21 @@ public class ESSearchService implements SearchService {
     }
 
     return indexMappingResponseBuilder.build();
+  }
+
+  /**
+   * Return the real index name based on an alias. If the alias is not found, Optional.empty is returned.
+   * @param alias
+   * @return first index name found for the alias or empty
+   */
+  private Optional<String> getIndexNameFromAlias(String alias) throws IOException {
+    BooleanResponse b = client.indices().existsAlias(builder -> builder.name(alias));
+    if(!b.value()) {
+      return Optional.empty();
+    }
+
+    GetAliasResponse aliasResponse = client.indices().getAlias(builder -> builder.name(alias));
+    return aliasResponse.result().keySet().stream().findFirst();
   }
 
   /**
