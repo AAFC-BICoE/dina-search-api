@@ -18,6 +18,8 @@ import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
 import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import jakarta.json.stream.JsonGenerator;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
@@ -29,6 +31,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,12 +51,19 @@ public class ESSearchService implements SearchService {
   private final ElasticsearchClient client;
   private final JsonpMapper jsonpMapper;
 
+  private final LoadingCache<String, Optional<String>> ALIAS_CACHE;
+
   @Autowired
   private MappingObjectAttributes mappingObjectAttributes;
   
   public ESSearchService(@Autowired ElasticsearchClient client) {
     this.client = client;
     this.jsonpMapper = client._jsonpMapper();
+
+    ALIAS_CACHE = Caffeine.newBuilder()
+        .maximumSize(10)
+        .expireAfterWrite(Duration.ofMinutes(5))
+        .build(this::getIndexNameFromAlias);
   }
 
   @Override
@@ -185,7 +195,7 @@ public class ESSearchService implements SearchService {
 
     try {
       //Check for alias
-      String indexName = getIndexNameFromAlias(indexNameOrAlias).orElse(indexNameOrAlias);
+      String indexName = ALIAS_CACHE.get(indexNameOrAlias).orElse(indexNameOrAlias);
 
       // Retrieve the index mapping from ElasticSearch
       GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
