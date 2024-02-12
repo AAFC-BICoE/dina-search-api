@@ -5,7 +5,15 @@
       "number_of_replicas": "1"
     }
   },
+  "aliases": {
+    "dina_loan_transaction_index": {}
+  },
   "mappings": {
+    "_meta": {
+      "version": {
+        "number": "0.1"
+      }
+    },
     "date_detection": true,
     "numeric_detection": true,
     "dynamic_templates": [

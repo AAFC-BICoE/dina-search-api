@@ -28,7 +28,15 @@
       }
     }
   },
+  "aliases": {
+    "dina_object_store_index": {}
+  },
   "mappings": {
+    "_meta": {
+      "version": {
+        "number": "0.1"
+      }
+    },
     "date_detection": true,
     "numeric_detection": true,
     "dynamic_templates": [

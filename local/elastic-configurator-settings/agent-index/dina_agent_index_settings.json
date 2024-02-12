@@ -5,7 +5,15 @@
       "number_of_replicas": "1"
     }
   },
+  "aliases": {
+    "dina_agent_index": {}
+  },
   "mappings": {
+    "_meta": {
+      "version": {
+        "number": "0.1"
+      }
+    },
     "date_detection": false,
     "numeric_detection": false,
     "dynamic_templates": [
