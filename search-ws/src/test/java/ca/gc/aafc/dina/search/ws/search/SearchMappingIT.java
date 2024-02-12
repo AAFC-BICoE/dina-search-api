@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test focussing on the mapping response of search-ws.
  */
 @SpringBootTest
+@DirtiesContext
 public class SearchMappingIT extends ElasticSearchBackedTest {
 
   // used to search and wait for a document

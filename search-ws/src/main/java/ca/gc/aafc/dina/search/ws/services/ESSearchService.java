@@ -199,6 +199,9 @@ public class ESSearchService implements SearchService {
 
       // Retrieve the index mapping from ElasticSearch
       GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
+      if (mappingResponse.result().isEmpty()) {
+        throw new SearchApiException("Can't retrieve mapping of index " + indexNameOrAlias);
+      }
       Map<String, Property> mappingProperties = mappingResponse.result().get(indexName).mappings().properties();
 
       // sanity check for JSON:API documents
