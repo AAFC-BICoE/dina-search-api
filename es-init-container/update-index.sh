@@ -16,7 +16,7 @@ if [ "$index_exist" = '200' ]
 then
   echo "Index $INDEX is present. Ready to update."
   echo "Updating index $INDEX"
-  echo "$HOST"
+echo "$HOST"
   STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$HOST/$INDEX/_mapping" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$OPTIONAL_MAPPING_FILE")
 
 # Check if the update was successful

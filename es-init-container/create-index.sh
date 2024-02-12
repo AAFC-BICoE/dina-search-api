@@ -15,12 +15,12 @@ INDEX_NAME=$(curl -X GET "$HOST/_alias/$INDEX_ALIAS" | jq -r 'keys[0]')
 index_exist="$(curl -s -o /dev/null -I -w "%{http_code}" "$HOST/$INDEX_NAME/?pretty")"
 echo "HTTP Code returned by ElasticSearch: $index_exist"
 
+INDEX_ALIAS=${INDEX_ALIAS//\"}
+
 if [ "$index_exist" = '200' ]
 then
   echo "Index $INDEX_ALIAS already created, nothing to do"
 else
-
-  INDEX_ALIAS=${INDEX_ALIAS//\"}
 
   TIMESTAMP=$(date +%Y%m%d%H%M%S)
 
@@ -43,4 +43,4 @@ fi
 #run migrate-index.sh to check if index needs migration
 
   echo "Running migrate-index script"
-  ./migrate-index.sh "$HOST" "$INDEX" "$SETTINGS_FILE"
+  ./migrate-index.sh "$HOST" "$INDEX_ALIAS" "$SETTINGS_FILE" "$OPTIONAL_MAPPING_FILE"

@@ -32,6 +32,12 @@ if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
   echo $NEW_INDEX
   curl -X PUT "$HOST/$NEW_INDEX/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
 
+  if [ -n "$4" ]
+  then
+    echo "Running update script for optional mapping"
+    ./update-index.sh "$HOST" "$NEW_INDEX" "$OPTIONAL_MAPPING_FILE"
+  fi
+  
   #Re-index documents
   echo "Index created. Re-indexing documents."
 
