@@ -195,7 +195,7 @@ public class ESSearchService implements SearchService {
 
     try {
       //Check for alias
-      String indexName = aliasCache.get(indexNameOrAlias).orElse(indexNameOrAlias);
+      String indexName = getCacheEntry(indexNameOrAlias).orElse(indexNameOrAlias);
 
       // Retrieve the index mapping from ElasticSearch
       GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
@@ -225,6 +225,18 @@ public class ESSearchService implements SearchService {
     }
 
     return indexMappingResponseBuilder.build();
+  }
+
+  /**
+   * null-safe get for aliasCache.
+   * @param indexNameOrAlias
+   * @return the entry or Optional.empty() if can't be found using the cache.
+   */
+  private Optional<String> getCacheEntry(String indexNameOrAlias) {
+    if(aliasCache.get(indexNameOrAlias) == null) {
+      return Optional.empty();
+    }
+    return aliasCache.get(indexNameOrAlias);
   }
 
   /**
