@@ -51,7 +51,7 @@ public class ESSearchService implements SearchService {
   private final ElasticsearchClient client;
   private final JsonpMapper jsonpMapper;
 
-  private final LoadingCache<String, Optional<String>> ALIAS_CACHE;
+  private final LoadingCache<String, Optional<String>> aliasCache;
 
   @Autowired
   private MappingObjectAttributes mappingObjectAttributes;
@@ -60,7 +60,7 @@ public class ESSearchService implements SearchService {
     this.client = client;
     this.jsonpMapper = client._jsonpMapper();
 
-    ALIAS_CACHE = Caffeine.newBuilder()
+    aliasCache = Caffeine.newBuilder()
         .maximumSize(10)
         .expireAfterWrite(Duration.ofMinutes(5))
         .build(this::getIndexNameFromAlias);
@@ -195,7 +195,7 @@ public class ESSearchService implements SearchService {
 
     try {
       //Check for alias
-      String indexName = ALIAS_CACHE.get(indexNameOrAlias).orElse(indexNameOrAlias);
+      String indexName = aliasCache.get(indexNameOrAlias).orElse(indexNameOrAlias);
 
       // Retrieve the index mapping from ElasticSearch
       GetMappingResponse mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
