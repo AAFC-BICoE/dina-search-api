@@ -1,9 +1,7 @@
 #!/bin/bash
 
-###Temporary changes to variables for testing purposes###
-
 HOST="$1"           # Host name in the url format
-INDEX_ALIAS="$2"          # ES index name
+INDEX_ALIAS="$2"    # ES index alias name
 SETTINGS_FILE="$3"  # JSON file path name containing the settings for the index
 OPTIONAL_MAPPING_FILE="$4"   # JSON file path name containing the update for the index
 
@@ -31,6 +29,8 @@ if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
   #Create new index as 'old_index_name_timestamp'
   echo $NEW_INDEX
   curl -X PUT "$HOST/$NEW_INDEX/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
+  
+  #update new index provided optional mapping file
 
   if [ -n "$4" ]
   then
