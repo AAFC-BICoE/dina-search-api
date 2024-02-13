@@ -32,18 +32,6 @@ else
   cat "$SETTINGS_FILE"
   curl -X PUT "$HOST/$INDEX_TIMESTAMP/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
 
-  #Add alias to new index
-
-  echo "Updating alias..."
-    
-  STATUS_CODE_2=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST $HOST/_aliases?pretty -d'{
-    "actions" : [
-        { "add" : { "index" : "'$INDEX_TIMESTAMP'", "alias" : "'$INDEX_ALIAS'" } }
-    ]
-  }')
-
-  echo "Alias update response code is: $STATUS_CODE_2"
-
   if [ -n "$4" ]
   then
     echo "Running update script for optional mapping"
@@ -51,8 +39,3 @@ else
   fi
 
 fi
-
-#run migrate-index.sh to check if index needs migration
-
-  echo "Running migrate-index script"
-  ./migrate-index.sh "$HOST" "$INDEX_ALIAS" "$SETTINGS_FILE" "$OPTIONAL_MAPPING_FILE"
