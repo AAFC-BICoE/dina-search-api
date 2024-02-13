@@ -5,13 +5,10 @@
       "number_of_replicas": "1"
     }
   },
-  "aliases": {
-    "dina_storage_index": {}
-  },
   "mappings": {
     "_meta": {
       "version": {
-        "number": "0.1"
+        "number": "1.0"
       }
     },
     "date_detection": false,
