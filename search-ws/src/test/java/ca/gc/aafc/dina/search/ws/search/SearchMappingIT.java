@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test focussing on the mapping response of search-ws.
  */
 @SpringBootTest
+@DirtiesContext
 public class SearchMappingIT extends ElasticSearchBackedTest {
 
   // used to search and wait for a document
@@ -49,9 +51,12 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
 
   @Test
   public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
+    String indexName = TestConstants.MATERIAL_SAMPLE_INDEX + "_123456";
     // Submit ES mapping
     sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
+            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), indexName);
+
+    addAlias(indexName, TestConstants.MATERIAL_SAMPLE_INDEX);
 
     // index a document to trigger the dynamic mapping
     indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, "test-document-1", DOCUMENT_SEARCH_FIELD,
