@@ -9,50 +9,63 @@ SOURCE_INDEX_NAME="$2"    # ES index name (source)
 INDEX_PREFIX="$3"         # prefix to use to create the new index name prefix + timestamp
 SETTINGS_FILE="$4"  # JSON file path name containing the settings for the index
 OPTIONAL_MAPPING_FILE="$5"   # JSON file path name containing the update for the index
+MIGRATE_FLAG=true
 
-remote_schema="$(curl -XGET "$HOST/$SOURCE_INDEX_NAME/_mapping?pretty")"
+>&2 echo -e "\n\n Start of migrate-index.sh"
+
+remote_schema="$(curl -X GET "$HOST/$SOURCE_INDEX_NAME/_mapping?pretty")"
+
+#>&2 echo "Remote schema: $remote_schema"
+
 remote_version=$(echo "$remote_schema" | jq -r ".$SOURCE_INDEX_NAME.mappings._meta.version.number // \"0\"" | bc -l)
 
 local_mappings=$(cat $SETTINGS_FILE | jq '.mappings')
 local_version=$(echo "$local_mappings" | jq '._meta.version.number' | bc -l)
 
-echo "Local version: $local_version"
-echo "Remote version: $remote_version"
+>&2 echo "Local version: $local_version"
+>&2 echo "Remote version: $remote_version"
 
 if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
-
-  TIMESTAMP=$(date +%Y%m%d%H%M%S)
-  NEW_INDEX=${INDEX_PREFIX}_${TIMESTAMP}
   
-  echo "Versions are different. Creating new index."
+  >&2 echo "Versions are different. Creating new index."
+
+  #call ./create-index
   #Create new index as 'old_index_name_timestamp'
-  echo "$NEW_INDEX"
-  curl -X PUT "$HOST/$NEW_INDEX/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
-  
-  #update new index provided optional mapping file
-
   if [ -n "$5" ]
   then
-    echo "Running update script for optional mapping"
-    ./update-index.sh "$HOST" "$NEW_INDEX" "$OPTIONAL_MAPPING_FILE"
+    >&2 echo "Running create script with optional mapping"
+    NEW_INDEX=$(./create-index.sh $ELASTIC_SERVER_URL $INDEX_PREFIX $SETTINGS_FILE $MIGRATE_FLAG $OPTIONAL_MAPPING_FILE)
+  else
+    >&2 echo "Running create script without optional mapping"
+    NEW_INDEX=$(./create-index.sh $ELASTIC_SERVER_URL $INDEX_PREFIX $SETTINGS_FILE $MIGRATE_FLAG)
   fi
   
   #Re-index documents
-  echo "Index created. Re-indexing documents."
+  >&2 echo "Index created. Re-indexing documents."
+
+  >&2 echo "Source index is: $SOURCE_INDEX_NAME and destination index is: $NEW_INDEX ."
 
   STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$HOST/_reindex?pretty" -d'{
     "source": {
-      "index": "'SOURCE_INDEX_NAME'"
+      "index": "'$SOURCE_INDEX_NAME'"
     },
     "dest": {
       "index": "'$NEW_INDEX'"
     }
   }')
 
-  if [ "$STATUS_CODE" != '200' ]
+  >&2 echo "Status code of reindexing op is: $STATUS_CODE."
+
+  if [ "$STATUS_CODE" = '200' ]
   then
-      echo "Error: Reindexing failed. Status code is $STATUS_CODE"
+    >&2 echo "Created new index and re-indexed documents successfully"
+    echo $NEW_INDEX
+    exit 0
+  else
+    >&2 echo "Could not reindex, do not delete old index or alias"
+    exit 1
   fi
 else
-  echo "Nothing to update, remote version is the same as local."
+  >&2 echo "Versions are the same, no need for update"
+  exit 0
 fi

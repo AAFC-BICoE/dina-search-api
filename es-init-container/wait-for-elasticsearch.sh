@@ -25,8 +25,9 @@ else
   cmd="$1 $2 $3 $4"
 fi
 
-echo $host
-echo $cmd
+>&2 echo -e "\n\n Start of wait-for-elasticsearch.sh"
+
+>&2 echo $cmd
 
 until $(curl --output /dev/null --silent --head --fail "$host"); do
     printf '.'
@@ -36,7 +37,7 @@ done
 # First wait for ES to start...
 response=$(curl $host)
 
-echo $response
+#echo $response
 
 until [ "$response" = "200" ]; do
     response=$(curl --write-out %{http_code} --silent --output /dev/null "$host")
