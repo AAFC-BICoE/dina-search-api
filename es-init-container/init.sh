@@ -53,7 +53,6 @@ fi
 
 >&2 echo "Checking if migration is required"
 
-
 NEW_MIGRATE_INDEX=$(./migrate-index.sh "$ELASTIC_SERVER_URL" "$NEW_INDEX" "${!indexName}" "${!indexFile}" "${!optionalMappingFile}")
 
 exit_status=$?  # get the exit status of the script
@@ -70,8 +69,27 @@ if [[ $exit_status -eq 0 && -n "$NEW_MIGRATE_INDEX" ]]; then
     ./update-index.sh "$ELASTIC_SERVER_URL" "$NEW_MIGRATE_INDEX" "${!optionalMappingFile}"
   fi 
 
-  >&2 echo "migrate-script created new index, deleting old index: $NEW_INDEX"
+  #get total number of documents in old_index
+    num_docs_old=$(curl -s -X GET "$ELASTIC_SERVER_URL/$NEW_INDEX/_search" -H 'Content-Type: application/json' -d'
+  {
+    "query": {
+      "match_all": {}
+    }
+  }' | jq -r '.hits.total.value')
 
+  >&2 echo "migrate-script created new index, deleting old index: $NEW_INDEX"
+  #get total number of documents in new_index
+
+    num_docs_new=$(curl -s -X GET "$ELASTIC_SERVER_URL/$NEW_MIGRATE_INDEX/_search" -H 'Content-Type: application/json' -d'
+  {
+    "query": {
+      "match_all": {}
+    }
+  }' | jq -r '.hits.total.value')
+
+  >&2 echo -e "Old index doc count: $num_docs_old \nNew index doc count: $num_docs_new"
+
+  #only when old index is deleted add-alias is evoked
   while true; do
       response=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
       if [ "$response" -eq 200 ]; then

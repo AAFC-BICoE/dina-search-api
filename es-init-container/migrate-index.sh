@@ -27,11 +27,16 @@ if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
   
   >&2 echo "Versions are different. Creating new index."
 
-  #call ./create-index
-  #Create new index as 'old_index_name_timestamp'
+  #make source index read-only
+
+  STATUS_CODE_READ_ONLY=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$HOST/$INDEX_PREFIX/_settings?pretty" -H "Content-Type: application/json" -d'{
+  "index.blocks.write": false
+  }')
+  
+  >&2 echo "The read only operation status is: $STATUS_CODE_READ_ONLY"
 
   >&2 echo "Running create script"
-  NEW_INDEX=$(./create-index.sh $ELASTIC_SERVER_URL $INDEX_PREFIX $SETTINGS_FILE)
+  NEW_INDEX=$(./create-index.sh $HOST $INDEX_PREFIX $SETTINGS_FILE)
   
   #Re-index documents
   >&2 echo "Index created. Re-indexing documents."
