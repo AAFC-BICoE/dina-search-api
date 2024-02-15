@@ -8,14 +8,12 @@ HOST="$1"                 # Host name in the url format
 SOURCE_INDEX_NAME="$2"    # ES index name (source)
 INDEX_PREFIX="$3"         # prefix to use to create the new index name prefix + timestamp
 SETTINGS_FILE="$4"  # JSON file path name containing the settings for the index
-OPTIONAL_MAPPING_FILE="$5"   # JSON file path name containing the update for the index
-MIGRATE_FLAG=true
 
 >&2 echo -e "\n\n Start of migrate-index.sh"
 
 remote_schema="$(curl -X GET "$HOST/$SOURCE_INDEX_NAME/_mapping?pretty")"
 
-#>&2 echo "Remote schema: $remote_schema"
+>&2 echo "Remote schema: $remote_schema"
 
 remote_version=$(echo "$remote_schema" | jq -r ".$SOURCE_INDEX_NAME.mappings._meta.version.number // \"0\"" | bc -l)
 
@@ -31,14 +29,9 @@ if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
 
   #call ./create-index
   #Create new index as 'old_index_name_timestamp'
-  if [ -n "$5" ]
-  then
-    >&2 echo "Running create script with optional mapping"
-    NEW_INDEX=$(./create-index.sh $ELASTIC_SERVER_URL $INDEX_PREFIX $SETTINGS_FILE $MIGRATE_FLAG $OPTIONAL_MAPPING_FILE)
-  else
-    >&2 echo "Running create script without optional mapping"
-    NEW_INDEX=$(./create-index.sh $ELASTIC_SERVER_URL $INDEX_PREFIX $SETTINGS_FILE $MIGRATE_FLAG)
-  fi
+
+  >&2 echo "Running create script"
+  NEW_INDEX=$(./create-index.sh $ELASTIC_SERVER_URL $INDEX_PREFIX $SETTINGS_FILE)
   
   #Re-index documents
   >&2 echo "Index created. Re-indexing documents."
@@ -66,6 +59,6 @@ if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
     exit 1
   fi
 else
-  >&2 echo "Versions are the same, no need for update"
+  >&2 echo "Remote version is higher than or equal to local version , no need for update"
   exit 0
 fi
