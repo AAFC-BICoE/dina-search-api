@@ -29,8 +29,8 @@ if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
 
   #make source index read-only
 
-  STATUS_CODE_READ_ONLY=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$HOST/$INDEX_PREFIX/_settings?pretty" -H "Content-Type: application/json" -d'{
-  "index.blocks.write": false
+  STATUS_CODE_READ_ONLY=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$HOST/$SOURCE_INDEX_NAME/_settings?pretty" -H "Content-Type: application/json" -d'{
+    "index.blocks.read_only_allow_delete": true
   }')
   
   >&2 echo "The read only operation status is: $STATUS_CODE_READ_ONLY"
@@ -51,13 +51,14 @@ if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
       "index": "'$NEW_INDEX'"
     }
   }')
-
+  
   >&2 echo "Status code of reindexing op is: $STATUS_CODE."
 
   if [ "$STATUS_CODE" = '200' ]
   then
     >&2 echo "Created new index and re-indexed documents successfully"
     echo $NEW_INDEX
+    sleep 2
     exit 0
   else
     >&2 echo "Could not reindex, do not delete old index or alias"

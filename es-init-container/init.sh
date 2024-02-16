@@ -61,8 +61,6 @@ exit_status=$?  # get the exit status of the script
 
 if [[ $exit_status -eq 0 && -n "$NEW_MIGRATE_INDEX" ]]; then
 
-  #INDEX_NAME=$(curl -s -X GET "$ELASTIC_SERVER_URL/_alias/${!indexName}" | jq -r 'keys[0]')
-
   if [ -v "$optionalMappingFile" ] && [ -n "${!optionalMappingFile}" ]; then
     # If updateFile is set and not empty, run the script with it
     >&2 echo "Running update script for optional mapping"
@@ -90,17 +88,31 @@ if [[ $exit_status -eq 0 && -n "$NEW_MIGRATE_INDEX" ]]; then
   >&2 echo -e "Old index doc count: $num_docs_old \nNew index doc count: $num_docs_new"
 
   #only when old index is deleted add-alias is evoked
-  while true; do
-      response=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
-      if [ "$response" -eq 200 ]; then
-          ./add-alias.sh $ELASTIC_SERVER_URL $NEW_MIGRATE_INDEX ${!indexName}
-          break
-      fi
-      sleep 1
-  done
+  if [ "$num_docs_old" -eq "$num_docs_new" ]; then
+    >&2 echo "Document counts match. Proceeding with deletion of old index and setting alias..."
+    while true; do
+        response=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
+        if [ "$response" -eq 200 ]; then
+            ./add-alias.sh $ELASTIC_SERVER_URL $NEW_MIGRATE_INDEX ${!indexName}
+            break
+        fi
+        sleep 1
+    done
+  else
+    >&2 echo "Document counts do not match. Not proceeding with deletion and reversing read-only on index..."
+    STATUS_CODE_READ_ONLY=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$ELASTIC_SERVER_URL/$NEW_INDEX/_settings?pretty" -H "Content-Type: application/json" -d'{
+      "index.blocks.read_only_allow_delete": null
+      }')
+    >&2 echo "The read only operation status is: $STATUS_CODE_READ_ONLY"
 
-else
+    DELETE_NEW_MIGRATE_INDEX_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_MIGRATE_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
+
+    >&2 echo "The delete request status for migrate index is: $DELETE_NEW_MIGRATE_INDEX_RESPONSE"
+
+  fi
+
+  else
   >&2 echo "Nothing else to do, migrate-script did not create new index"
-fi
 
+  fi
 done
