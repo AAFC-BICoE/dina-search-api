@@ -146,6 +146,12 @@ else
       fi
       >&2 echo "New Index created. Calling add-alias script"
       ./add-alias.sh $ELASTIC_SERVER_URL $NEW_INDEX ${!indexPrefixName}
+      exit_status=$?  # get the exit status of the script
+      if [[ $exit_status -eq 1 ]]; then
+        >&2 echo "Deleting new index since alias could not be created"
+        DELETE_NEW_INDEX_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
+
+      fi
 
     fi
   done

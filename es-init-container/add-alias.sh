@@ -19,3 +19,12 @@ STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: applicati
 }')
 
 >&2 echo "Alias update response code is: $STATUS_CODE"
+
+if [ "$STATUS_CODE" = '200' ]
+then
+  >&2 echo "added alias successfully"
+  exit 0
+else
+  >&2 echo "Could not add alias"
+  exit 1
+fi
