@@ -3,16 +3,32 @@
 #
 # Script flow:
 #   Iterates through different index array
-#     Evokes migrate-index script
-#       Checks if new index was created and re-indexed:
+#     Evokes create-index script
+#       Checks if new index was created:
 #       T: 1) Updates index provided optional mapping file
-#          2) Checks if number of documents in both indices match
-#          T: Deletes old index and evokes add-alias
-#          F: 1) Deletes newly created index
-#             2) Reverses read-only op on current index.
-#       F: Nothing to do, migrate script does not create new index
+#          2) Calls re-index script
+#          3) Checks if re-index is successful
+#             T: Checks if number of documents in both indices match
+#                T: Deletes old index and evokes add-alias
+#                F: 1) Deletes newly created index
+#                   2) Reverses read-only op on current index.
 
-index_array=($DINA_INDEX_DECLARATIONS)
+get_document_count() {
+    local index_name="$1"  # The index name (e.g., "old_index" or "new_index")
+    local elastic_server_url="$2"  # The Elasticsearch server URL
+
+    # Query Elasticsearch to get the document count
+    local num_docs
+    num_docs=$(curl -s -X GET "$elastic_server_url/$index_name/_search" -H 'Content-Type: application/json' -d '
+    {
+        "query": {
+            "match_all": {}
+        }
+    }' | jq -r '.hits.total.value')
+
+    echo "$num_docs"  # Print the document count
+}
+  index_array=($DINA_INDEX_DECLARATIONS)
   for currIndex in ${index_array[@]}; do
 
     indexName=DINA_${currIndex}_INDEX_NAME
@@ -23,67 +39,59 @@ index_array=($DINA_INDEX_DECLARATIONS)
     >&2 echo "Index alias is not created for: ${!indexName}"
 
     #Create new index, re-index, delete old, add alias
-
-    NEW_MIGRATE_INDEX=$(./migrate-index.sh "$ELASTIC_SERVER_URL" "${!indexName}" "${!indexName}" "${!indexFile}" "${!optionalMappingFile}")
     
+    NEW_INDEX=$(./wait-for-elasticsearch.sh ./create-index.sh $ELASTIC_SERVER_URL ${!indexName} ${!indexFile})
+
+    if [[ -n "$NEW_INDEX" ]]; then
+      if [ -v "$optionalMappingFile" ] && [ -n "${!optionalMappingFile}" ]; then
+        # If updateFile is set and not empty, run the script with it
+        >&2 echo "Running update script for optional mapping"
+        ./update-index.sh "$ELASTIC_SERVER_URL" "$NEW_INDEX" "${!optionalMappingFile}"
+      fi 
+    fi
+
+    STATUS_CODE_READ_ONLY=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$ELASTIC_SERVER_URL/${!indexName}/_settings?pretty" -H "Content-Type: application/json" -d'{
+        "index.blocks.read_only_allow_delete": true
+      }')
+
+    ./re-index.sh "$ELASTIC_SERVER_URL" "${!indexName}" "$NEW_INDEX"
     exit_status=$?  # get the exit status of the script
 
-    # Deleting old index..."
+    #if re-index successful
+    if [[ $exit_status -eq 0 ]]; then
+      #get total number of documents in old_index
+      num_docs_old=$(get_document_count "${!indexName}" "$ELASTIC_SERVER_URL")
 
-    if [[ $exit_status -eq 0 && -n "$NEW_MIGRATE_INDEX" ]]; then
+      #get total number of documents in new_index
 
-        if [ -v "$optionalMappingFile" ] && [ -n "${!optionalMappingFile}" ]; then
-            # If updateFile is set and not empty, run the script with it
-            >&2 echo "Running update script for optional mapping"
-            ./update-index.sh "$ELASTIC_SERVER_URL" "$NEW_MIGRATE_INDEX" "${!optionalMappingFile}"
-        fi 
+      num_docs_new=$(get_document_count "$NEW_INDEX" "$ELASTIC_SERVER_URL")
 
-        #get total number of documents in old_index
-        num_docs_old=$(curl -s -X GET "$ELASTIC_SERVER_URL/${!indexName}/_search" -H 'Content-Type: application/json' -d'
-          {
-            "query": {
-              "match_all": {}
-            }
-          }' | jq -r '.hits.total.value')
+      >&2 echo -e "Old index doc count: $num_docs_old \nNew index doc count: $num_docs_new"
 
-        >&2 echo "migrate-script created new index, deleting old index: ${!indexName}"
-        #get total number of documents in new_index
+      #only when old index is deleted add-alias is evoked
+      if [ "$num_docs_old" -eq "$num_docs_new" ]; then
+        # Deleting old index..."
+        >&2 echo "Document counts match. Proceeding with deletion of old index and setting alias..."
+        while true; do
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/${!indexName}" -H 'Content-Type:application/json' -H 'Accept: application/json')
+          if [ "$response" -eq 200 ]; then
+              ./add-alias.sh $ELASTIC_SERVER_URL $NEW_INDEX ${!indexName}
+              break
+          fi
+          sleep 1
+        done
+      else
+        >&2 echo "Document counts do not match. Not proceeding with deletion and reversing read-only on index..."
+        STATUS_CODE_READ_ONLY=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$ELASTIC_SERVER_URL/${!indexName}/_settings?pretty" -H "Content-Type: application/json" -d'{
+          "index.blocks.read_only_allow_delete": null
+          }')
+        >&2 echo "The read only operation status is: $STATUS_CODE_READ_ONLY"
 
-        num_docs_new=$(curl -s -X GET "$ELASTIC_SERVER_URL/$NEW_MIGRATE_INDEX/_search" -H 'Content-Type: application/json' -d'
-          {
-            "query": {
-              "match_all": {}
-            }
-          }' | jq -r '.hits.total.value')
+        DELETE_NEW_INDEX_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
 
-        >&2 echo -e "Old index doc count: $num_docs_old \nNew index doc count: $num_docs_new"
+        >&2 echo "The delete request status for index is: $DELETE_NEW_INDEX_RESPONSE"
+      fi
 
-        #only when old index is deleted add-alias is evoked
-        if [ "$num_docs_old" -eq "$num_docs_new" ]; then
-            >&2 echo "Document counts match. Proceeding with deletion of old index and setting alias..."
-            while true; do
-                response=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/${!indexName}" -H 'Content-Type:application/json' -H 'Accept: application/json')
-                if [ "$response" -eq 200 ]; then
-                    ./add-alias.sh $ELASTIC_SERVER_URL $NEW_MIGRATE_INDEX ${!indexName}
-                    break
-                fi
-                sleep 1
-            done
-        else
-            >&2 echo "Document counts do not match. Not proceeding with deletion and reversing read-only on index..."
-            STATUS_CODE_READ_ONLY=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$ELASTIC_SERVER_URL/${!indexName}/_settings?pretty" -H "Content-Type: application/json" -d'{
-              "index.blocks.read_only_allow_delete": null
-              }')
-            >&2 echo "The read only operation status is: $STATUS_CODE_READ_ONLY"
-
-            DELETE_NEW_MIGRATE_INDEX_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_MIGRATE_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
-
-            >&2 echo "The delete request status for migrate index is: $DELETE_NEW_MIGRATE_INDEX_RESPONSE"
-
-        fi
-
-    else
-    >&2 echo "Nothing else to do, migrate-script did not create new index"
     fi
 
   done
