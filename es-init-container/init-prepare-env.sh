@@ -32,17 +32,16 @@ for currIndex in ${index_array[@]}; do
     if [ -v "$optionalMappingFile" ] && [ -n "${!optionalMappingFile}" ]; then
       # If updateFile is set and not empty, run the script with it
       >&2 echo "Running update script for optional mapping"
-      ./update-index.sh "$ELASTIC_SERVER_URL" "$NEW_INDEX" "${!optionalMappingFile}"
+      response=$(update_request "$ELASTIC_SERVER_URL" "$NEW_INDEX" "${!optionalMappingFile}")
     fi
   fi
 
   STATUS_CODE_READ_ONLY=$(set_read_only_allow_delete "$ELASTIC_SERVER_URL" "${!indexName}" "true")
 
-  ./re-index.sh "$ELASTIC_SERVER_URL" "${!indexName}" "$NEW_INDEX"
-  exit_status=$?  # get the exit status of the script
+  response=$(reindex_request "$ELASTIC_SERVER_URL" "${!indexName}" "$NEW_INDEX")
 
   #if re-index successful
-  if [[ $exit_status -eq 0 ]]; then
+  if [[ $response == '200' ]]; then
     #get total number of documents in old_index
     num_docs_old=$(get_document_count "$ELASTIC_SERVER_URL" "${!indexName}")
 
@@ -56,9 +55,11 @@ for currIndex in ${index_array[@]}; do
       # Deleting old index..."
       >&2 echo "Document counts match. Proceeding with deletion of old index and setting alias..."
       while true; do
-        response=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/${!indexName}" -H 'Content-Type:application/json' -H 'Accept: application/json')
-        if [ "$response" -eq 200 ]; then
-            ./add-alias.sh $ELASTIC_SERVER_URL $NEW_INDEX ${!indexName}
+
+        response=$(delete_index_request "$ELASTIC_SERVER_URL" "${!indexName}")
+
+        if [ "$response" == '200' ]; then
+            response=$(add_index_alias $ELASTIC_SERVER_URL $NEW_INDEX ${!indexName})
             break
         fi
         sleep 1
@@ -70,7 +71,7 @@ for currIndex in ${index_array[@]}; do
 
       >&2 echo "The read only operation status is: $STATUS_CODE_READ_ONLY"
 
-      DELETE_NEW_INDEX_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
+      DELETE_NEW_INDEX_RESPONSE=$(delete_index_request "$ELASTIC_SERVER_URL" "$NEW_INDEX")
 
       >&2 echo "The delete request status for index is: $DELETE_NEW_INDEX_RESPONSE"
     fi

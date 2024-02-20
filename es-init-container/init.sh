@@ -40,21 +40,23 @@ else
     
     >&2 echo -e "\n\n\n\n"
     >&2 echo "Index alias is : ${!indexPrefixName}"
-    CURRENT_INDEX_NAME=$(curl -X GET "$ELASTIC_SERVER_URL/_alias/${!indexPrefixName}" | jq -r 'keys[0]')
+    
+    waiting=$(./wait-for-elasticsearch.sh "just waiting for elastic" $ELASTIC_SERVER_URL)
+
+    CURRENT_INDEX_NAME=$(curl -s -X GET "$ELASTIC_SERVER_URL/_alias/${!indexPrefixName}" | jq -r 'keys[0]')
 
     >&2 echo "Checking if index exists..."
     index_exist="$(curl -s -o /dev/null -I -w "%{http_code}" "$ELASTIC_SERVER_URL/$CURRENT_INDEX_NAME/?pretty")"
 
     >&2 echo "HTTP Code returned by ElasticSearch: $index_exist"
 
-    if [ "$index_exist" = '200' ]; then
+    if [ "$index_exist" == '200' ]; then
       >&2 echo "Index ${!indexPrefixName} already created"
         
       >&2 echo "Checking if migration is required ..."
-        
-      ./check-mapping-version.sh "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "${!indexFile}"
-      exit_status=$?  # get the exit status of the script
-        
+      check_mapping_version "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "${!indexFile}"
+      exit_status=$?
+
       if [[ $exit_status -eq 1 ]]; then
           
         #versions are different
@@ -66,7 +68,7 @@ else
           if [ -v "$optionalMappingFile" ] && [ -n "${!optionalMappingFile}" ]; then
             # If updateFile is set and not empty, run the script with it
             >&2 echo "Running update script for optional mapping"
-            ./update-index.sh "$ELASTIC_SERVER_URL" "$NEW_INDEX" "${!optionalMappingFile}"
+            response=$(update_request "$ELASTIC_SERVER_URL" "$NEW_INDEX" "${!optionalMappingFile}")
           fi 
         fi
 
@@ -74,11 +76,10 @@ else
 
           
         #re-index
-        ./re-index.sh "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "$NEW_INDEX"
-        exit_status=$?  # get the exit status of the script
-
+        response=$(reindex_request "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "$NEW_INDEX")
+        >&2 echo "The response is: $response"
         #if re-index successful
-        if [[ $exit_status -eq 0 ]]; then
+        if [[ $response == '200' ]]; then
           #get total number of documents in old_index
           num_docs_old=$(get_document_count "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" )
 
@@ -93,9 +94,9 @@ else
             # Deleting old index..."
             >&2 echo "Document counts match. Proceeding with deletion of old index and setting alias..."
             while true; do
-              response=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$CURRENT_INDEX_NAME" -H 'Content-Type:application/json' -H 'Accept: application/json')
-              if [ "$response" -eq 200 ]; then
-                  ./add-alias.sh $ELASTIC_SERVER_URL $NEW_INDEX ${!indexPrefixName}
+              response=$(delete_index_request "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME")
+              if [ "$response" == '200' ]; then
+                  add_alias_response=$(add_index_alias $ELASTIC_SERVER_URL $NEW_INDEX ${!indexPrefixName})
                   break
               fi
               sleep 1
@@ -107,8 +108,7 @@ else
 
             >&2 echo "The read only operation status is: $STATUS_CODE_READ_ONLY"
 
-            DELETE_NEW_INDEX_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
-
+            DELETE_NEW_INDEX_RESPONSE=$(delete_index_request "$ELASTIC_SERVER_URL" "$NEW_INDEX")
             >&2 echo "The delete request status for index is: $DELETE_NEW_INDEX_RESPONSE"
           fi
 
@@ -124,14 +124,14 @@ else
       if [ -v "$optionalMappingFile" ] && [ -n "${!optionalMappingFile}" ]; then
         # If updateFile is set and not empty, run the script with it
         >&2 echo "Running update script for optional mapping"
-        ./update-index.sh "$ELASTIC_SERVER_URL" "$NEW_INDEX" "${!optionalMappingFile}"
+        response=$(update_request "$ELASTIC_SERVER_URL" "$NEW_INDEX" "${!optionalMappingFile}")
       fi
       >&2 echo "New Index created. Calling add-alias script"
-      ./add-alias.sh $ELASTIC_SERVER_URL $NEW_INDEX ${!indexPrefixName}
-      exit_status=$?  # get the exit status of the script
-      if [[ $exit_status -eq 1 ]]; then
+      add_alias_response=$(add_index_alias $ELASTIC_SERVER_URL $NEW_INDEX ${!indexPrefixName})
+      if [[ "$add_alias_response" != '200' ]]; then
         >&2 echo "Deleting new index since alias could not be created"
-        DELETE_NEW_INDEX_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
+
+        DELETE_NEW_INDEX_RESPONSE=$(delete_index_request "$ELASTIC_SERVER_URL" "$NEW_INDEX")
 
       fi
 

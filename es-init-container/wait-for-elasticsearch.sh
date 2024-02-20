@@ -58,4 +58,4 @@ until [ "$health" = 'yellow' ] || [ "$health" = 'green' ]; do
 done
 
 >&2 echo "Elastic Search is up"
-exec $cmd
+bash $cmd
