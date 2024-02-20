@@ -22,9 +22,6 @@ set_read_only_allow_delete() {
     local valueToSet="$3"
 
     local returnedCode
-    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$elastic_server_url/$index_name/_settings?pretty" -H "Content-Type: application/json" -d '
-    {
-        "index.blocks.read_only_allow_delete": $valueToSet
-    }')
+    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$elastic_server_url/$index_name/_settings?pretty" -H "Content-Type: application/json" -d "{\"index.blocks.read_only_allow_delete\": \"$valueToSet\"}")
     echo "$returnedCode"
 }

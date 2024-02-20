@@ -70,9 +70,8 @@ else
           fi 
         fi
 
-        STATUS_CODE_READ_ONLY=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$ELASTIC_SERVER_URL/$CURRENT_INDEX_NAME/_settings?pretty" -H "Content-Type: application/json" -d'{
-            "index.blocks.read_only_allow_delete": true
-        }')
+        STATUS_CODE_READ_ONLY=$(set_read_only_allow_delete "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "true")
+
           
         #re-index
         ./re-index.sh "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "$NEW_INDEX"
@@ -103,9 +102,9 @@ else
             done
           else
             >&2 echo "Document counts do not match. Not proceeding with deletion and reversing read-only on index..."
-            STATUS_CODE_READ_ONLY=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$ELASTIC_SERVER_URL/$CURRENT_INDEX_NAME/_settings?pretty" -H "Content-Type: application/json" -d'{
-              "index.blocks.read_only_allow_delete": null
-              }')
+
+            STATUS_CODE_READ_ONLY=$(set_read_only_allow_delete "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "null")
+
             >&2 echo "The read only operation status is: $STATUS_CODE_READ_ONLY"
 
             DELETE_NEW_INDEX_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$ELASTIC_SERVER_URL/$NEW_INDEX" -H 'Content-Type:application/json' -H 'Accept: application/json')
