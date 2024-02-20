@@ -44,11 +44,10 @@ for currIndex in ${index_array[@]}; do
   #if re-index successful
   if [[ $exit_status -eq 0 ]]; then
     #get total number of documents in old_index
-    num_docs_old=$(get_document_count "${!indexName}" "$ELASTIC_SERVER_URL")
+    num_docs_old=$(get_document_count "$ELASTIC_SERVER_URL" "${!indexName}")
 
     #get total number of documents in new_index
-
-    num_docs_new=$(get_document_count "$NEW_INDEX" "$ELASTIC_SERVER_URL")
+    num_docs_new=$(get_document_count "$ELASTIC_SERVER_URL" "$NEW_INDEX")
 
     >&2 echo -e "Old index doc count: $num_docs_old \nNew index doc count: $num_docs_new"
 
