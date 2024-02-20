@@ -25,24 +25,7 @@
 #        2) Updates index provided optional mapping file
 #        3) Evokes add-alias
 
-
-#function for retrieving document count from index
-
-get_document_count() {
-    local index_name="$1"  # The index name (e.g., "old_index" or "new_index")
-    local elastic_server_url="$2"  # The Elasticsearch server URL
-
-    # Query Elasticsearch to get the document count
-    local num_docs
-    num_docs=$(curl -s -X GET "$elastic_server_url/$index_name/_search" -H 'Content-Type: application/json' -d '
-    {
-        "query": {
-            "match_all": {}
-        }
-    }' | jq -r '.hits.total.value')
-
-    echo "$num_docs"  # Print the document count
-}
+source es_functions.sh
 
 if [[ -v PREPARE_ENV && ! -z ${PREPARE_ENV} ]]; then
     echo "PREPARE_ENV is declared and not null. Running prepare-env.sh"
@@ -58,6 +41,7 @@ else
     >&2 echo -e "\n\n\n\n"
     >&2 echo "Index alias is : ${!indexPrefixName}"
     CURRENT_INDEX_NAME=$(curl -X GET "$ELASTIC_SERVER_URL/_alias/${!indexPrefixName}" | jq -r 'keys[0]')
+
     >&2 echo "Checking if index exists..."
     index_exist="$(curl -s -o /dev/null -I -w "%{http_code}" "$ELASTIC_SERVER_URL/$CURRENT_INDEX_NAME/?pretty")"
 
@@ -66,10 +50,9 @@ else
     if [ "$index_exist" = '200' ]; then
       >&2 echo "Index ${!indexPrefixName} already created"
         
-      >&2 echo "Checking if migration is required"
+      >&2 echo "Checking if migration is required ..."
         
       ./check-mapping-version.sh "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "${!indexFile}"
-        
       exit_status=$?  # get the exit status of the script
         
       if [[ $exit_status -eq 1 ]]; then
@@ -98,11 +81,11 @@ else
         #if re-index successful
         if [[ $exit_status -eq 0 ]]; then
           #get total number of documents in old_index
-          num_docs_old=$(get_document_count "$CURRENT_INDEX_NAME" "$ELASTIC_SERVER_URL")
+          num_docs_old=$(get_document_count "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" )
 
           #get total number of documents in new_index
 
-          num_docs_new=$(get_document_count "$NEW_INDEX" "$ELASTIC_SERVER_URL")
+          num_docs_new=$(get_document_count "$ELASTIC_SERVER_URL" "$NEW_INDEX")
 
           >&2 echo -e "Old index doc count: $num_docs_old \nNew index doc count: $num_docs_new"
 
