@@ -41,9 +41,7 @@ else
     >&2 echo -e "\n\n\n\n"
     >&2 echo "Index alias is : ${!indexPrefixName}"
     
-    waiting=$(./wait-for-elasticsearch.sh "just waiting for elastic" $ELASTIC_SERVER_URL)
-
-    CURRENT_INDEX_NAME=$(curl -s -X GET "$ELASTIC_SERVER_URL/_alias/${!indexPrefixName}" | jq -r 'keys[0]')
+    CURRENT_INDEX_NAME=$(./wait-for-elasticsearch.sh "curl -s -X GET "$ELASTIC_SERVER_URL/_alias/${!indexPrefixName}" | jq -r 'keys[0]'" $ELASTIC_SERVER_URL)
 
     >&2 echo "Checking if index exists..."
     index_exist="$(curl -s -o /dev/null -I -w "%{http_code}" "$ELASTIC_SERVER_URL/$CURRENT_INDEX_NAME/?pretty")"

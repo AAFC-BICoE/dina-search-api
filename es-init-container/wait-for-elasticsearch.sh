@@ -15,14 +15,14 @@
 # create_index to perform the initial index creation (if necessary).
 #
 set -e
-
+executable="$1"
 host="$2"
 
-if [ -n "$5" ]
+if [ "$#" -eq 2 ]
 then
-  cmd="$1 $2 $3 $4 $5"
+  cmd="$executable"
 else
-  cmd="$1 $2 $3 $4"
+  cmd="$@"
 fi
 
 >&2 echo -e "\n\n Start of wait-for-elasticsearch.sh"
@@ -58,4 +58,4 @@ until [ "$health" = 'yellow' ] || [ "$health" = 'green' ]; do
 done
 
 >&2 echo "Elastic Search is up"
-bash $cmd
+eval $cmd
