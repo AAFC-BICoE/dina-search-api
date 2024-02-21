@@ -26,7 +26,7 @@ for currIndex in ${index_array[@]}; do
   >&2 echo "Index alias is not created for: ${!indexName}"
 
   #Create new index, re-index, delete old, add alias
-  NEW_INDEX=$(./wait-for-elasticsearch.sh ./create-index.sh $ELASTIC_SERVER_URL ${!indexName} ${!indexFile})
+  NEW_INDEX=$(./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL ./create-index.sh $ELASTIC_SERVER_URL ${!indexName} ${!indexFile})
 
   if [[ -n "$NEW_INDEX" ]]; then
     if [ -v "$optionalMappingFile" ] && [ -n "${!optionalMappingFile}" ]; then

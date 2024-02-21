@@ -41,7 +41,7 @@ else
     >&2 echo -e "\n\n\n\n"
     >&2 echo "Index alias is : ${!indexPrefixName}"
     
-    CURRENT_INDEX_NAME=$(./wait-for-elasticsearch.sh "curl -s -X GET "$ELASTIC_SERVER_URL/_alias/${!indexPrefixName}" | jq -r 'keys[0]'" $ELASTIC_SERVER_URL)
+    CURRENT_INDEX_NAME=$(./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL "curl -s -X GET "$ELASTIC_SERVER_URL/_alias/${!indexPrefixName}" | jq -r 'keys[0]'")
 
     >&2 echo "Checking if index exists..."
     index_exist="$(curl -s -o /dev/null -I -w "%{http_code}" "$ELASTIC_SERVER_URL/$CURRENT_INDEX_NAME/?pretty")"
@@ -60,7 +60,7 @@ else
         #versions are different
         #create index
         >&2 echo "Running create script"
-        NEW_INDEX=$(./wait-for-elasticsearch.sh ./create-index.sh $ELASTIC_SERVER_URL ${!indexPrefixName} ${!indexFile})
+        NEW_INDEX=$(./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL ./create-index.sh $ELASTIC_SERVER_URL ${!indexPrefixName} ${!indexFile})
 
         if [[ -n "$NEW_INDEX" ]]; then
           if [ -v "$optionalMappingFile" ] && [ -n "${!optionalMappingFile}" ]; then
@@ -118,7 +118,7 @@ else
     
     #Index did not exist. Creating index
     else
-      NEW_INDEX=$(./wait-for-elasticsearch.sh ./create-index.sh $ELASTIC_SERVER_URL ${!indexPrefixName} ${!indexFile})
+      NEW_INDEX=$(./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL ./create-index.sh $ELASTIC_SERVER_URL ${!indexPrefixName} ${!indexFile})
       if [ -v "$optionalMappingFile" ] && [ -n "${!optionalMappingFile}" ]; then
         # If updateFile is set and not empty, run the script with it
         >&2 echo "Running update script for optional mapping"

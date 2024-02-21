@@ -73,6 +73,7 @@ reindex_request() {
         "index": "'$dest_index_name'"
         }
     }')
+    sleep 2
     >&2 echo "Response is: $returnedCode"
 
     echo "$returnedCode"

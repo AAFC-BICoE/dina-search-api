@@ -15,15 +15,10 @@
 # create_index to perform the initial index creation (if necessary).
 #
 set -e
-executable="$1"
-host="$2"
+host="$1"
+shift
 
-if [ "$#" -eq 2 ]
-then
-  cmd="$executable"
-else
-  cmd="$@"
-fi
+cmd="$executable $@"
 
 >&2 echo -e "\n\n Start of wait-for-elasticsearch.sh"
 
