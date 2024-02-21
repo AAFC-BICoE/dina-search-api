@@ -18,7 +18,7 @@ set -e
 host="$1"
 shift
 
-cmd="$executable $@"
+cmd="$@"
 
 >&2 echo -e "\n\n Start of wait-for-elasticsearch.sh"
 
