@@ -42,20 +42,21 @@ else
     >&2 echo "Index prefix name is : ${!indexPrefixName}"
     
     CURRENT_INDEX_NAME=$(./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL "curl -s -X GET "$ELASTIC_SERVER_URL/_alias/${!indexPrefixName}" | jq -r 'keys[0]'")
-
-    if echo "$CURRENT_INDEX_NAME" | grep -q "error"; then
+    
+    if [[ "$CURRENT_INDEX_NAME" != "${!indexPrefixName}"* ]]; then
       response="$(curl -s -o /dev/null -I -w "%{http_code}" "$ELASTIC_SERVER_URL/${!indexPrefixName}")"
       >&2 echo "Response code when checking index using prefix as name: $response"
       if [ "$response" == '200' ]; then
         >&2 echo "The index does exist but has no alias. Run script with PREPARE_ENV to create index/alias pair."
         >&2 echo "Skipping index creation."
         continue
+      else
+        >&2 echo "No index or alias exists with: ${!indexPrefixName}. Proceeding with script"
       fi
     fi
 
     index_exist="$(curl -s -o /dev/null -I -w "%{http_code}" "$ELASTIC_SERVER_URL/$CURRENT_INDEX_NAME/?pretty")"
 
-    >&2 echo "HTTP Code returned by checking index: $index_exist"
 
     if [ "$index_exist" == '200' ]; then
       >&2 echo "Index ${!indexPrefixName} already created"
