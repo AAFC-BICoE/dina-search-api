@@ -43,8 +43,9 @@ else
     
     CURRENT_INDEX_NAME=$(./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL "curl -s -X GET "$ELASTIC_SERVER_URL/_alias/${!indexPrefixName}" | jq -r 'keys[0]'")
 
-    if [ "$CURRENT_INDEX_NAME" == "error" ]; then
-      response="$(curl -s -o /dev/null -I -w "%{http_code}" "$ELASTIC_SERVER_URL/${!indexPrefixName}/?pretty")"
+    if echo "$CURRENT_INDEX_NAME" | grep -q "error"; then
+      response="$(curl -s -o /dev/null -I -w "%{http_code}" "$ELASTIC_SERVER_URL/${!indexPrefixName}")"
+      >&2 echo "Response code when checking index using prefix as name: $response"
       if [ "$response" == '200' ]; then
         >&2 echo "The index does exist but has no alias. Run script with PREPARE_ENV to create index/alias pair."
         >&2 echo "Skipping index creation."
