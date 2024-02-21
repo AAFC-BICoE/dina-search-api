@@ -15,18 +15,14 @@
 # create_index to perform the initial index creation (if necessary).
 #
 set -e
+host="$1"
+shift
 
-host="$2"
+cmd="$@"
 
-if [ -n "$5" ]
-then
-  cmd="$1 $2 $3 $4 $5"
-else
-  cmd="$1 $2 $3 $4"
-fi
+>&2 echo -e "\n\n Start of wait-for-elasticsearch.sh"
 
-echo $host
-echo $cmd
+>&2 echo $cmd
 
 until $(curl --output /dev/null --silent --head --fail "$host"); do
     printf '.'
@@ -36,7 +32,7 @@ done
 # First wait for ES to start...
 response=$(curl $host)
 
-echo $response
+#echo $response
 
 until [ "$response" = "200" ]; do
     response=$(curl --write-out %{http_code} --silent --output /dev/null "$host")
@@ -57,4 +53,4 @@ until [ "$health" = 'yellow' ] || [ "$health" = 'green' ]; do
 done
 
 >&2 echo "Elastic Search is up"
-exec $cmd
+eval $cmd
