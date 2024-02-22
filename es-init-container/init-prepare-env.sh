@@ -23,10 +23,26 @@ for currIndex in ${index_array[@]}; do
   optionalMappingFile=DINA_${currIndex}_OPTIONAL_INDEX_SETTINGS_FILE
 
   >&2 echo -e "\n\n\n\n"
-  >&2 echo "Index alias is not created for: ${!indexName}"
+  >&2 echo "Checking if index exists but has no alias..."
 
   #Create new index, re-index, delete old, add alias
-  NEW_INDEX=$(./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL ./create-index.sh $ELASTIC_SERVER_URL ${!indexName} ${!indexFile})
+  
+  CURRENT_INDEX_NAME=$(./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL "curl -s -X GET "$ELASTIC_SERVER_URL/_alias/${!indexName}" | jq -r 'keys[0]'")
+
+  if [[ "$CURRENT_INDEX_NAME" != "${!indexName}"* ]]; then
+    response="$(curl -s -o /dev/null -I -w "%{http_code}" "$ELASTIC_SERVER_URL/${!indexName}")"
+    >&2 echo "Response code when checking index using prefix as name: $response"
+    if [ "$response" == '200' ]; then
+      >&2 echo "Index exists without alias, creating index."
+      NEW_INDEX=$(./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL ./create-index.sh $ELASTIC_SERVER_URL ${!indexName} ${!indexFile})
+    else
+      >&2 echo "No index or alias exists with: ${!indexName}. This scenario is not suitable for prepare-env script. Please re-run container without PREPARE_ENV"
+      continue
+    fi
+  else
+    >&2 echo "Index already has an alias. This scenario is not suitable for prepare-env script. Please re-run container without PREPARE_ENV"
+    continue
+  fi
 
   if [[ -n "$NEW_INDEX" ]]; then
     if [ -v "$optionalMappingFile" ] && [ -n "${!optionalMappingFile}" ]; then
