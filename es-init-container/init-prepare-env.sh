@@ -28,7 +28,7 @@ for currIndex in ${index_array[@]}; do
   #Create new index, re-index, delete old, add alias
   
   CURRENT_INDEX_NAME=$(./wait-for-elasticsearch.sh $ELASTIC_SERVER_URL "curl -s -X GET "$ELASTIC_SERVER_URL/_alias/${!indexName}" | jq -r 'keys[0]'")
-  >&2 echo $CURRENT_INDEX_NAME
+
   if [[ "$CURRENT_INDEX_NAME" != "${!indexName}"* ]]; then
     response="$(curl -s -o /dev/null -I -w "%{http_code}" "$ELASTIC_SERVER_URL/${!indexName}")"
     >&2 echo "Response code when checking index using prefix as name: $response"
