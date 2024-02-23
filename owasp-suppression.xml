@@ -6,10 +6,6 @@
     </suppress>
     <suppress>
         <notes>CVE about Keycloak Server</notes>
-        <cve>CVE-2021-4133</cve>
-    </suppress>
-    <suppress>
-        <notes>CVE about Keycloak Server</notes>
         <cve>CVE-2022-1245</cve>
     </suppress>
     <suppress>
@@ -19,6 +15,10 @@
     <suppress>
         <notes>no untrusted source</notes>
         <cve>CVE-2022-1471</cve>
+    </suppress>
+    <suppress>
+        <notes>no UriComponentsBuilder</notes>
+        <cve>CVE-2024-22243</cve>
     </suppress>
     <suppress>
         <notes>not valid for search-api</notes>

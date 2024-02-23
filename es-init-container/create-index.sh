@@ -1,22 +1,23 @@
 #!/bin/bash
 
 #
-# The script is testing the presence of the index name. If the index does not
-# exist the index is created with the passed index json configuration otherwise
-# the script simply exit.
+# The script is responsible for creating an index.
+# A new name will be generated based on the prefix and the current timestamp.
 #
+
 HOST="$1"           # Host name in the url format
-INDEX="$2"          # ES index name
+INDEX_PREFIX="$2"   # ES index prefix
 SETTINGS_FILE="$3"  # JSON file path name containing the settings for the index
 
-index_exist="$(curl -s -o /dev/null -I -w "%{http_code}" "$HOST/$INDEX/?pretty")"
-echo "HTTP Code returned by ElasticSearch: $index_exist"
-if [ "$index_exist" = '200' ]
-then
-  echo "Index $INDEX already created, nothing to do"
-else
-  echo "Creating index $INDEX"
-  echo "Mapping definition:"
-  cat "$SETTINGS_FILE"
-  curl -X PUT "$HOST/$INDEX/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
-fi
+>&2 echo -e "\n\n Start of create-index.sh"
+
+TIMESTAMP=$(date +%Y%m%d%H%M%S)
+INDEX_TIMESTAMP=${INDEX_PREFIX}_${TIMESTAMP}
+
+>&2 echo "Creating index $INDEX_TIMESTAMP"
+
+>&2 echo "Mapping definition:"
+>&2 cat "$SETTINGS_FILE"
+curl -s -o /dev/null -X PUT "$HOST/$INDEX_TIMESTAMP/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
+
+echo $INDEX_TIMESTAMP

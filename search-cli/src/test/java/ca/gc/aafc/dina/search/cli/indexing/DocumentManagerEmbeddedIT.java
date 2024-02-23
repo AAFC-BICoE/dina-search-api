@@ -27,6 +27,7 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.mock.Expectation;
+import org.mockserver.model.HttpResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -50,7 +51,7 @@ import ca.gc.aafc.dina.testsupport.elasticsearch.*;
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 @ExtendWith(MockServerExtension.class) 
-@MockServerSettings(ports = {1080, 8081, 8082})
+@MockServerSettings(ports = {1080, 8081, 8082, TestConstants.KEYCLOAK_MOCK_PORT})
 public class DocumentManagerEmbeddedIT {
 
   private static final String EMBEDDED_ORG_NAME = "Integration";
@@ -113,7 +114,8 @@ public class DocumentManagerEmbeddedIT {
   @SneakyThrows({ IOException.class, InterruptedException.class })
   @Test
   public void processEmbedded_Document() {
-    MockKeyCloakAuthentication mockKeycloakAuthentication = new MockKeyCloakAuthentication(client);
+
+    MockKeyCloakAuthentication.mockKeycloak(client);
 
     // Here we register an endpoint for organization since this test assumes organization is an external relationship
     EndpointDescriptor organizationDescriptor = new EndpointDescriptor();
@@ -121,13 +123,13 @@ public class DocumentManagerEmbeddedIT {
     serviceEndpointProperties.getEndpoints().put("organization", organizationDescriptor);
 
     // Mock the person request/response.
-    MockServerTestUtils.addMockGetResponse(client, mockKeycloakAuthentication, EMBEDDED_DOCUMENT_TYPE,
+    MockServerTestUtils.addMockGetResponse(client, EMBEDDED_DOCUMENT_TYPE,
         EMBEDDED_DOCUMENT_ID,
         List.of(Pair.of("include", "organizations")), EMBEDDED_PERSON_RESPONSE_PATH);
 
     // Mock the organization request after an update. That mock will be used
     // indirectly by the re-index operation from the processEmbedded.
-    Expectation[] orgSuccess = MockServerTestUtils.addMockGetResponse(client, mockKeycloakAuthentication,
+    Expectation[] orgSuccess = MockServerTestUtils.addMockGetResponse(client,
         EMBEDDED_DOCUMENT_INCLUDED_TYPE,
         EMBEDDED_DOCUMENT_INCLUDED_ID, List.of(), EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH);
 
@@ -203,10 +205,10 @@ public class DocumentManagerEmbeddedIT {
     // 404 to simulate a deletion
     client.clear(orgSuccess[0].getHttpRequest());
 
-    client.when(mockKeycloakAuthentication.setupMockRequest()
+    client.when(MockKeyCloakAuthentication.setupMockRequest()
         .withMethod("GET")
         .withPath("/api/v1/" + EMBEDDED_DOCUMENT_INCLUDED_TYPE + "/" + EMBEDDED_DOCUMENT_INCLUDED_ID))
-        .respond(mockKeycloakAuthentication.setupMockResponse()
+        .respond(HttpResponse.response()
             .withStatusCode(404)
             .withBody("")
             .withDelay(TimeUnit.SECONDS, 1));
