@@ -44,7 +44,7 @@
     <json-path.version>2.7.0</json-path.version>
 
     <!-- Versions override-->
-    <spring-security.version>5.7.10</spring-security.version>
+    <org.springframework.version>5.3.32</org.springframework.version>
   </properties>
 
   <!-- Common sub module dependencies -->
