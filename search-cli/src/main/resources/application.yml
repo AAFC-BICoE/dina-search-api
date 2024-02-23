@@ -3,9 +3,9 @@ spring:
     web-application-type: none
   shell.command.history.enabled: false
   rabbitmq.listener.simple.default-requeue-rejected: false
-keycloak:
-  openid_auth_server: http://keycloak.local:8080/auth/realms/dina/protocol/openid-connect/token
-  client_id: objectstore
+http-client:
+  openIdConnectBaseUrl: http://keycloak.local:8080/auth/realms/dina/protocol/openid-connect/
+  clientId: objectstore
   username: cnc-cm
   password: cnc-cm
 elasticsearch:

@@ -29,7 +29,7 @@
     <java.version>17</java.version>
 
     <jakarta.json.version>2.0.1</jakarta.json.version>
-    <dina-base-api.version>0.114</dina-base-api.version>
+    <dina-base-api.version>0.117</dina-base-api.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>

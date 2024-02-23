@@ -1,5 +1,7 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
+import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
+import ca.gc.aafc.dina.messaging.message.DocumentOperationType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
@@ -7,8 +9,6 @@ import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
 
 import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;
-import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
-import ca.gc.aafc.dina.search.messaging.types.DocumentOperationType;
 
 @Component
 @ShellComponent
@@ -30,7 +30,7 @@ public class SendMQMessage {
 
     DocumentOperationType docOperationType = DocumentOperationType.valueOf(operation.toUpperCase());
 
-    DocumentOperationNotification docNotification = 
+    DocumentOperationNotification docNotification =
       new DocumentOperationNotification(dryRun, 
             type, 
             documentId, 

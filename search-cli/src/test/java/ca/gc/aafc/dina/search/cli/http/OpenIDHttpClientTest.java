@@ -29,14 +29,15 @@ public class OpenIDHttpClientTest {
   public void getDataFromUrlWithNullEndpointDescriptor() {
 
     assertNotNull(openIdClient);
-    Assertions.assertThrows(
+    Exception exception = Assertions.assertThrows(
       SearchApiException.class, () -> {
         openIdClient.getDataFromUrl(serviceEndpointProperties.getEndpoints().get("Unknow Type"));
       });
-
+    String expectedMessage = "Invalid endpoint descriptor, can not be null";
+    assertEquals(expectedMessage, exception.getMessage());
   }
 
-  @DisplayName("Test Get Data from URL with Null EndpointDescriptor")
+  @DisplayName("Test Get Data from URL with valid EndpointDescriptor")
   @Test
   public void getDataFromUrlWithPersonEndpointDescriptor() {
 
@@ -50,10 +51,9 @@ public class OpenIDHttpClientTest {
         });
 
     // validate that we et the proper exception
-    //
-    String expectedMessage = "Authentication rejected";
+    // the exception is due to the fact that Keycloak url won't resolve but we know we got to the http request
+    String expectedMessage = "Exception during retrieval from http://localhost:8082/api/v1/person/?include=organizations";
     assertEquals(expectedMessage, exception.getMessage());
-    
   }
 
 }
