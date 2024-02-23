@@ -1,13 +1,13 @@
 package ca.gc.aafc.dina.search.cli.messaging;
 
+import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
+import ca.gc.aafc.dina.messaging.message.DocumentOperationType;
 import ca.gc.aafc.dina.search.cli.TestConstants;
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
 import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
 import ca.gc.aafc.dina.search.cli.utils.MockServerTestUtils;
-import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
-import ca.gc.aafc.dina.search.messaging.types.DocumentOperationType;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;

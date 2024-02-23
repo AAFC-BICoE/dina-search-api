@@ -1,6 +1,6 @@
 package ca.gc.aafc.dina.search.messaging.consumer;
 
-import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
+import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 
 public interface IMessageProcessor {
 

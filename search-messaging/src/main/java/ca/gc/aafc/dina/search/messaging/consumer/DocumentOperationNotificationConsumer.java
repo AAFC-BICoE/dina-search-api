@@ -2,11 +2,11 @@ package ca.gc.aafc.dina.search.messaging.consumer;
 
 import ca.gc.aafc.dina.messaging.config.RabbitMQQueueProperties;
 import ca.gc.aafc.dina.messaging.consumer.RabbitMQMessageConsumer;
+import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
 import lombok.extern.log4j.Log4j2;
 
 import javax.inject.Named;

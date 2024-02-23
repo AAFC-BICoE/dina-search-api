@@ -1,6 +1,6 @@
 package ca.gc.aafc.dina.search.messaging.producer;
 
-import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
+import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 
 public interface MessageProducer {
 

@@ -1,7 +1,7 @@
 package ca.gc.aafc.dina.search.cli.messaging;
 
+import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import ca.gc.aafc.dina.search.messaging.consumer.IMessageProcessor;
-import ca.gc.aafc.dina.search.messaging.types.DocumentOperationNotification;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.concurrent.CountDownLatch;
