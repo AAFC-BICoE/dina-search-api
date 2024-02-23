@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
+import ca.gc.aafc.dina.search.cli.TestConstants;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
+import org.mockserver.model.HttpResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -33,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 @ExtendWith(MockServerExtension.class) 
-@MockServerSettings(ports = {1080, 8081, 8082})
+@MockServerSettings(ports = {1080, 8081, 8082, TestConstants.KEYCLOAK_MOCK_PORT})
 public class DocumentManagerIT {
 
   private ClientAndServer client;
@@ -77,23 +79,23 @@ public class DocumentManagerIT {
   @Test
   public void processMessage_withIncludedData_properlyAssembledMessage() {
 
-    MockKeyCloakAuthentication mockKeycloakAuthentication = new MockKeyCloakAuthentication(client);
+    MockKeyCloakAuthentication.mockKeycloak(client);
 
     // Mock the person request.
-    client.when(mockKeycloakAuthentication.setupMockRequest()
+    client.when(MockKeyCloakAuthentication.setupMockRequest()
         .withMethod("GET")
         .withPath("/api/v1/" + DOCUMENT_TYPE + "/" + DOCUMENT_ID)
         .withQueryStringParameter("include", "organizations"))
-        .respond(mockKeycloakAuthentication.setupMockResponse()
+        .respond(HttpResponse.response()
             .withStatusCode(200)
             .withBody(Files.readString(PERSON_RESPONSE_PATH))
             .withDelay(TimeUnit.SECONDS, 1));
 
     // Mock the organization request.
-    client.when(mockKeycloakAuthentication.setupMockRequest()
+    client.when(MockKeyCloakAuthentication.setupMockRequest()
         .withMethod("GET")
         .withPath("/api/v1/" + DOCUMENT_INCLUDE_TYPE + "/" + DOCUMENT_INCLUDE_ID))
-        .respond(mockKeycloakAuthentication.setupMockResponse()
+        .respond(HttpResponse.response()
             .withStatusCode(200)
             .withBody(Files.readString(ORGANIZATION_RESPONSE_PATH))
             .withDelay(TimeUnit.SECONDS, 1));

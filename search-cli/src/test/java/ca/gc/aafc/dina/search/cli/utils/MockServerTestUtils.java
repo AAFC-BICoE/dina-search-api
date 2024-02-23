@@ -10,6 +10,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.mock.Expectation;
 import org.mockserver.model.HttpRequest;
+import org.mockserver.model.HttpResponse;
 
 /**
  * Utility class for adding mock responses to a MockServer instance.
@@ -24,7 +25,6 @@ public class MockServerTestUtils {
    * Adds a mock request to the provided MockServer client to respond with the content of the provided JSON file.
    *
    * @param client           The MockServer client instance.
-   * @param mockKeycloakAuthentication         The MockKeyCloakAuthentication instance for setting up authentication.
    * @param docType          The type of the document.
    * @param docIdentifier    The identifier of the document.
    * @param queryParams      The list of query parameters to be added to the request.
@@ -32,11 +32,10 @@ public class MockServerTestUtils {
    * @return An array of Expectation instances representing the configured mock responses.
    * @throws IOException if there is an issue reading the JSON file.
    */
-  public static Expectation[] addMockGetResponse(ClientAndServer client, MockKeyCloakAuthentication mockKeycloakAuthentication,
-      String docType, String docIdentifier,
+  public static Expectation[] addMockGetResponse(ClientAndServer client, String docType, String docIdentifier,
       List<Pair<String, String>> queryParams, Path jsonFileResponse) throws IOException {
 
-    HttpRequest req = mockKeycloakAuthentication.setupMockRequest()
+    HttpRequest req = MockKeyCloakAuthentication.setupMockRequest()
         .withMethod("GET")
         .withPath("/api/v1/" + docType + "/" + docIdentifier);
 
@@ -44,7 +43,8 @@ public class MockServerTestUtils {
       req.withQueryStringParameter(q.getKey(), q.getValue());
     }
 
-    return client.when(req).respond(mockKeycloakAuthentication.setupMockResponse()
+    return client.when(req).respond(
+        HttpResponse.response()
         .withStatusCode(200)
         .withBody(Files.readString(jsonFileResponse))
         .withDelay(TimeUnit.SECONDS, 1));

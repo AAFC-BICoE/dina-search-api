@@ -4,6 +4,8 @@ import java.nio.file.Path;
 
 public interface TestConstants {
 
+  int KEYCLOAK_MOCK_PORT = 8080;
+
   String AGENT_INDEX_MAPPING_FILE = "es-mapping/dina_agent_index_settings.json";
   String OBJECT_STORE_INDEX_MAPPING_FILE = "es-mapping/dina_object_store_index_settings.json";
 

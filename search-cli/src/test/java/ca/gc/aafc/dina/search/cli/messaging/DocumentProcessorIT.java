@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 })
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 @ExtendWith(MockServerExtension.class)
-@MockServerSettings(ports = { 1080, 8081, 8082 })
+@MockServerSettings(ports = { 1080, 8081, 8082, TestConstants.KEYCLOAK_MOCK_PORT })
 public class DocumentProcessorIT {
 
   // Organization related constants:
@@ -79,10 +79,10 @@ public class DocumentProcessorIT {
   @Test
   @SneakyThrows({ IOException.class, InterruptedException.class })
   public void reIndexRelatedDocuments() {
-    MockKeyCloakAuthentication mockKeycloakAuthentication = new MockKeyCloakAuthentication(client);
 
+    MockKeyCloakAuthentication.mockKeycloak(client);
     // Mock the person endpoint
-    Expectation[] expectations = MockServerTestUtils.addMockGetResponse(client, mockKeycloakAuthentication,
+    Expectation[] expectations = MockServerTestUtils.addMockGetResponse(client,
         TestConstants.PERSON_DOCUMENT_TYPE, TestConstants.PERSON_DOCUMENT_ID,
         List.of(Pair.of("include", "organizations")), TestConstants.PERSON_RESPONSE_PATH);
 
@@ -106,7 +106,7 @@ public class DocumentProcessorIT {
 
     // remove the previous mock response
     client.clear(expectations[0].getHttpRequest());
-    MockServerTestUtils.addMockGetResponse(client, mockKeycloakAuthentication, TestConstants.PERSON_DOCUMENT_TYPE,
+    MockServerTestUtils.addMockGetResponse(client, TestConstants.PERSON_DOCUMENT_TYPE,
         TestConstants.PERSON_DOCUMENT_ID,
         List.of(Pair.of("include", "organizations")), TestConstants.PERSON_ORG_RESPONSE_PATH);
 
