@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 public class LatchBasedMessageProcessor implements IMessageProcessor {
 
-  private static final int MAX_WAIT_SEC = 10;
+  private static final int MAX_WAIT_SEC = 30;
 
   // Use as documentId to throw a runtime exception. Useful to test DLQ
   public static final String INVALID_DOC_ID = "Invalid";
