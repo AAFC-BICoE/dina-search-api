@@ -12,6 +12,8 @@
 #                T: Deletes old index and evokes add-alias
 #                F: 1) Deletes newly created index
 #                   2) Reverses read-only op on current index.
+#             F: Deletes new index
+#               
 
 source es_functions.sh
 
@@ -75,6 +77,11 @@ for currIndex in ${index_array[@]}; do
 
       >&2 echo "The delete request status for index is: $DELETE_NEW_INDEX_RESPONSE"
     fi
+  
+  else
+    >&2 echo "Deleting new index since reindexing was not successful"
+    DELETE_NEW_INDEX_RESPONSE=$(delete_index_request "$ELASTIC_SERVER_URL" "$NEW_INDEX")
+
   fi
 
 done

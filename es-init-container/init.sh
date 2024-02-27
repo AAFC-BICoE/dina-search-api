@@ -17,10 +17,12 @@
 #           Evokes update script on new index provided mapping file
 #           Perform read-only op on current index.
 #           Evokes re-index on new index
-#           Checks if number of documents in both indices match
-#            T: Deletes old index and evokes add-alias
-#            F: 1) Deletes newly created index
-#               2) Reverses read-only op on current index.
+#           Checks if re-index is successful
+#           T: Checks if number of documents in both indices match
+#              T: Deletes old index and evokes add-alias
+#              F: 1) Deletes newly created index
+#                 2) Reverses read-only op on current index.
+#           F: Deletes new index
 #     F: 1) Evokes create-index
 #        2) Updates index provided optional mapping file
 #        3) Evokes add-alias
@@ -85,7 +87,7 @@ else
           
         #re-index
         response=$(reindex_request "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "$NEW_INDEX")
-        >&2 echo "The response is: $response"
+
         #if re-index successful
         if [[ $response == '200' ]]; then
           #get total number of documents in old_index
@@ -119,6 +121,10 @@ else
             DELETE_NEW_INDEX_RESPONSE=$(delete_index_request "$ELASTIC_SERVER_URL" "$NEW_INDEX")
             >&2 echo "The delete request status for index is: $DELETE_NEW_INDEX_RESPONSE"
           fi
+
+        else
+          >&2 echo "Deleting new index since reindexing was not successful"
+          DELETE_NEW_INDEX_RESPONSE=$(delete_index_request "$ELASTIC_SERVER_URL" "$NEW_INDEX")
 
         fi
 
