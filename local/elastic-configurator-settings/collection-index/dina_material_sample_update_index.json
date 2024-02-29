@@ -8,6 +8,50 @@
           "ignore_above": 256
         }
       }
+    },
+    "included.attributes.extensionValues.mixs_soil_v4": {
+      "properties": {
+        "samp_vol_we_dna_ext": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "water_content": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "texture": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        }
+      }
+    },
+    "included.attributes.extensionValues.mixs_sediment_v4": {
+      "properties": {
+        "phosphate": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        }
+      }
     }
   }
 }
