@@ -77,6 +77,11 @@ else
             # If updateFile is set and not empty, run the script with it
             >&2 echo "Running update script for optional mapping"
             response=$(update_request "$ELASTIC_SERVER_URL" "$NEW_INDEX" "${!optionalMappingFile}")
+            if [[ $response == '200' ]]; then
+              >&2 echo "The update request was successful"
+            else
+              >&2 echo "The update request failed with status: $response"
+            fi
           fi 
         fi
 
@@ -133,6 +138,11 @@ else
         # If updateFile is set and not empty, run the script with it
         >&2 echo "Running update script for optional mapping"
         response=$(update_request "$ELASTIC_SERVER_URL" "$NEW_INDEX" "${!optionalMappingFile}")
+        if [[ $response == '200' ]]; then
+          >&2 echo "The update request was successful"
+        else
+          >&2 echo "The update request failed with status: $response"
+        fi
       fi
       >&2 echo "New Index created. Calling add-alias script"
       add_alias_response=$(add_index_alias $ELASTIC_SERVER_URL $NEW_INDEX ${!indexPrefixName})

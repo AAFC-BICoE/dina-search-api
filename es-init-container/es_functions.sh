@@ -119,7 +119,7 @@ update_request() {
 
     returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$elastic_server_url/$index_name/_mapping" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$mapping_file")
 
-    return "$returnedCode"
+    echo "$returnedCode"
 
 }
 
