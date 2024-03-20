@@ -6,12 +6,12 @@ get_document_count() {
 
     # Query Elasticsearch to get the document count
     local num_docs
-    num_docs=$(curl -s -X GET "$elastic_server_url/$index_name/_search" -H 'Content-Type: application/json' -d '
+    num_docs=$(curl -s -X GET "$elastic_server_url/$index_name/_count" -H 'Content-Type: application/json' -d '
     {
         "query": {
             "match_all": {}
         }
-    }' | jq -r '.hits.total.value')
+    }' | jq -r '.count')
 
     echo "$num_docs"  # Print the document count
 }
@@ -65,7 +65,7 @@ reindex_request() {
 
     >&2 echo "Source index is: $source_index_name and destination index is: $dest_index_name"
 
-    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex?pretty" -d'{
+    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex" -d'{
         "source": {
         "index": "'$source_index_name'"
         },
