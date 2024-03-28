@@ -96,48 +96,51 @@ public class IndexableDocumentHandler {
    */
   private void processIncluded(JsonNode includedArray) {
 
-    System.out.println("---> processIncluded");
-
     if (includedArray == null || !includedArray.isArray()) {
       return;
     }
 
-    for (JsonNode curObject : includedArray) {
+    try {
+      System.out.println("included array:" + OM.writeValueAsString(includedArray));
 
-      if (curObject.get(JSONApiDocumentStructure.ATTRIBUTES) != null || !curObject.isObject()) {
-        // Already have the attributes or the node is not an object ... skip the current entry
-        continue;
-      }
+      for (JsonNode curObject : includedArray) {
+        System.out.println("array element:" + OM.writeValueAsString(curObject));
+        if (curObject.get(JSONApiDocumentStructure.ATTRIBUTES) != null || !curObject.isObject()) {
+          // Already have the attributes or the node is not an object ... skip the current entry
+          continue;
+        }
 
-      // Getting the type and perform a level #1 retrieval of attributes
-      //
-      String type = curObject.get(JSONApiDocumentStructure.TYPE).asText();
-      if (svcEndpointProps.getEndpoints().containsKey(type)) {
-
-        // Get the Id and retrieved the attributes from the related object.
+        // Getting the type and perform a level #1 retrieval of attributes
         //
-        String curObjectId = curObject.get(JSONApiDocumentStructure.ID).asText();
+        String type = curObject.get(JSONApiDocumentStructure.TYPE).asText();
+        if (svcEndpointProps.getEndpoints().containsKey(type)) {
 
-        // Best effort processing for assembling of include section
-        try {
-          String rawPayload = client.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
+          // Get the Id and retrieved the attributes from the related object.
+          //
+          String curObjectId = curObject.get(JSONApiDocumentStructure.ID).asText();
 
-          System.out.println(rawPayload);
+          // Best effort processing for assembling of include section
+          try {
+            String rawPayload = client.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
+            JsonNode document = OM.readTree(rawPayload);
+            // Take the data.attributes section to be embedded
+            Optional<JsonNode> dataObject = atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
 
-          JsonNode document = OM.readTree(rawPayload);
-          // Take the data.attributes section to be embedded
-          Optional<JsonNode> dataObject = atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
-
-          if (dataObject.isPresent()) {
-            ((ObjectNode) curObject).set(JSONApiDocumentStructure.ATTRIBUTES, dataObject.get());
-          } else {
-            // Remove attribute section from the embedded object
-            ((ObjectNode) curObject).remove(JSONApiDocumentStructure.ATTRIBUTES);
+            if (dataObject.isPresent()) {
+              System.out.println("swap with" + OM.writeValueAsString(dataObject.get()));
+              ((ObjectNode) curObject).set(JSONApiDocumentStructure.ATTRIBUTES, dataObject.get());
+            } else {
+              System.out.println("remove");
+              // Remove attribute section from the embedded object
+              ((ObjectNode) curObject).remove(JSONApiDocumentStructure.ATTRIBUTES);
+            }
+          } catch (SearchApiException | JsonProcessingException ex) {
+            log.error("Error during processing of included section object type{}, id={}, message={}", type, curObjectId, ex.getMessage());
           }
-        } catch (SearchApiException | JsonProcessingException ex) {
-          log.error("Error during processing of included section object type{}, id={}, message={}", type, curObjectId, ex.getMessage());
         }
       }
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
     }
   }
 
