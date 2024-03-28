@@ -114,7 +114,6 @@ public class DocumentManagerIT {
     // Test to ensure the person message was properly assembled.
     assertEquals(DOCUMENT_ID, jsonMessage.at("/data/id").asText());
     assertEquals(DOCUMENT_INCLUDE_ID, jsonMessage.at("/included/0/id").asText());
-    System.out.println(JsonTestUtils.OBJECT_MAPPER.writeValueAsString(jsonMessage));
     assertEquals(TEST_USER, jsonMessage.at("/data/attributes/displayName").asText());
 
     // make sure meta section is there

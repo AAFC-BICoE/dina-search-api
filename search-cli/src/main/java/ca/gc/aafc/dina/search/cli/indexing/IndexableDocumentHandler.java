@@ -96,6 +96,8 @@ public class IndexableDocumentHandler {
    */
   private void processIncluded(JsonNode includedArray) {
 
+    System.out.println("---> processIncluded");
+
     if (includedArray == null || !includedArray.isArray()) {
       return;
     }
@@ -119,6 +121,8 @@ public class IndexableDocumentHandler {
         // Best effort processing for assembling of include section
         try {
           String rawPayload = client.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
+
+          System.out.println(rawPayload);
 
           JsonNode document = OM.readTree(rawPayload);
           // Take the data.attributes section to be embedded
