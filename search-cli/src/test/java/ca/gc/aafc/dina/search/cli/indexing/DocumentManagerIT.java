@@ -5,6 +5,11 @@ import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 import ca.gc.aafc.dina.search.cli.TestConstants;
+import ca.gc.aafc.dina.search.cli.json.JSONApiDocumentStructure;
+import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
+import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
+import ca.gc.aafc.dina.testsupport.jsonapi.JsonAPITestHelper;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +50,9 @@ public class DocumentManagerIT {
 
   @Autowired
   private DocumentManager documentManager;
+
+  @Autowired
+  private ElasticsearchClient esClient;
 
   private static final String DOCUMENT_TYPE = "person";
   private static final String DOCUMENT_ID = "9df388de-71b5-45be-9613-b70674439773";
@@ -106,6 +114,7 @@ public class DocumentManagerIT {
     // Test to ensure the person message was properly assembled.
     assertEquals(DOCUMENT_ID, jsonMessage.at("/data/id").asText());
     assertEquals(DOCUMENT_INCLUDE_ID, jsonMessage.at("/included/0/id").asText());
+    System.out.println(JsonTestUtils.OBJECT_MAPPER.writeValueAsString(jsonMessage));
     assertEquals(TEST_USER, jsonMessage.at("/data/attributes/displayName").asText());
 
     // make sure meta section is there
