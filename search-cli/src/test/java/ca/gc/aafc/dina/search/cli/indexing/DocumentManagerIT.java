@@ -114,6 +114,9 @@ public class DocumentManagerIT {
     // Create a request for the document processor.
     JsonNode jsonMessage = documentManager.indexDocument(TestConstants.PERSON_TYPE, DOCUMENT_ID);
 
+    // remove to not interfere with other tests
+    serviceEndpointProperties.getEndpoints().remove(TestConstants.ORGANIZATION_TYPE);
+
     // Test to ensure the person message was properly assembled.
     assertEquals(DOCUMENT_ID, jsonMessage.at("/data/id").asText());
     assertEquals(DOCUMENT_INCLUDE_ID, jsonMessage.at("/included/0/id").asText());
