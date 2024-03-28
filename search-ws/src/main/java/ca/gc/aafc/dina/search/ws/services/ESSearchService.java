@@ -16,6 +16,7 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.indices.GetAliasResponse;
 import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
 import co.elastic.clients.json.JsonpMapper;
+import co.elastic.clients.json.JsonpMappingException;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -131,7 +132,7 @@ public class ESSearchService implements SearchService {
           .storedFields(fieldsToReturn)
           .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(fieldsToReturn))), JsonNode.class));
 
-    } catch (IOException ex) {
+    } catch (IOException | ElasticsearchException | JsonpMappingException ex) {
       throw new SearchApiException("Error during search processing", ex);
     }
   }
@@ -149,7 +150,7 @@ public class ESSearchService implements SearchService {
         jsonpMapper.serialize(response, generator);
       }
       return writer.toString();
-    } catch (IOException e) {
+    } catch (IOException | ElasticsearchException | JsonpMappingException e) {
       throw new SearchApiException("Error during search processing", e);
     }
   }
@@ -177,7 +178,7 @@ public class ESSearchService implements SearchService {
     try {
       co.elastic.clients.elasticsearch.core.CountResponse response = client.count(cr);
       return new CountResponse(response.count());
-    } catch (IOException e) {
+    } catch (IOException | ElasticsearchException | JsonpMappingException e) {
       throw new SearchApiException("Error during search processing", e);
     }
   }
@@ -202,8 +203,8 @@ public class ESSearchService implements SearchService {
       if (mappingResponse.result().isEmpty()) {
         throw new SearchApiException("Can't retrieve mapping of index " + indexNameOrAlias);
       }
-      Map<String, Property> mappingProperties = mappingResponse.result().get(indexName).mappings().properties();
 
+      Map<String, Property> mappingProperties = mappingResponse.result().get(indexName).mappings().properties();
       // sanity check for JSON:API documents
       Objects.requireNonNull(mappingProperties.get("data"));
       // Extract document type
@@ -400,6 +401,13 @@ public class ESSearchService implements SearchService {
       return relBuilder.build();
     }
     return null;
+  }
+
+  /**(
+   * Invalidate cache (used for index aliases)
+   */
+  public void invalidateCache() {
+    aliasCache.invalidateAll();
   }
 
 }

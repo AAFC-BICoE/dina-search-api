@@ -2,6 +2,7 @@ package ca.gc.aafc.dina.search.ws.search;
 
 import ca.gc.aafc.dina.search.ws.container.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.ws.services.ESSearchService;
 import ca.gc.aafc.dina.search.ws.services.IndexMappingResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 import org.junit.jupiter.api.AfterEach;
@@ -51,6 +52,9 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
 
   @Test
   public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
+
+    ((ESSearchService)searchService).invalidateCache();
+
     String indexName = TestConstants.MATERIAL_SAMPLE_INDEX + "_123456";
     // Submit ES mapping
     sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,

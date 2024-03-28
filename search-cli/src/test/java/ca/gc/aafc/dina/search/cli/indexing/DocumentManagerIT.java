@@ -1,10 +1,13 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
-
 import ca.gc.aafc.dina.search.cli.TestConstants;
+import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
+import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
+import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import com.fasterxml.jackson.databind.JsonNode;
+import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,12 +25,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
-import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
-
-import lombok.SneakyThrows;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -40,15 +40,20 @@ public class DocumentManagerIT {
 
   private ClientAndServer client;
 
+  @Autowired
+  private ServiceEndpointProperties serviceEndpointProperties;
+
   @Container
   private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
 
   @Autowired
   private DocumentManager documentManager;
 
-  private static final String DOCUMENT_TYPE = "person";
+  @Autowired
+  private ElasticsearchClient esClient;
+
   private static final String DOCUMENT_ID = "9df388de-71b5-45be-9613-b70674439773";
-  private static final String DOCUMENT_INCLUDE_TYPE = "organization";
+
   private static final String DOCUMENT_INCLUDE_ID = "3c7018ce-cf47-418a-9a15-bf5867a6c320";
 
   private static final String TEST_USER = "test user";
@@ -81,10 +86,16 @@ public class DocumentManagerIT {
 
     MockKeyCloakAuthentication.mockKeycloak(client);
 
+    // mock the organization endpoint as en external relationship just for the purpose of that test.
+    EndpointDescriptor epd = new EndpointDescriptor();
+    epd.setIndexName(TestConstants.AGENT_INDEX);
+    epd.setTargetUrl("http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE);
+    serviceEndpointProperties.getEndpoints().put(TestConstants.ORGANIZATION_TYPE, epd);
+
     // Mock the person request.
     client.when(MockKeyCloakAuthentication.setupMockRequest()
         .withMethod("GET")
-        .withPath("/api/v1/" + DOCUMENT_TYPE + "/" + DOCUMENT_ID)
+        .withPath("/api/v1/" + TestConstants.PERSON_TYPE + "/" + DOCUMENT_ID)
         .withQueryStringParameter("include", "organizations"))
         .respond(HttpResponse.response()
             .withStatusCode(200)
@@ -94,14 +105,17 @@ public class DocumentManagerIT {
     // Mock the organization request.
     client.when(MockKeyCloakAuthentication.setupMockRequest()
         .withMethod("GET")
-        .withPath("/api/v1/" + DOCUMENT_INCLUDE_TYPE + "/" + DOCUMENT_INCLUDE_ID))
+        .withPath("/api/v1/" + TestConstants.ORGANIZATION_TYPE + "/" + DOCUMENT_INCLUDE_ID))
         .respond(HttpResponse.response()
             .withStatusCode(200)
             .withBody(Files.readString(ORGANIZATION_RESPONSE_PATH))
             .withDelay(TimeUnit.SECONDS, 1));
 
     // Create a request for the document processor.
-    JsonNode jsonMessage = documentManager.indexDocument(DOCUMENT_TYPE, DOCUMENT_ID);
+    JsonNode jsonMessage = documentManager.indexDocument(TestConstants.PERSON_TYPE, DOCUMENT_ID);
+
+    // remove to not interfere with other tests
+    serviceEndpointProperties.getEndpoints().remove(TestConstants.ORGANIZATION_TYPE);
 
     // Test to ensure the person message was properly assembled.
     assertEquals(DOCUMENT_ID, jsonMessage.at("/data/id").asText());

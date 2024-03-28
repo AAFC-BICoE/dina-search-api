@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import static ca.gc.aafc.dina.search.ws.search.TestConstants.MATERIAL_SAMPLE_INDEX;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
 public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
@@ -160,6 +161,15 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
     // validate count with empty query
     assertEquals(Long.valueOf(1), searchService.count(DINA_AGENT_INDEX, "{\"query\":{ }}").getCount());
     assertEquals(Long.valueOf(1), searchService.count(DINA_AGENT_INDEX, "").getCount());
+  }
+
+  @Test
+  public void testError() throws IOException, InterruptedException {
+    // Let's add a document into the elasticsearch cluster
+    indexDocumentForIT(DINA_AGENT_INDEX, DOCUMENT_ID, DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
+
+    // validate count with empty query
+    assertThrows(SearchApiException.class, () -> searchService.search(DINA_AGENT_INDEX, "{\"query\":{ a}}"));
   }
 
   @DisplayName("Integration Test search autocomplete document autocomplete field")

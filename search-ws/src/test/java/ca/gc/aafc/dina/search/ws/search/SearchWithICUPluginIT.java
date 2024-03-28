@@ -68,11 +68,11 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
     assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC00044", "CNC101", "CNC22", "CNC3")));
 
     // Sort on "sort" (alphanumeric natural sort)
-    String queryStringAsc = "{\"sort\":[{ \"data.attributes.materialSampleName.sort\" : \"asc\" }]" + "}";
+    String queryStringAsc = "{\"sort\":[{ \"data.attributes.materialSampleName.keyword_numeric\" : \"asc\" }]" + "}";
     result = searchService.search(MATERIAL_SAMPLE_INDEX, queryStringAsc);
     assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC3", "CNC22", "CNC00044", "CNC101")));
 
-    String queryStringDesc = "{\"sort\":[{ \"data.attributes.materialSampleName.sort\" : \"desc\" }]" + "}";
+    String queryStringDesc = "{\"sort\":[{ \"data.attributes.materialSampleName.keyword_numeric\" : \"desc\" }]" + "}";
     result = searchService.search(MATERIAL_SAMPLE_INDEX, queryStringDesc);
     assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC101", "CNC00044", "CNC22", "CNC3")));
 
