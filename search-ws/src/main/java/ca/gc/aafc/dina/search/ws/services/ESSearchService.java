@@ -203,8 +203,8 @@ public class ESSearchService implements SearchService {
       if (mappingResponse.result().isEmpty()) {
         throw new SearchApiException("Can't retrieve mapping of index " + indexNameOrAlias);
       }
-      Map<String, Property> mappingProperties = mappingResponse.result().get(indexName).mappings().properties();
 
+      Map<String, Property> mappingProperties = mappingResponse.result().get(indexName).mappings().properties();
       // sanity check for JSON:API documents
       Objects.requireNonNull(mappingProperties.get("data"));
       // Extract document type
@@ -401,6 +401,13 @@ public class ESSearchService implements SearchService {
       return relBuilder.build();
     }
     return null;
+  }
+
+  /**(
+   * Invalidate cache (used for index aliases)
+   */
+  public void invalidateCache() {
+    aliasCache.invalidateAll();
   }
 
 }
