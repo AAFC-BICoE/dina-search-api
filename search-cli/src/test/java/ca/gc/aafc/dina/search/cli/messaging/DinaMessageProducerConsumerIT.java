@@ -143,6 +143,7 @@ class DinaMessageProducerConsumerIT {
    *
    */
   private void validateMessageTransferAndProcessingByConsumer(DocumentOperationNotification docNotification) throws InterruptedException {
+    latchBasedMessageProcessor.resetLatch();
     messageProducer.send(docNotification);
     assertResult(docNotification, latchBasedMessageProcessor.waitForMessage());
   }
