@@ -3,6 +3,7 @@ package ca.gc.aafc.dina.search.cli.indexing;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.ShardFailure;
 import co.elastic.clients.elasticsearch._types.ShardStatistics;
@@ -47,7 +48,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
       IndexResponse response = client.index(builder -> builder
         .id(documentId)
         .index(indexName)
-        .document(payload)
+        .document(payload).refresh(Refresh.WaitFor)
       );
       Result indexResult = response.result();
 
