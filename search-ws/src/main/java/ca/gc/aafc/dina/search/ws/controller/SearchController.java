@@ -69,12 +69,12 @@ public class SearchController {
   public ResponseEntity<String> search(@RequestBody String query, @RequestParam String indexName) {
 
     log.info("indexName={}, query={}", indexName, query);
-
     try {
       validateHtmlSafe(query);
       validateAlphanumericInputs(indexName);
       return new ResponseEntity<>(searchService.search(indexName, query), HttpStatus.ACCEPTED);
     } catch (SearchApiException e) {
+      log.error("SearchApiException cause {}", e.getCause().getMessage());
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
@@ -88,6 +88,7 @@ public class SearchController {
       validateAlphanumericInputs(indexName);
       return new ResponseEntity<>(searchService.count(indexName, query), HttpStatus.ACCEPTED);
     } catch (SearchApiException e) {
+      log.error("SearchApiException cause {}", e.getCause().getMessage());
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }

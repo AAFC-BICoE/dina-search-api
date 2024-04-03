@@ -99,9 +99,8 @@ public class IndexableDocumentHandler {
     if (includedArray == null || !includedArray.isArray()) {
       return;
     }
-
+    
     for (JsonNode curObject : includedArray) {
-
       if (curObject.get(JSONApiDocumentStructure.ATTRIBUTES) != null || !curObject.isObject()) {
         // Already have the attributes or the node is not an object ... skip the current entry
         continue;
@@ -119,7 +118,6 @@ public class IndexableDocumentHandler {
         // Best effort processing for assembling of include section
         try {
           String rawPayload = client.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
-
           JsonNode document = OM.readTree(rawPayload);
           // Take the data.attributes section to be embedded
           Optional<JsonNode> dataObject = atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
