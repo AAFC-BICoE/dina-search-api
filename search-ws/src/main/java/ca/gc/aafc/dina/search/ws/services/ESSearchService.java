@@ -394,6 +394,7 @@ public class ESSearchService implements SearchService {
         }
 
         attributeBuilder.type(curEntry.getType()).distinctTermAgg(curEntry.getDistinctTermAgg());
+        attributeBuilder.subtype(curEntry.getDateSubtype() != null ? curEntry.getDateSubtype().toString().toLowerCase() : null);
 
         relBuilder.attribute(attributeBuilder.build());
       });

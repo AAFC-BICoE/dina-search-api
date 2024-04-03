@@ -15,6 +15,7 @@ mappings:
       type: text
     - name: createdOn
       type: date
+      dateSubtype: DATE_TIME
     - name: tags
       type: text
     - name: preparationDate
@@ -37,6 +38,7 @@ mappings:
       type: text
     - name: createdOn
       type: date
+      dateSubtype: DATE_TIME
     - name: tags
       type: text
     - name: habitat
@@ -49,8 +51,10 @@ mappings:
       type: text
     - name: startEventDateTime
       type: date
+      dateSubtype: LOCAL_DATE_TIME
     - name: endEventDateTime
       type: date
+      dateSubtype: LOCAL_DATE_TIME
     - name: host
       type: text
     - name: dwcVerbatimLocality
@@ -115,6 +119,7 @@ mappings:
       distinctTermAgg: true
     - name: createdOn
       type: date
+      dateSubtype: DATE_TIME
     - name: dcType
       type: text
       distinctTermAgg: true
@@ -126,8 +131,10 @@ mappings:
       distinctTermAgg: true
     - name: xmpMetadataDate
       type: date
+      dateSubtype: DATE_TIME
     - name: acDigitizationDate
       type: date
+      dateSubtype: DATE_TIME
     - name: publiclyReleasable
       type: boolean
     - name: acTags
@@ -149,16 +156,20 @@ mappings:
       type: text
     - name: openedDate
       type: date
+      dateSubtype: LOCAL_DATE
     - name: closedDate
       type: date
+      dateSubtype: LOCAL_DATE
     - name: dueDate
       type: date
+      dateSubtype: LOCAL_DATE
     - name: managedAttributes 
       type: object
     - name: createdBy
       type: text
     - name: createdOn
       type: date
+      dateSubtype: DATE_TIME
 
     
 
