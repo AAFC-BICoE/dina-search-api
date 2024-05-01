@@ -1,14 +1,13 @@
-package ca.gc.aafc.dina.search.common.config;
+package ca.gc.aafc.dina.search.cli.config;
 
-import java.io.IOException;
-
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.boot.env.YamlPropertySourceLoader;
 import org.springframework.core.env.CompositePropertySource;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.support.DefaultPropertySourceFactory;
 import org.springframework.core.io.support.EncodedResource;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.IOException;
 
 public class YamlPropertySourceFactory extends DefaultPropertySourceFactory {
 

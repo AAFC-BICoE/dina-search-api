@@ -2,22 +2,21 @@ package ca.gc.aafc.dina.search.cli.commands;
 
 import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationType;
+import ca.gc.aafc.dina.messaging.producer.DocumentOperationNotificationMessageProducer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
 
-import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;
-
 @Component
 @ShellComponent
 @ConditionalOnProperty(prefix = "messaging", name = "isProducer", havingValue = "true")
 public class SendMQMessage {
 
-  private final MessageProducer messageProducer;
+  private final DocumentOperationNotificationMessageProducer messageProducer;
 
-  public SendMQMessage(MessageProducer messageProducer) {
+  public SendMQMessage(DocumentOperationNotificationMessageProducer messageProducer) {
     this.messageProducer = messageProducer;
   }
 

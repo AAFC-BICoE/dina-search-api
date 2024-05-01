@@ -3,11 +3,11 @@ package ca.gc.aafc.dina.search.cli.messaging;
 import ca.gc.aafc.dina.messaging.config.RabbitMQQueueProperties;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationType;
+import ca.gc.aafc.dina.messaging.producer.DocumentOperationNotificationMessageProducer;
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.config.MessageProcessorTestConfiguration;
 import ca.gc.aafc.dina.search.cli.containers.DinaRabbitMQContainer;
 import ca.gc.aafc.dina.search.messaging.consumer.DocumentOperationNotificationConsumer;
-import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
@@ -54,7 +54,7 @@ class DinaMessageProducerConsumerIT {
   }
 
   @Autowired
-  private MessageProducer messageProducer;
+  private DocumentOperationNotificationMessageProducer messageProducer;
 
   @Autowired
   private LatchBasedMessageProcessor latchBasedMessageProcessor;
