@@ -4,6 +4,9 @@ import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import ca.gc.aafc.dina.search.messaging.consumer.IMessageProcessor;
 import lombok.extern.log4j.Log4j2;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -19,7 +22,9 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
   // Use as documentId to throw a runtime exception. Useful to test DLQ
   public static final String INVALID_DOC_ID = "Invalid";
 
-  private CountDownLatch latch = new CountDownLatch(1);
+  private final Map<String, CountDownLatch> latchMap = new HashMap<>();
+  private final Map<String, DocumentOperationNotification> receivedMessages = new HashMap<>();
+
   private DocumentOperationNotification message;
 
   @Override
@@ -29,8 +34,8 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
       return;
     }
 
-    message = docOpMessage;
-    latch.countDown();
+    receivedMessages.put(docOpMessage.getDocumentId(), docOpMessage);
+    latchMap.get(docOpMessage.getDocumentId()).countDown();
 
     if(INVALID_DOC_ID.equals(docOpMessage.getDocumentId())) {
       throw new RuntimeException("Invalid document id");
@@ -40,18 +45,17 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
   /**
    * Reset the latch.
    */
-  public void resetLatch() {
-    latch = new CountDownLatch(1);
+  public void registerLatchKey(String key) {
+    latchMap.put(key, new CountDownLatch(1));
   }
 
   /***
    * Wait until we receive the message and reset the latch (so another message can be received).
    * @return
    */
-  public DocumentOperationNotification waitForMessage() throws InterruptedException {
-    if(latch.await(MAX_WAIT_SEC, TimeUnit.SECONDS)) {
-      resetLatch();
-      return message;
+  public DocumentOperationNotification waitForMessage(String key) throws InterruptedException {
+    if(latchMap.get(key).await(MAX_WAIT_SEC, TimeUnit.SECONDS)) {
+      return receivedMessages.get(key);
     }
     log.warn("latch timed-out");
     return null;
