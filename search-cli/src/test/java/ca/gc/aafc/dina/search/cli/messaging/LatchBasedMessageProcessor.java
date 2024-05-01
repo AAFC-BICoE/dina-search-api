@@ -25,8 +25,6 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
   private final Map<String, CountDownLatch> latchMap = new HashMap<>();
   private final Map<String, DocumentOperationNotification> receivedMessages = new HashMap<>();
 
-  private DocumentOperationNotification message;
-
   @Override
   public void processMessage(DocumentOperationNotification docOpMessage) {
     if (docOpMessage == null) {
@@ -57,7 +55,7 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
     if(latchMap.get(key).await(MAX_WAIT_SEC, TimeUnit.SECONDS)) {
       return receivedMessages.get(key);
     }
-    log.warn("latch timed-out");
+    log.warn("latch timed-out for key " + key);
     return null;
   }
 
