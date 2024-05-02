@@ -7,6 +7,8 @@ import lombok.extern.log4j.Log4j2;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -22,8 +24,8 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
   // Use as documentId to throw a runtime exception. Useful to test DLQ
   public static final String INVALID_DOC_ID = "Invalid";
 
-  private final Map<String, CountDownLatch> latchMap = new HashMap<>();
-  private final Map<String, DocumentOperationNotification> receivedMessages = new HashMap<>();
+  private final Map<String, CountDownLatch> latchMap = new ConcurrentHashMap<>();
+  private final Map<String, DocumentOperationNotification> receivedMessages = new ConcurrentHashMap<>();
 
   @Override
   public void processMessage(DocumentOperationNotification docOpMessage) {
