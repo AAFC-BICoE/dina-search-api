@@ -31,7 +31,7 @@
   "mappings": {
     "_meta": {
       "version": {
-        "number": "1.0"
+        "number": "2.0"
       }
     },
     "date_detection": true,
