@@ -107,9 +107,23 @@
                     "type": "text",
                     "analyzer": "keyword_lowercase_analyzer",
                     "index_prefixes": {
+                      "min_chars": 1,
+                      "max_chars": 10
+                    }
+                  },
+                  "prefix_reverse": {
+                    "type": "text",
+                    "analyzer": "keyword_lowercase_reverse_analyzer",
+                    "index_prefixes": {
                       "min_chars" : 1,
                       "max_chars" : 10
                     }
+                  },
+                  "keyword_numeric": {
+                    "type": "icu_collation_keyword",
+                    "index": true,
+                    "numeric": true,
+                    "language": "en"
                   },
                   "keyword": {
                     "type": "keyword",
