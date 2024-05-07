@@ -3,11 +3,9 @@ package ca.gc.aafc.dina.search.cli.messaging;
 import ca.gc.aafc.dina.messaging.config.RabbitMQQueueProperties;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationType;
-import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
+import ca.gc.aafc.dina.messaging.producer.DocumentOperationNotificationMessageProducer;
 import ca.gc.aafc.dina.search.cli.config.MessageProcessorTestConfiguration;
 import ca.gc.aafc.dina.search.cli.containers.DinaRabbitMQContainer;
-import ca.gc.aafc.dina.search.messaging.consumer.DocumentOperationNotificationConsumer;
-import ca.gc.aafc.dina.search.messaging.producer.MessageProducer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.AfterAll;
@@ -27,6 +25,7 @@ import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 import javax.inject.Named;
+
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -54,7 +53,7 @@ class DinaMessageProducerConsumerIT {
   }
 
   @Autowired
-  private MessageProducer messageProducer;
+  private DocumentOperationNotificationMessageProducer messageProducer;
 
   @Autowired
   private LatchBasedMessageProcessor latchBasedMessageProcessor;
@@ -65,12 +64,6 @@ class DinaMessageProducerConsumerIT {
 
   @Autowired
   private RabbitTemplate rabbitTemplate;
-
-  @Autowired
-  private DocumentOperationNotificationConsumer documentConsumer;
-
-  @Autowired
-  private DocumentProcessor documentProcessor;
 
   @BeforeAll
   static void beforeAll() {
@@ -86,9 +79,8 @@ class DinaMessageProducerConsumerIT {
   @SneakyThrows
   @Test
   void addDocument() {
-
     DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "material-sample",
-        "testDocumentId", DocumentOperationType.ADD);
+        "testDocumentId-add", DocumentOperationType.ADD);
 
     validateMessageTransferAndProcessingByConsumer(docNotification);
   }
@@ -99,8 +91,9 @@ class DinaMessageProducerConsumerIT {
     DocumentOperationNotification expected = new DocumentOperationNotification(false,
       // dryRun = false will fail to connect and throw the needed exception
       "material-sample", LatchBasedMessageProcessor.INVALID_DOC_ID, DocumentOperationType.ADD);
+    latchBasedMessageProcessor.registerLatchKey(LatchBasedMessageProcessor.INVALID_DOC_ID);
     messageProducer.send(expected);
-    latchBasedMessageProcessor.waitForMessage();
+    latchBasedMessageProcessor.waitForMessage(LatchBasedMessageProcessor.INVALID_DOC_ID);
 
     rabbitTemplate.setExchange("");
     rabbitTemplate.setReceiveTimeout(1000);
@@ -119,9 +112,8 @@ class DinaMessageProducerConsumerIT {
   @SneakyThrows
   @Test
   void updateDocument() {
-
     DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "material-sample",
-        "testDocumentId", DocumentOperationType.UPDATE);
+        "testDocumentId-update", DocumentOperationType.UPDATE);
 
     validateMessageTransferAndProcessingByConsumer(docNotification);
   }
@@ -129,9 +121,8 @@ class DinaMessageProducerConsumerIT {
   @SneakyThrows
   @Test
   void deleteDocument() {
-
     DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "material-sample",
-        "testDocumentId", DocumentOperationType.DELETE);
+        "testDocumentId-delete", DocumentOperationType.DELETE);
 
     validateMessageTransferAndProcessingByConsumer(docNotification);
   }
@@ -139,13 +130,11 @@ class DinaMessageProducerConsumerIT {
   /*
    * The method is responsible for sending a message from the producer class. Validating
    * that the message consumer received the expected message.
-   *
-   *
    */
   private void validateMessageTransferAndProcessingByConsumer(DocumentOperationNotification docNotification) throws InterruptedException {
-    latchBasedMessageProcessor.resetLatch();
+    latchBasedMessageProcessor.registerLatchKey(docNotification.getDocumentId());
     messageProducer.send(docNotification);
-    assertResult(docNotification, latchBasedMessageProcessor.waitForMessage());
+    assertResult(docNotification, latchBasedMessageProcessor.waitForMessage(docNotification.getDocumentId()));
   }
 
   private void assertResult(DocumentOperationNotification docOperation, DocumentOperationNotification fromConsumer) {
