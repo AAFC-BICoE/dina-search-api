@@ -25,6 +25,8 @@ mappings:
       type: object
     - name: hostOrganism.name
       type: text
+    - name: targetOrganismPrimaryScientificName
+      type: text
     - name: extensionValues
       type: object
     - name: restrictionFieldsExtension
