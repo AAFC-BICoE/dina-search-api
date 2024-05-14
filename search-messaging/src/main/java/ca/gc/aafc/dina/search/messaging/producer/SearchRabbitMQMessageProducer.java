@@ -2,6 +2,7 @@ package ca.gc.aafc.dina.search.messaging.producer;
 
 import ca.gc.aafc.dina.messaging.config.RabbitMQQueueProperties;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
+import ca.gc.aafc.dina.messaging.producer.DocumentOperationNotificationMessageProducer;
 import ca.gc.aafc.dina.messaging.producer.RabbitMQMessageProducer;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +16,15 @@ import javax.inject.Named;
  */
 @Service
 @ConditionalOnProperty(prefix = "dina.messaging", name = "isProducer", havingValue = "true")
-public class SearchRabbitMQMessageProducer extends RabbitMQMessageProducer<DocumentOperationNotification> implements MessageProducer {
+public class SearchRabbitMQMessageProducer extends RabbitMQMessageProducer implements DocumentOperationNotificationMessageProducer {
 
   @Autowired
   public SearchRabbitMQMessageProducer(RabbitTemplate rabbitTemplate, @Named("searchQueueProperties") RabbitMQQueueProperties queueProperties) {
     super(rabbitTemplate, queueProperties);
+  }
+
+  @Override
+  public void send(DocumentOperationNotification message) {
+    super.send(message);
   }
 }
