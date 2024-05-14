@@ -26,7 +26,6 @@ import org.testcontainers.junit.jupiter.Container;
 
 import javax.inject.Named;
 
-
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(
@@ -55,6 +54,7 @@ class DinaMessageProducerConsumerIT {
   @Autowired
   private DocumentOperationNotificationMessageProducer messageProducer;
 
+  // Note: Sometimes this instance is different from the one used by the Rabbit consumer. Static variables are used in LatchBasedMessageProcessor.
   @Autowired
   private LatchBasedMessageProcessor latchBasedMessageProcessor;
 
@@ -121,7 +121,6 @@ class DinaMessageProducerConsumerIT {
   @SneakyThrows
   @Test
   void deleteDocument() {
-    System.out.println("deleteDocument, latchBasedMessageProcessor instance:" + latchBasedMessageProcessor);
     DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "material-sample",
         "testDocumentId-delete", DocumentOperationType.DELETE);
 

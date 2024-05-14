@@ -4,11 +4,8 @@ import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import ca.gc.aafc.dina.search.messaging.consumer.IMessageProcessor;
 import lombok.extern.log4j.Log4j2;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -24,8 +21,9 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
   // Use as documentId to throw a runtime exception. Useful to test DLQ
   public static final String INVALID_DOC_ID = "Invalid";
 
-  private final Map<String, CountDownLatch> latchMap = new ConcurrentHashMap<>();
-  private final Map<String, DocumentOperationNotification> receivedMessages = new ConcurrentHashMap<>();
+  // use static variables. Sometimes the tests might get different instances
+  private static final Map<String, CountDownLatch> LATCH_MAP = new ConcurrentHashMap<>();
+  private static final Map<String, DocumentOperationNotification> RECEIVED_MESSAGES = new ConcurrentHashMap<>();
 
   @Override
   public void processMessage(DocumentOperationNotification docOpMessage) {
@@ -34,13 +32,9 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
       return;
     }
 
-    receivedMessages.put(docOpMessage.getDocumentId(), docOpMessage);
+    RECEIVED_MESSAGES.put(docOpMessage.getDocumentId(), docOpMessage);
 
-    if(!latchMap.containsKey(docOpMessage.getDocumentId())) {
-      System.out.println("deleteDocument, latchBasedMessageProcessor instance:" + this);
-    }
-
-    latchMap.get(docOpMessage.getDocumentId()).countDown();
+    LATCH_MAP.get(docOpMessage.getDocumentId()).countDown();
 
     if(INVALID_DOC_ID.equals(docOpMessage.getDocumentId())) {
       throw new RuntimeException("Invalid document id");
@@ -51,7 +45,7 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
    * Reset the latch.
    */
   public void registerLatchKey(String key) {
-    latchMap.put(key, new CountDownLatch(1));
+    LATCH_MAP.put(key, new CountDownLatch(1));
   }
 
   /***
@@ -59,8 +53,8 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
    * @return
    */
   public DocumentOperationNotification waitForMessage(String key) throws InterruptedException {
-    if(latchMap.get(key).await(MAX_WAIT_SEC, TimeUnit.SECONDS)) {
-      return receivedMessages.get(key);
+    if(LATCH_MAP.get(key).await(MAX_WAIT_SEC, TimeUnit.SECONDS)) {
+      return RECEIVED_MESSAGES.get(key);
     }
     log.warn("latch timed-out for key " + key);
     return null;
