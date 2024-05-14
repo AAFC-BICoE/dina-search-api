@@ -35,6 +35,11 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
     }
 
     receivedMessages.put(docOpMessage.getDocumentId(), docOpMessage);
+
+    if(!latchMap.containsKey(docOpMessage.getDocumentId())) {
+      System.out.println("deleteDocument, latchBasedMessageProcessor instance:" + this);
+    }
+
     latchMap.get(docOpMessage.getDocumentId()).countDown();
 
     if(INVALID_DOC_ID.equals(docOpMessage.getDocumentId())) {

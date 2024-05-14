@@ -121,6 +121,7 @@ class DinaMessageProducerConsumerIT {
   @SneakyThrows
   @Test
   void deleteDocument() {
+    System.out.println("deleteDocument, latchBasedMessageProcessor instance:" + latchBasedMessageProcessor);
     DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "material-sample",
         "testDocumentId-delete", DocumentOperationType.DELETE);
 
