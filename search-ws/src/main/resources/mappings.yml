@@ -36,6 +36,8 @@ mappings:
       distinctTermAgg: true
     - name: publiclyReleasable
       type: boolean
+    - name: sourceSet
+      type: text
 
   collecting-event:
     - name: createdBy
