@@ -11,6 +11,9 @@ mappings:
     - name: materialSampleType
       type: text
       distinctTermAgg: true
+    - name: materialSampleState
+      type: text
+      distinctTermAgg: true
     - name: createdBy
       type: text
     - name: createdOn
@@ -34,6 +37,8 @@ mappings:
       distinctTermAgg: true
     - name: publiclyReleasable
       type: boolean
+    - name: sourceSet
+      type: text
 
   collecting-event:
     - name: createdBy
