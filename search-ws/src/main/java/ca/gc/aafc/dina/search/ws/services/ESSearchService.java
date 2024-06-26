@@ -34,6 +34,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -206,14 +207,17 @@ public class ESSearchService implements SearchService {
 
       Map<String, Property> mappingProperties = mappingResponse.result().get(indexName).mappings().properties();
       // sanity check for JSON:API documents
-      Objects.requireNonNull(mappingProperties.get("data"));
+      Objects.requireNonNull(mappingProperties.get(JSONApiDocumentStructure.DATA));
       // Extract document type
       String docType = ESResponseHelper.extractConstantKeywordValue(
               Objects.requireNonNull(mappingProperties.get("data").object().properties().get("type")));
 
+      Map<String, IndexMappingResponse.Attribute> includedBlock = handleIncludedSection(mappingProperties.get(JSONApiDocumentStructure.INCLUDED));
+
       MappingCrawlContext crawlContext = MappingCrawlContext.builder()
-              .mappingConfiguration(mappingObjectAttributes)
-              .documentType(docType).build();
+          .mappingConfiguration(mappingObjectAttributes)
+          .includedAttributes(includedBlock)
+          .documentType(docType).build();
 
       mappingProperties.forEach((propertyName, property) -> {
         Stack<String> pathStack = new Stack<>();
@@ -291,7 +295,8 @@ public class ESSearchService implements SearchService {
             // we need a constant_keyword in order to get the type from the ES mapping
             if (property.isConstantKeyword()) {
               String valueString = ESResponseHelper.extractConstantKeywordValue(property);
-              IndexMappingResponse.Relationship rel = handleRelationshipSection(valueString, currentPath, crawlContext.getMappingConfiguration());
+              IndexMappingResponse.Relationship rel = handleRelationshipSection(valueString, currentPath,
+                  crawlContext.getMappingConfiguration(), crawlContext.getIncludedAttributes());
               if (rel != null) {
                 responseBuilder.relationship(rel);
               }
@@ -374,7 +379,8 @@ public class ESSearchService implements SearchService {
    * @param mappingObjectAttributes from config file
    * @return
    */
-  private static IndexMappingResponse.Relationship handleRelationshipSection(String typeKey, String esPath, MappingObjectAttributes mappingObjectAttributes) {
+  private static IndexMappingResponse.Relationship handleRelationshipSection(String typeKey, String esPath, MappingObjectAttributes mappingObjectAttributes,
+                                                                             Map<String, IndexMappingResponse.Attribute> includedAttributes) {
     List<MappingAttribute> attributes = mappingObjectAttributes.getAttributes(typeKey);
     // make sure we have configuration for the relationship
     if (attributes != null) {
@@ -392,6 +398,10 @@ public class ESSearchService implements SearchService {
         } else {
           attributeBuilder.name(curEntry.getName());
           attributeBuilder.path("attributes");
+          // if we have the attribute in the included attribute take the value of "fields" from there
+          if(includedAttributes.containsKey(curEntry.getName())) {
+            attributeBuilder.fields(includedAttributes.get(curEntry.getName()).getFields());
+          }
         }
 
         attributeBuilder.type(curEntry.getType()).distinctTermAgg(curEntry.getDistinctTermAgg());
@@ -404,7 +414,35 @@ public class ESSearchService implements SearchService {
     return null;
   }
 
-  /**(
+  /**
+   * Compute a map of attributes from the JSON:API "included" section of the mapping.
+   * Warning: the type of the included section is unknown so attributes can come from different types if the name of the attribute
+   * is the same in the different types.
+   * Mostly used to populate the "fields" from the mapping.
+   * @param includedBlock
+   * @return
+   */
+  private Map<String, IndexMappingResponse.Attribute> handleIncludedSection(Property includedBlock) {
+
+    if(includedBlock == null || !includedBlock.isNested()) {
+      return Map.of();
+    }
+
+    Map<String, IndexMappingResponse.Attribute> attributesMap = new HashMap<>();
+    Map<String, Property> nested = includedBlock.nested().properties();
+    Map<String, Property> attributes = nested.get(JSONApiDocumentStructure.ATTRIBUTES).object().properties();
+
+    attributes.forEach( (k, v) -> attributesMap.put(k,
+       IndexMappingResponse.Attribute.builder()
+          .name(k)
+          .type(v._kind().jsonValue())
+          .fields(fieldsFromProperty(v))
+          .build()));
+
+    return attributesMap;
+  }
+
+  /**
    * Invalidate cache (used for index aliases)
    */
   public void invalidateCache() {

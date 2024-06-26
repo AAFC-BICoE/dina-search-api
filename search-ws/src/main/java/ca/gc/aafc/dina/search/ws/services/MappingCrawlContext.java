@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Map;
+
 /**
  * Package protected mapping crawling context.
  * The context is immutable
@@ -17,4 +19,6 @@ class MappingCrawlContext {
   private final MappingObjectAttributes mappingConfiguration;
   private final String documentType;
 
+  // attributes from the included block
+  private final Map<String, IndexMappingResponse.Attribute> includedAttributes;
 }
