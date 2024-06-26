@@ -66,6 +66,8 @@ mappings:
       type: text
     - name: dwcVerbatimLocality
       type: text
+    - name: dwcRecordedBy
+      type: text
 
   organism:
     - name: determination.verbatimScientificName

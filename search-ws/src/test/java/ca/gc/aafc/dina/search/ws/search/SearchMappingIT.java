@@ -92,6 +92,14 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
         containsInAnyOrder("prefix_reverse", "prefix", "infix", "keyword")
     );
 
+    //check fields on relationships
+    IndexMappingResponse.Attribute dwcRecordedByMapping = findAttributeByNameInRelationship(response, "collecting-event", "dwcRecordedBy");
+    assertNotNull(dwcRecordedByMapping);
+    assertThat(
+        dwcRecordedByMapping.getFields(),
+        containsInAnyOrder("autocomplete", "keyword")
+    );
+
     //check date subtype
     IndexMappingResponse.Attribute preparationDateMapping = findAttributeByName(response, "preparationDate");
     assertNotNull(preparationDateMapping);
@@ -106,6 +114,19 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
     for (IndexMappingResponse.Attribute curAttribute : response.getAttributes()) {
       if (name.equals(curAttribute.getName())) {
         return curAttribute;
+      }
+    }
+    return null;
+  }
+
+  private IndexMappingResponse.Attribute findAttributeByNameInRelationship(IndexMappingResponse response, String relName, String attributeName) {
+    for (IndexMappingResponse.Relationship curRel : response.getRelationships()) {
+      if (relName.equals(curRel.getValue())) {
+        for (IndexMappingResponse.Attribute curAttribute : curRel.getAttributes()) {
+          if (attributeName.equals(curAttribute.getName())) {
+            return curAttribute;
+          }
+        }
       }
     }
     return null;
