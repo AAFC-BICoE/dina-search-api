@@ -400,7 +400,9 @@ public class ESSearchService implements SearchService {
           attributeBuilder.path("attributes");
           // if we have the attribute in the included attribute take the value of "fields" from there
           if(includedAttributes.containsKey(curEntry.getName())) {
-            attributeBuilder.fields(includedAttributes.get(curEntry.getName()).getFields());
+            if (CollectionUtils.isNotEmpty(includedAttributes.get(curEntry.getName()).getFields())) {
+              attributeBuilder.fields(includedAttributes.get(curEntry.getName()).getFields());
+            }
           }
         }
 
