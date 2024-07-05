@@ -5,7 +5,7 @@
   <parent>
     <artifactId>search-api-parent</artifactId>
     <groupId>io.github.aafc-bicoe</groupId>
-    <version>0.33</version>
+    <version>0.34</version>
   </parent>
 
   <artifactId>search-cli</artifactId>
@@ -27,7 +27,7 @@
     <dependency>
       <groupId>io.github.aafc-bicoe</groupId>
       <artifactId>search-messaging</artifactId>
-      <version>0.33</version>
+      <version>0.34</version>
     </dependency>
 
     <dependency>

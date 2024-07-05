@@ -66,6 +66,8 @@ mappings:
       type: text
     - name: dwcVerbatimLocality
       type: text
+    - name: dwcRecordedBy
+      type: text
 
   organism:
     - name: determination.verbatimScientificName
@@ -86,10 +88,23 @@ mappings:
   storage-unit:
     - name: name
       type: text
+    - name: barcode
+      type: text
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date
+      dateSubtype: DATE_TIME
 
   storage-unit-type:
     - name: name
       type: text
+      distinctTermAgg: true
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date
+      dateSubtype: DATE_TIME
 
   preparation-type:
     - name: name
