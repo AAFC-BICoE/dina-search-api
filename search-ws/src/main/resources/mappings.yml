@@ -88,10 +88,23 @@ mappings:
   storage-unit:
     - name: name
       type: text
+    - name: barcode
+      type: text
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date
+      dateSubtype: DATE_TIME
 
   storage-unit-type:
     - name: name
       type: text
+      distinctTermAgg: true
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date
+      dateSubtype: DATE_TIME
 
   preparation-type:
     - name: name
