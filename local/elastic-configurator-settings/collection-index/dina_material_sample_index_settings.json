@@ -266,6 +266,18 @@
                   }
                 }
               },
+              "storageUnitCoordinates": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "type": {
+                        "type": "constant_keyword",
+                        "value": "storage-unit-coordinates"
+                      }
+                    }
+                  }
+                }
+              },
               "collection": {
                 "properties": {
                   "data": {

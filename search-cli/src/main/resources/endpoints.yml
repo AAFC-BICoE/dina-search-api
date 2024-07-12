@@ -28,6 +28,7 @@ endpoints:
       - assemblages
       - projects
       - hierarchy
+      - storageUnitCoordinates
     relationshipsType:
       - collecting-event
   metadata:
