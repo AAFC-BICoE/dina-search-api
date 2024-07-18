@@ -106,7 +106,9 @@ mappings:
       type: date
       dateSubtype: DATE_TIME
 
-  storage-unit-coordinates:
+  storage-unit-usage:
+    - name: storageUnitName
+      type: text
     - name: wellColumn
       type: long
     - name: wellRow
