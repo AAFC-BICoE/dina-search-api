@@ -20,7 +20,6 @@ endpoints:
       - collectingEvent
       - organism
       - attachment
-      - storageUnit
       - collection
       - preparedBy
       - preparationType
