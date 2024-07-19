@@ -106,6 +106,16 @@ mappings:
       type: date
       dateSubtype: DATE_TIME
 
+  storage-unit-usage:
+    - name: storageUnitName
+      type: text
+    - name: wellColumn
+      type: long
+    - name: wellRow
+      type: text
+    - name: cellNumber
+      type: long
+
   preparation-type:
     - name: name
       type: text

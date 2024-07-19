@@ -20,7 +20,6 @@ endpoints:
       - collectingEvent
       - organism
       - attachment
-      - storageUnit
       - collection
       - preparedBy
       - preparationType
@@ -28,6 +27,7 @@ endpoints:
       - assemblages
       - projects
       - hierarchy
+      - storageUnitUsage
     relationshipsType:
       - collecting-event
   metadata:
