@@ -48,6 +48,7 @@ public class ESSearchService implements SearchService {
 
   private static final String EMPTY_QUERY = "{\"query\":{}}";
   private static final String ID_FIELD = "data.id";
+  private static final String TYPE_FIELD = "data.type";
   private static final String GROUP_FIELD = "data.attributes.group.keyword"; //use the keyword version since we do a term filter
 
   private final ElasticsearchClient client;
@@ -85,6 +86,7 @@ public class ESSearchService implements SearchService {
     List<String> fieldsToReturn = new ArrayList<>();
     fields.add(autoCompleteField);
     fieldsToReturn.add(ID_FIELD);
+    fieldsToReturn.add(TYPE_FIELD);
     fieldsToReturn.add(autoCompleteField);
     fields.add(autoCompleteField + ".autocomplete._2gram");
     fields.add(autoCompleteField + ".autocomplete._3gram");
