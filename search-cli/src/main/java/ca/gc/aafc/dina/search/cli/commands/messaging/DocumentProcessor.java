@@ -54,7 +54,7 @@ public class DocumentProcessor implements IMessageProcessor {
     }
     log.info("Processing: {}", docOpMessage);
     // make sure we can process the type
-    if(documentManager.isTypeConfigured(docOpMessage.getDocumentType())) {
+    if (documentManager.isTypeConfigured(docOpMessage.getDocumentType())) {
       switch (docOpMessage.getOperationType()) {
         case ADD:
         case UPDATE:
