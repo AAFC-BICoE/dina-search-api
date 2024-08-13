@@ -42,7 +42,7 @@ public class MappingObjectAttributes {
    */
   public MappingAttribute getAttribute(String type, String attributeName) {
     List<MappingAttribute> allAttribute = getAttributes(type);
-    if(allAttribute == null) {
+    if (allAttribute == null) {
       return null;
     }
 
@@ -64,7 +64,7 @@ public class MappingObjectAttributes {
    */
   public MappingAttribute getObjectAttribute(String type, String attributeName) {
     List<MappingAttribute> allAttribute = getAttributes(type);
-    if(allAttribute == null) {
+    if (allAttribute == null) {
       return null;
     }
 

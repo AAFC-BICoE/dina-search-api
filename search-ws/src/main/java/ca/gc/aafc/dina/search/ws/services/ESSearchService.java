@@ -48,6 +48,7 @@ public class ESSearchService implements SearchService {
 
   private static final String EMPTY_QUERY = "{\"query\":{}}";
   private static final String ID_FIELD = "data.id";
+  private static final String TYPE_FIELD = "data.type";
   private static final String GROUP_FIELD = "data.attributes.group.keyword"; //use the keyword version since we do a term filter
 
   private final ElasticsearchClient client;
@@ -85,6 +86,7 @@ public class ESSearchService implements SearchService {
     List<String> fieldsToReturn = new ArrayList<>();
     fields.add(autoCompleteField);
     fieldsToReturn.add(ID_FIELD);
+    fieldsToReturn.add(TYPE_FIELD);
     fieldsToReturn.add(autoCompleteField);
     fields.add(autoCompleteField + ".autocomplete._2gram");
     fields.add(autoCompleteField + ".autocomplete._3gram");
@@ -238,7 +240,7 @@ public class ESSearchService implements SearchService {
    * @return the entry or Optional.empty() if can't be found using the cache.
    */
   private Optional<String> getCacheEntry(String indexNameOrAlias) {
-    if(aliasCache.get(indexNameOrAlias) == null) {
+    if (aliasCache.get(indexNameOrAlias) == null) {
       return Optional.empty();
     }
     return aliasCache.get(indexNameOrAlias);
@@ -251,7 +253,7 @@ public class ESSearchService implements SearchService {
    */
   private Optional<String> getIndexNameFromAlias(String alias) throws IOException {
     BooleanResponse b = client.indices().existsAlias(builder -> builder.name(alias));
-    if(!b.value()) {
+    if (!b.value()) {
       return Optional.empty();
     }
 
@@ -303,7 +305,7 @@ public class ESSearchService implements SearchService {
             } else {
               log.debug("skipping : {}. Only constant_keyword are supported on relationships", currentPath);
             }
-          } else if(JSONApiDocumentStructure.isAttributesPath(currentPath)) {
+          } else if (JSONApiDocumentStructure.isAttributesPath(currentPath)) {
             IndexMappingResponse.Attribute attribute = handleDataProperty(currentPath, propertyName,
                 property._kind().jsonValue(), fieldsFromProperty(property), crawlContext);
             if (attribute != null) {
@@ -399,7 +401,7 @@ public class ESSearchService implements SearchService {
           attributeBuilder.name(curEntry.getName());
           attributeBuilder.path("attributes");
           // if we have the attribute in the included attribute take the value of "fields" from there
-          if(includedAttributes.containsKey(curEntry.getName())) {
+          if (includedAttributes.containsKey(curEntry.getName())) {
             if (CollectionUtils.isNotEmpty(includedAttributes.get(curEntry.getName()).getFields())) {
               attributeBuilder.fields(includedAttributes.get(curEntry.getName()).getFields());
             }
@@ -426,7 +428,7 @@ public class ESSearchService implements SearchService {
    */
   private Map<String, IndexMappingResponse.Attribute> handleIncludedSection(Property includedBlock) {
 
-    if(includedBlock == null || !includedBlock.isNested()) {
+    if (includedBlock == null || !includedBlock.isNested()) {
       return Map.of();
     }
 
