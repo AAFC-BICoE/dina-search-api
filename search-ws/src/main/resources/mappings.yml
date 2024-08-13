@@ -39,6 +39,21 @@ mappings:
       type: boolean
     - name: sourceSet
       type: text
+    - name: identifiers
+      type: object
+      distinctTermAgg: true
+    - name: preservationType
+      type: text
+      distinctTermAgg: true
+    - name: preparationFixative
+      type: text
+      distinctTermAgg: true
+    - name: preparationMaterials
+      type: text
+      distinctTermAgg: true
+    - name: preparationSubstrate
+      type: text
+      distinctTermAgg: true
 
   collecting-event:
     - name: createdBy
