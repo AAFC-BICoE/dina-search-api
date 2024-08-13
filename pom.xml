@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.aafc-bicoe</groupId>
   <artifactId>search-api-parent</artifactId>
-  <version>0.34</version>
+  <version>0.35</version>
 
   <packaging>pom</packaging>
 
@@ -26,20 +26,22 @@
   <properties>
     <!-- Compile properties -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <java.version>17</java.version>
+    <java.version>21</java.version>
 
     <jakarta.json.version>2.0.1</jakarta.json.version>
-    <dina-base-api.version>0.124</dina-base-api.version>
+    <dina-base-api.version>0.128</dina-base-api.version>
 
     <!-- Build plugin properties -->
-    <maven-checkstyle-plugin.version>3.1.1</maven-checkstyle-plugin.version>
-    <checkstyle.version>8.44</checkstyle.version>
-    <checkstyle-antlr.version>4.9.3</checkstyle-antlr.version>
+    <maven-checkstyle-plugin.version>3.4.0</maven-checkstyle-plugin.version>
+    <checkstyle.version>10.17.0</checkstyle.version>
 
     <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
-    <spotbugs.version>4.5.2</spotbugs.version>
-    <maven-spotbugs.version>4.5.0.0</maven-spotbugs.version>
+
+    <spotbugs-maven-plugin.version>4.8.5.0</spotbugs-maven-plugin.version>
+    <spotbugs.version>4.8.5</spotbugs.version>
+
     <dependency.check.version>8.0.2</dependency.check.version>
+    <lombok.version>1.18.30</lombok.version>
     <lombok-maven-plugin.version>1.18.20.0</lombok-maven-plugin.version>
 
     <testcontainers.version>1.16.2</testcontainers.version>
@@ -146,11 +148,6 @@
             <artifactId>checkstyle</artifactId>
             <version>${checkstyle.version}</version>
           </dependency>
-          <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4-runtime</artifactId>
-            <version>${checkstyle-antlr.version}</version>
-          </dependency>
         </dependencies>
         <configuration>
           <configLocation>checkstyle.xml</configLocation>
@@ -162,7 +159,7 @@
       <plugin>
         <groupId>com.github.spotbugs</groupId>
         <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>${maven-spotbugs.version}</version>
+        <version>${spotbugs-maven-plugin.version}</version>
         <configuration>
           <excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
         </configuration>
