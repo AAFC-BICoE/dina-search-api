@@ -8,9 +8,12 @@ public interface TestConstants {
 
   String AGENT_INDEX_MAPPING_FILE = "es-mapping/dina_agent_index_settings.json";
   String OBJECT_STORE_INDEX_MAPPING_FILE = "es-mapping/dina_object_store_index_settings.json";
+  String MATERIAL_SAMPLE_INDEX_MAPPING_FILE = "es-mapping/dina_material_sample_index_settings.json";
 
   String AGENT_INDEX = "dina_agent_index";
   String OBJECT_STORE_INDEX = "dina_object_store_index";
+  String MATERIAL_SAMPLE_INDEX = "dina_material_sample_index";
+
   String PERSON_TYPE = "person";
   String ORGANIZATION_TYPE = "organization";
 
