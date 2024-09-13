@@ -54,6 +54,14 @@ mappings:
     - name: preparationSubstrate
       type: text
       distinctTermAgg: true
+    - name: dwcOtherCatalogNumbers
+      type: text
+    - name: barcode
+      type: text
+    - name: materialSampleRemarks
+      type: text
+    - name: preparationRemarks
+      type: text
 
   collecting-event:
     - name: createdBy
