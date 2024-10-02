@@ -28,6 +28,8 @@ mappings:
       type: object
     - name: hostOrganism.name
       type: text
+    - name: effectiveScientificName
+      type: text
     - name: targetOrganismPrimaryScientificName
       type: text
     - name: extensionValues
@@ -54,6 +56,14 @@ mappings:
     - name: preparationSubstrate
       type: text
       distinctTermAgg: true
+    - name: dwcOtherCatalogNumbers
+      type: text
+    - name: barcode
+      type: text
+    - name: materialSampleRemarks
+      type: text
+    - name: preparationRemarks
+      type: text
 
   collecting-event:
     - name: createdBy

@@ -28,7 +28,9 @@ endpoints:
       - projects
       - hierarchy
       - storageUnitUsage
+      - parentMaterialSample
     relationshipsType:
+      - person
       - collecting-event
   metadata:
     indexName: dina_object_store_index
