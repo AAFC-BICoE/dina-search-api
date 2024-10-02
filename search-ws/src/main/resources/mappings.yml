@@ -28,6 +28,8 @@ mappings:
       type: object
     - name: hostOrganism.name
       type: text
+    - name: effectiveScientificName
+      type: text
     - name: targetOrganismPrimaryScientificName
       type: text
     - name: extensionValues
