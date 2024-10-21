@@ -99,8 +99,9 @@ mappings:
     - name: geographicPlaceNameSourceDetail.country.code
       type: text
       distinctTermAgg: true
-    - name: geographicPlaceNameSourceDetail.stateProvince
+    - name: geographicPlaceNameSourceDetail.stateProvince.name
       type: text
+      distinctTermAgg: true
 
   organism:
     - name: determination.verbatimScientificName
