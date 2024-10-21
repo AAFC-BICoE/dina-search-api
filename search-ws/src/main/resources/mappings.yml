@@ -93,6 +93,14 @@ mappings:
       type: text
     - name: dwcRecordedBy
       type: text
+    - name: geographicPlaceNameSourceDetail.country.name
+      type: text
+      distinctTermAgg: true
+    - name: geographicPlaceNameSourceDetail.country.code
+      type: text
+      distinctTermAgg: true
+    - name: geographicPlaceNameSourceDetail.stateProvince
+      type: text
 
   organism:
     - name: determination.verbatimScientificName
