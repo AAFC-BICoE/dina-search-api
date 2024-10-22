@@ -93,13 +93,13 @@ mappings:
       type: text
     - name: dwcRecordedBy
       type: text
-    - name: geographicPlaceNameSourceDetail.country.name
+    - name: dwcCountryCode
       type: text
       distinctTermAgg: true
-    - name: geographicPlaceNameSourceDetail.country.code
+    - name: dwcCountry
       type: text
       distinctTermAgg: true
-    - name: geographicPlaceNameSourceDetail.stateProvince.name
+    - name: dwcStateProvince
       type: text
       distinctTermAgg: true
 
