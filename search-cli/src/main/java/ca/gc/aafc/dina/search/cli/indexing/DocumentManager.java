@@ -210,7 +210,7 @@ public class DocumentManager {
     });
   }
 
-  record DocumentInfo(String type, String id) {
+  public record DocumentInfo(String type, String id) {
   }
 
 }

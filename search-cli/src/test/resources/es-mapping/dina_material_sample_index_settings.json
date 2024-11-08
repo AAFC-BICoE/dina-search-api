@@ -376,6 +376,9 @@
                   }
                 }
               },
+              "eventGeom": {
+                "type": "geo_point"
+              },
               "determination" : {
                 "properties" : {
                   "verbatimDeterminer": {
