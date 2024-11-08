@@ -170,5 +170,6 @@ public class IndexableDocumentHandler {
     }
   }
 
-  record JsonNodeTransformation(String nodeName, String attribute, Function<JsonNode, JsonNode> transformer){}
+  record JsonNodeTransformation(String nodeName, String attribute, Function<JsonNode, JsonNode> transformer) {
+  }
 }

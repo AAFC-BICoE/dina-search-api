@@ -11,9 +11,13 @@ import java.util.function.Function;
  * Gets a node from a JONS:API document and transforms its value.
  */
 @Log4j2
-public class JsonNodeTransformer {
+public final class JsonNodeTransformer {
 
   private static final JsonPointer COORDINATES_PTR = JsonPointer.valueOf("/coordinates");
+
+  private JsonNodeTransformer() {
+    // utility class
+  }
 
   /**
    * Extracts the JsonNode under the property "coordinates".
