@@ -1,10 +1,10 @@
 {
     "data": {
-      "id": "94c97f20-3481-4a44-ba64-3a1351051a76",
+      "id": "01930c2a-f299-7464-ad27-ce3828421e6e",
       "type": "material-sample",
       "attributes": {
         "version": 0,
-        "group": "cnc",
+        "group": "aafc",
         "createdOn": "2022-03-02T17:40:24.211011Z",
         "createdBy": "cnc-cm",
         "dwcCatalogNumber": null,
@@ -55,7 +55,7 @@
         "type": "collecting-event",
         "attributes": {
           "version": 3,
-          "group": "cnc",
+          "group": "aafc",
           "createdBy": "cnc-cm",
           "createdOn": "2022-03-02T17:37:05.066112Z",
           "geoReferenceAssertions": [
@@ -146,7 +146,7 @@
         "attributes": {
           "createdOn": "2022-03-02T17:34:21.994188Z",
           "createdBy": "cnc-cm",
-          "group": "cnc",
+          "group": "aafc",
           "name": "Unit Type Number 2",
           "storageUnitChildren": [],
           "hierarchy": null

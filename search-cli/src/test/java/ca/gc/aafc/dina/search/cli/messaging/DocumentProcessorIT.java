@@ -5,7 +5,6 @@ import ca.gc.aafc.dina.messaging.message.DocumentOperationType;
 import ca.gc.aafc.dina.search.cli.TestConstants;
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
-import ca.gc.aafc.dina.search.cli.indexing.NodeTransformer;
 import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
 import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
 import ca.gc.aafc.dina.search.cli.utils.MockServerTestUtils;
@@ -13,8 +12,6 @@ import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
@@ -48,8 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @MockServerSettings(ports = { 1080, 8081, 8082, TestConstants.KEYCLOAK_MOCK_PORT })
 public class DocumentProcessorIT {
 
-  public static final ObjectMapper OM = new ObjectMapper();
-
   // Organization related constants:
   private static final String ORGANIZATION_DOCUMENT_ID = "f9e10a21-d8b6-4d9b-8c99-953bdc940862";
   private static final String ORGANIZATION_DOCUMENT_TYPE = "organization";
@@ -79,27 +74,6 @@ public class DocumentProcessorIT {
   @BeforeEach
   public void beforeEachLifecycleMethod(ClientAndServer clientAndServer) {
     this.client = clientAndServer;
-  }
-
-  @Test
-  @SneakyThrows({ IOException.class })
-  public void indexGeoPointDocuments() {
-    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient,
-        TestConstants.MATERIAL_SAMPLE_INDEX, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE);
-
-    String s = TestResourceHelper.readContentAsString("material_sample_document.json");
-    JsonNode document = OM.readTree(s);
-
-    JsonNode included = document.at("/included");
-
-    included.elements().forEachRemaining( arrayElement -> {
-      NodeTransformer.transformNode(arrayElement.at("/attributes"), "eventGeom", NodeTransformer::extractCoordinates);
-    });
-
-
-    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.indexDocument(elasticSearchClient, TestConstants.MATERIAL_SAMPLE_INDEX, "2",
-        OM.writeValueAsString(document));
-
   }
 
   @Test
@@ -149,7 +123,7 @@ public class DocumentProcessorIT {
         "data.id", TestConstants.PERSON_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
-    JsonNode doc = searchResponse.hits().hits().get(0).source();
+    JsonNode doc = searchResponse.hits().hits().getFirst().source();
 
     assertEquals("test org", doc.at("/included/0/attributes/displayName").asText());
   }
