@@ -28,7 +28,14 @@
         <notes>no AuthenticatedVoter</notes>
         <cve>CVE-2024-22257</cve>
     </suppress>
-
+    <suppress>
+        <notes>Not applicable</notes>
+        <cve>CVE-2024-38816</cve>
+    </suppress>
+    <suppress>
+        <notes>No WebFlux</notes>
+        <cve>CVE-2024-38821</cve>
+    </suppress>
     <suppress>
         <notes>not valid for search-api</notes>
         <packageUrl regex="true">^pkg:maven/org\.springframework/spring.*$</packageUrl>
