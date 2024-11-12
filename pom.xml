@@ -47,6 +47,9 @@
     <testcontainers.version>1.16.2</testcontainers.version>
     <json-path.version>2.7.0</json-path.version>
 
+    <!-- versions override-->
+    <spring-framework.version>5.3.39</spring-framework.version>
+
   </properties>
 
   <!-- Common sub module dependencies -->
