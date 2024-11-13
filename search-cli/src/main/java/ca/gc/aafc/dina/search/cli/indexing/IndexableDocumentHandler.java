@@ -1,6 +1,6 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
-import ca.gc.aafc.dina.search.cli.http.CacheableApiAccess;
+import ca.gc.aafc.dina.search.cli.http.DinaApiAccess;
 import ca.gc.aafc.dina.search.cli.json.JSONApiDocumentStructure;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,7 +15,9 @@ import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 
 import lombok.extern.log4j.Log4j2;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * This class handles merging DINA API document with external document references embedded in the
@@ -34,11 +36,18 @@ public class IndexableDocumentHandler {
 
   public static final ObjectMapper OM = new ObjectMapper();
 
-  private final CacheableApiAccess client;
+  private static final List<JsonNodeTransformation>
+      INCLUDED_NODE_TRANSFORMATION =
+      List.of(
+          new JsonNodeTransformation(JSONApiDocumentStructure.ATTRIBUTES, "eventGeom",
+              JsonNodeTransformer::extractCoordinates));
+
+
+  private final DinaApiAccess apiAccess;
   private final ServiceEndpointProperties svcEndpointProps;
 
-  public IndexableDocumentHandler(CacheableApiAccess client, ServiceEndpointProperties svcEndpointProps) {
-    this.client = client;
+  public IndexableDocumentHandler(DinaApiAccess apiAccess, ServiceEndpointProperties svcEndpointProps) {
+    this.apiAccess = apiAccess;
     this.svcEndpointProps = svcEndpointProps;
   }
 
@@ -101,6 +110,13 @@ public class IndexableDocumentHandler {
     }
     
     for (JsonNode curObject : includedArray) {
+      //Check for potential node transformations
+      for (JsonNodeTransformation jst : INCLUDED_NODE_TRANSFORMATION) {
+        if (curObject.has(jst.nodeName())) {
+          JsonNodeTransformer.transformNode(curObject.get(jst.nodeName()), jst.attribute(), jst.transformer());
+        }
+      }
+
       if (curObject.get(JSONApiDocumentStructure.ATTRIBUTES) != null || !curObject.isObject()) {
         // Already have the attributes or the node is not an object ... skip the current entry
         continue;
@@ -117,7 +133,7 @@ public class IndexableDocumentHandler {
 
         // Best effort processing for assembling of include section
         try {
-          String rawPayload = client.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
+          String rawPayload = apiAccess.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
           JsonNode document = OM.readTree(rawPayload);
           // Take the data.attributes section to be embedded
           Optional<JsonNode> dataObject = atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
@@ -152,5 +168,8 @@ public class IndexableDocumentHandler {
     if (metaObject.isObject()) {
       ((ObjectNode) metaObject).remove("external");
     }
+  }
+
+  record JsonNodeTransformation(String nodeName, String attribute, Function<JsonNode, JsonNode> transformer) {
   }
 }

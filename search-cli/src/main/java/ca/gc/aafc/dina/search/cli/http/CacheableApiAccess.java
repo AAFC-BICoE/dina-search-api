@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  *
  */
 @Component
-public class CacheableApiAccess {
+public class CacheableApiAccess implements DinaApiAccess {
 
   public static final String CACHE_NAME = "apiAccess";
 

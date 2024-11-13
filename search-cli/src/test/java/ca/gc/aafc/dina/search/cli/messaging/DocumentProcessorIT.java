@@ -123,7 +123,7 @@ public class DocumentProcessorIT {
         "data.id", TestConstants.PERSON_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
-    JsonNode doc = searchResponse.hits().hits().get(0).source();
+    JsonNode doc = searchResponse.hits().hits().getFirst().source();
 
     assertEquals("test org", doc.at("/included/0/attributes/displayName").asText());
   }

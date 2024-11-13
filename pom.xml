@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.aafc-bicoe</groupId>
   <artifactId>search-api-parent</artifactId>
-  <version>0.36</version>
+  <version>0.37</version>
 
   <packaging>pom</packaging>
 
@@ -29,7 +29,7 @@
     <java.version>21</java.version>
 
     <jakarta.json.version>2.0.1</jakarta.json.version>
-    <dina-base-api.version>0.128</dina-base-api.version>
+    <dina-base-api.version>0.131</dina-base-api.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.4.0</maven-checkstyle-plugin.version>
@@ -47,8 +47,9 @@
     <testcontainers.version>1.16.2</testcontainers.version>
     <json-path.version>2.7.0</json-path.version>
 
-    <!-- Versions override-->
-    <org.springframework.version>5.3.32</org.springframework.version>
+    <!-- versions override-->
+    <spring-framework.version>5.3.39</spring-framework.version>
+
   </properties>
 
   <!-- Common sub module dependencies -->

@@ -5,7 +5,7 @@
   <parent>
     <artifactId>search-api-parent</artifactId>
     <groupId>io.github.aafc-bicoe</groupId>
-    <version>0.36</version>
+    <version>0.37</version>
   </parent>
 
   <artifactId>search-cli</artifactId>
@@ -13,7 +13,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spring.shell.version>2.1.8</spring.shell.version>
+    <spring.shell.version>2.1.15</spring.shell.version>
     <json-path.version>2.5.0</json-path.version>
     <mockserver.version>5.11.2</mockserver.version>
   </properties>
@@ -27,7 +27,7 @@
     <dependency>
       <groupId>io.github.aafc-bicoe</groupId>
       <artifactId>search-messaging</artifactId>
-      <version>0.36</version>
+      <version>0.37</version>
     </dependency>
 
     <dependency>

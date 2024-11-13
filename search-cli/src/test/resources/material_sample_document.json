@@ -1,0 +1,160 @@
+{
+    "data": {
+      "id": "01930c2a-f299-7464-ad27-ce3828421e6e",
+      "type": "material-sample",
+      "attributes": {
+        "version": 0,
+        "group": "aafc",
+        "createdOn": "2022-03-02T17:40:24.211011Z",
+        "createdBy": "cnc-cm",
+        "dwcCatalogNumber": null,
+        "dwcOtherCatalogNumbers": [
+          "202"
+        ],
+        "materialSampleName": "Material Sample #3",
+        "materialSampleChildren": [],
+        "preparationDate": null,
+        "managedAttributes": {},
+        "determination": [],
+        "preparationRemarks": null,
+        "dwcDegreeOfEstablishment": null,
+        "host": null,
+        "barcode": "202",
+        "publiclyReleasable": true,
+        "notPubliclyReleasableReason": null,
+        "tags": null,
+        "materialSampleState": null,
+        "materialSampleRemarks": "202 Sample remarks",
+        "stateChangedOn": null,
+        "stateChangeRemarks": null,
+        "preparationMethod": null,
+        "associations": [],
+        "allowDuplicateName": false
+      },
+      "relationships": {
+        "collectingEvent": {
+          "data": {
+            "id": "6993c972-cd69-4d58-8c0f-163f9bf7a9bc",
+            "type": "collecting-event"
+          }
+        },
+        "storageUnit": {
+          "data": {
+            "id": "aff812e2-d2ef-49ee-a320-5da2582bbca0",
+            "type": "storage-unit"
+          }
+        },
+        "attachment": {
+          "data": []
+        }
+      }
+    },
+    "included": [
+      {
+        "id": "6993c972-cd69-4d58-8c0f-163f9bf7a9bc",
+        "type": "collecting-event",
+        "attributes": {
+          "version": 3,
+          "group": "aafc",
+          "createdBy": "cnc-cm",
+          "createdOn": "2022-03-02T17:37:05.066112Z",
+          "geoReferenceAssertions": [
+            {
+              "dwcDecimalLatitude": null,
+              "dwcDecimalLongitude": null,
+              "dwcCoordinateUncertaintyInMeters": null,
+              "createdOn": "2022-03-02T17:41:53.968226Z",
+              "dwcGeoreferencedDate": null,
+              "georeferencedBy": null,
+              "literalGeoreferencedBy": null,
+              "dwcGeoreferenceProtocol": null,
+              "dwcGeoreferenceSources": null,
+              "dwcGeoreferenceRemarks": null,
+              "dwcGeodeticDatum": null,
+              "isPrimary": true,
+              "dwcGeoreferenceVerificationStatus": null
+            }
+          ],
+          "dwcVerbatimCoordinates": null,
+          "dwcRecordedBy": "Christian",
+          "startEventDateTime": null,
+          "endEventDateTime": null,
+          "verbatimEventDateTime": null,
+          "dwcVerbatimLocality": "Ottawa",
+          "host": null,
+          "managedAttributes": {},
+          "dwcVerbatimLatitude": null,
+          "dwcVerbatimLongitude": null,
+          "eventGeom": {
+            "type": "Point",
+            "crs": {
+              "type": "name",
+              "properties": {
+                "name": "EPSG:4326"
+              }
+            },
+            "coordinates": [
+              25.0,
+              12.0
+            ]
+          },
+          "dwcVerbatimCoordinateSystem": null,
+          "dwcVerbatimSRS": "WGS84 (EPSG:4326)",
+          "dwcVerbatimElevation": null,
+          "dwcVerbatimDepth": null,
+          "dwcOtherRecordNumbers": [
+            "404"
+          ],
+          "dwcRecordNumber": "404",
+          "dwcCountry": null,
+          "dwcCountryCode": null,
+          "dwcStateProvince": null,
+          "habitat": "Ottawa",
+          "dwcMinimumElevationInMeters": null,
+          "dwcMinimumDepthInMeters": null,
+          "dwcMaximumElevationInMeters": null,
+          "dwcMaximumDepthInMeters": null,
+          "substrate": null,
+          "remarks": null,
+          "publiclyReleasable": true,
+          "notPubliclyReleasableReason": null,
+          "tags": null,
+          "geographicPlaceNameSource": "OSM",
+          "geographicPlaceNameSourceDetail": {
+            "sourceUrl": "https://nominatim.openstreetmap.org/ui/details.html?osmtype=R&osmid=5379616",
+            "customGeographicPlace": null,
+            "selectedGeographicPlace": null,
+            "higherGeographicPlaces": null,
+            "stateProvince": {
+              "id": "5379616",
+              "element": "relation",
+              "placeType": "state",
+              "name": "Quebec"
+            },
+            "country": {
+              "code": "ca",
+              "name": "Canada"
+            },
+            "recordedOn": "2022-03-02T17:41:53.968198Z"
+          },
+          "extensionValues": []
+        }
+      },
+      {
+        "id": "aff812e2-d2ef-49ee-a320-5da2582bbca0",
+        "type": "storage-unit",
+        "attributes": {
+          "createdOn": "2022-03-02T17:34:21.994188Z",
+          "createdBy": "cnc-cm",
+          "group": "aafc",
+          "name": "Unit Type Number 2",
+          "storageUnitChildren": [],
+          "hierarchy": null
+        }
+      }
+    ],
+    "meta": {
+      "totalResourceCount": 1,
+      "moduleVersion": "0.47"
+    }
+  }
