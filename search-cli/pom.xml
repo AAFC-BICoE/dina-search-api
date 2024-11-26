@@ -48,6 +48,12 @@
     </dependency>
 
     <dependency>
+      <groupId>io.github.aafc-bicoe</groupId>
+      <artifactId>dina-json</artifactId>
+      <version>${dina-base-api.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
     </dependency>
