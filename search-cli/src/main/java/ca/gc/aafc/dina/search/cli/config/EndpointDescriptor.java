@@ -9,8 +9,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Data
 public class EndpointDescriptor {
-  private String targetUrl;
   private String indexName;
+  private String type;
   private List<String> relationships;
   private Set<String> relationshipsType;
 

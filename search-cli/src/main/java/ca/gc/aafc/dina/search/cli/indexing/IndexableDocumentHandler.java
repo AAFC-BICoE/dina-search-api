@@ -117,7 +117,7 @@ public class IndexableDocumentHandler {
       // Getting the type and perform a level #1 retrieval of attributes
       //
       String type = curObject.get(JSONApiDocumentStructure.TYPE).asText();
-      if (svcEndpointProps.getEndpoints().containsKey(type)) {
+      if (svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
 
         // Get the Id and retrieved the attributes from the related object.
         //
@@ -125,7 +125,8 @@ public class IndexableDocumentHandler {
 
         // Best effort processing for assembling of include section
         try {
-          String rawPayload = apiAccess.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
+          String rawPayload = apiAccess.getFromApi(svcEndpointProps.getApiResourceDescriptorForType(type),
+              svcEndpointProps.getEndpointDescriptorForType(type), curObjectId);
           JsonNode document = OM.readTree(rawPayload);
           // Take the data.attributes section to be embedded
           Optional<JsonNode> dataObject = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);

@@ -1,6 +1,7 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
+import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
@@ -41,11 +42,8 @@ public class DocumentManager {
     this.indexer = indexer;
 
     indexList = new ArrayList<>();
-    svcEndpointProps.getEndpoints().values().forEach(desc -> {
-      if (StringUtils.isNotBlank(desc.getIndexName())) {
-        indexList.add(desc.getIndexName());
-      }
-    });
+    svcEndpointProps.getFilteredEndpointDescriptorStream(ed -> StringUtils.isNotBlank(ed.getIndexName()))
+        .forEach(desc -> indexList.add(desc.getIndexName()));
   }
 
   /**
@@ -61,12 +59,13 @@ public class DocumentManager {
       throw new SearchApiException("Unsupported endpoint type: " + type);
     }
 
-    EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
+    EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpointDescriptorForType(type);
+    ApiResourceDescriptor apiResourceDescriptor = svcEndpointProps.getApiResourceDescriptorForType(type);
 
     // Step #1: get the document
     log.info("Retrieving document id:{}", documentId);
 
-    String documentToIndex = aClient.getDataFromUrl(endpointDescriptor, documentId);
+    String documentToIndex = aClient.getDataFromUrl(apiResourceDescriptor, endpointDescriptor, documentId);
 
     // Step #2: Assemble the document into a JSON map
     log.info("Assembling document id:{}", documentId);
@@ -87,13 +86,13 @@ public class DocumentManager {
   public String deleteDocument(String type, String documentId) throws SearchApiException {
 
     String processedMessage = null;
-    if (!svcEndpointProps.getEndpoints().containsKey(type)) {
+    if (!svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
       processedMessage = "Unsupported endpoint type:" + type;
       log.error(processedMessage);
       return processedMessage;
     }
 
-    EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpoints().get(type);
+    EndpointDescriptor endpointDescriptor = svcEndpointProps.getEndpointDescriptorForType(type);
 
     // Step #2: Delete the document from elasticsearch
     if (StringUtils.isNotBlank(endpointDescriptor.getIndexName())) {
@@ -167,13 +166,13 @@ public class DocumentManager {
    * @return
    */
   public boolean isTypeConfigured(String type) {
-    if (!svcEndpointProps.getEndpoints().containsKey(type)) {
+    if (!svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
       log.debug("Unsupported endpoint type:" + type);
       return false;
     }
 
     // Do we have an index defined for the type ?
-    if (StringUtils.isBlank(svcEndpointProps.getEndpoints().get(type).getIndexName())) {
+    if (StringUtils.isBlank(svcEndpointProps.getEndpointDescriptorForType(type).getIndexName())) {
       log.debug("Undefined index for: " + type);
       return false;
     }
@@ -186,9 +185,8 @@ public class DocumentManager {
    * @return list of unique index or empty list
    */
   public List<String> getIndexForRelationshipType(String type) {
-    return svcEndpointProps.getEndpoints().values()
-        .stream()
-        .filter(endpointDescriptor -> endpointDescriptor.containsRelationshipsType(type))
+    return svcEndpointProps.
+        getFilteredEndpointDescriptorStream(ed -> ed.containsRelationshipsType(type))
         .map(EndpointDescriptor::getIndexName)
         .distinct()
         .collect(Collectors.toList());

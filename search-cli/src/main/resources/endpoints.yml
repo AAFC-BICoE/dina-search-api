@@ -11,11 +11,24 @@
 # Augmentation of objects is done using the same endpoint when external object references
 # are found during processing of an object.
 #
-#
+
+# apiResources links a type to an url to find a resource
+apiResources:
+  - type: material-sample
+    url: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
+  - type: person
+    url: ${PERSON_URL:http://localhost:8082/api/v1/person}
+  - type: storage-unit
+    url: ${STORAGE_UNIT_URL:http://localhost:8085/api/v1/storage-unit}
+  - type: metadata
+    url: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
+  - type: transaction
+    url: ${LOAN_TRANSACTION_URL:http://localhost:8086/api/v1/transaction}
+
 endpoints:
   material-sample:
     indexName: dina_material_sample_index
-    targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
+    type: material-sample
     relationships:
       - collectingEvent
       - organism
@@ -32,9 +45,12 @@ endpoints:
     relationshipsType:
       - person
       - collecting-event
+#    reverseRelationships:
+#      - type: x
+
   metadata:
     indexName: dina_object_store_index
-    targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
+    type: metadata
     relationships:
       - acMetadataCreator
       - dcCreator
@@ -42,22 +58,22 @@ endpoints:
     relationshipsType:
       - person
       - derivative
-  person: 
-    targetUrl: ${PERSON_URL:http://localhost:8082/api/v1/person}
+  person:
+    type: person
     indexName: dina_agent_index
     relationships:
       - organizations
     relationshipsType:
       - organization
   storage-unit:
-    targetUrl: ${STORAGE_UNIT_URL:http://localhost:8085/api/v1/storage-unit}
+    type: storage-unit
     indexName: dina_storage_index
     relationships:
       - storageUnitChildren
       - storageUnitType
       - hierarchy
   transaction:
-    targetUrl: ${LOAN_TRANSACTION_URL:http://localhost:8086/api/v1/transaction}
+    type: transaction
     indexName: dina_loan_transaction_index
     relationships:
       - involvedAgents

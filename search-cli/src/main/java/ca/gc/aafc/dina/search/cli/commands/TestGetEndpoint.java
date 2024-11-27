@@ -27,14 +27,15 @@ public class TestGetEndpoint {
   public String testGetEndpoint(@ShellOption(value = { "-t", "--type" }) String type) {
 
     String msg = null;
-    if (!svcEndpointProps.getEndpoints().containsKey(type)) {
+    if (!svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
       msg = "Unsupported endpoint type:" + type;
       log.error(msg);
       return msg;
     }
 
     try {
-      msg = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type));
+      msg = aClient.getDataFromUrl(svcEndpointProps.getApiResourceDescriptorForType(type),
+          svcEndpointProps.getEndpointDescriptorForType(type));
     } catch (SearchApiException sapiEx) {
       log.error("Error during operation execution", sapiEx);
     }

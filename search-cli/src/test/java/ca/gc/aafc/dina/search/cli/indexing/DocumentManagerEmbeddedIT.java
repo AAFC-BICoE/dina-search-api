@@ -1,6 +1,7 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.search.cli.TestConstants;
+import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.CacheConfiguration;
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
@@ -15,7 +16,6 @@ import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -119,8 +119,12 @@ public class DocumentManagerEmbeddedIT {
 
     // Here we register an endpoint for organization since this test assumes organization is an external relationship
     EndpointDescriptor organizationDescriptor = new EndpointDescriptor();
-    organizationDescriptor.setTargetUrl("http://localhost:8082/api/v1/organization");
-    serviceEndpointProperties.getEndpoints().put("organization", organizationDescriptor);
+    organizationDescriptor.setType(TestConstants.ORGANIZATION_TYPE);
+    organizationDescriptor.setIndexName(TestConstants.AGENT_INDEX);
+    serviceEndpointProperties.addEndpointDescriptor("organization", organizationDescriptor);
+
+    ApiResourceDescriptor apiResourceDescriptor = new ApiResourceDescriptor(TestConstants.ORGANIZATION_TYPE, "http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE);
+    serviceEndpointProperties.addApiResourceDescriptor(apiResourceDescriptor);
 
     // Mock the person request/response.
     MockServerTestUtils.addMockGetResponse(client, EMBEDDED_DOCUMENT_TYPE,
@@ -137,10 +141,10 @@ public class DocumentManagerEmbeddedIT {
     ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
 
     // Agent index can be skipped since it already has been added above.
-    Set<String> indices = serviceEndpointProperties.getEndpoints().values().stream()
+    Set<String> indices = serviceEndpointProperties
+        .getFilteredEndpointDescriptorStream(ed -> !TestConstants.AGENT_INDEX.equals(ed.getIndexName()))
         .map(EndpointDescriptor::getIndexName)
-        .filter(index -> !TestConstants.AGENT_INDEX.equals(index))
-            .collect(Collectors.toSet());
+        .collect(Collectors.toSet());
 
     // The other indices must exist, but can be empty for this test. Use the endpoint to generate them.
     createIndices(indices);
@@ -241,27 +245,22 @@ public class DocumentManagerEmbeddedIT {
     // Validate that the API response is in the cache
     Cache cache = cacheManager.getCache(CacheableApiAccess.CACHE_NAME);
     Object objFromCache = cache.get(getCacheableApiAccessCacheKey(
-        serviceEndpointProperties.getEndpoints().get(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
+        serviceEndpointProperties.getApiResourceDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
+        serviceEndpointProperties.getEndpointDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
         EMBEDDED_DOCUMENT_INCLUDED_ID));
     assertNotNull(objFromCache);
   }
 
   private void createIndices(Set<String> indices) {
-    serviceEndpointProperties.getEndpoints().values().forEach(desc -> {
-      if (StringUtils.isNotBlank (desc.getIndexName())) {
-
-        // Agent index can be skipped since it already has been added above.
-        if (desc.getIndexName().trim().equals(TestConstants.AGENT_INDEX)) return;
-
-        // Create the indices in elastic search.
-        try {
-          elasticSearchClient.indices().create(c -> c.index(desc.getIndexName().trim()));
-        } catch (ElasticsearchException e) {
-          fail(e);
-          e.printStackTrace();
-        } catch (IOException e) {
-          fail(e);
-        }
+    indices.forEach(indexName -> {
+      // Create the indices in elastic search.
+      try {
+        elasticSearchClient.indices().create(c -> c.index(indexName.trim()));
+      } catch (ElasticsearchException e) {
+        fail(e);
+        e.printStackTrace();
+      } catch (IOException e) {
+        fail(e);
       }
     });
   }
@@ -274,11 +273,12 @@ public class DocumentManagerEmbeddedIT {
    * @return
    */
   @SneakyThrows
-  public static String getCacheableApiAccessCacheKey(EndpointDescriptor endpointDescriptor, String objectId) {
+  public static String getCacheableApiAccessCacheKey(ApiResourceDescriptor apiResourceDescriptor, EndpointDescriptor endpointDescriptor, String objectId) {
     CacheConfiguration.MethodBasedKeyGenerator keyGen = new CacheConfiguration.MethodBasedKeyGenerator();
     // dummy instance only used to generate the key
     CacheableApiAccess cacheableApiAccess = new CacheableApiAccess(null);
-    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", EndpointDescriptor.class, String.class), endpointDescriptor, objectId).toString();
+    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", ApiResourceDescriptor.class, EndpointDescriptor.class, String.class),
+        apiResourceDescriptor, endpointDescriptor, objectId).toString();
   }
 
 }

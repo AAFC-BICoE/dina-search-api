@@ -64,7 +64,7 @@ public class IndexableDocumentHandlerIT {
 
     // Create a specific instance to ignore api calls since we don't have external relationships to resolve
     IndexableDocumentHandler idh = new IndexableDocumentHandler(
-        (endpointDescriptor, objectId) -> "",
+        ((apiResourceDescriptor, endpointDescriptor, objectId) -> ""),
         svcEndpointProps
     );
 

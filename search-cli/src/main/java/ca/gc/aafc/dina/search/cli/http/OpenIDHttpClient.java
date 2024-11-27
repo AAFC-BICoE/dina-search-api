@@ -3,6 +3,7 @@ package ca.gc.aafc.dina.search.cli.http;
 import ca.gc.aafc.dina.client.AccessTokenAuthenticator;
 import ca.gc.aafc.dina.client.TokenBasedRequestBuilder;
 import ca.gc.aafc.dina.client.token.AccessTokenManager;
+import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
 import ca.gc.aafc.dina.search.cli.config.HttpClientConfig;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
@@ -13,6 +14,7 @@ import okhttp3.HttpUrl.Builder;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -40,8 +42,8 @@ public class OpenIDHttpClient {
     httpClient = builder.build();
   }
 
-  public String getDataFromUrl(EndpointDescriptor endpointDescriptor) throws SearchApiException {
-    return getDataFromUrl(endpointDescriptor, null);
+  public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor, EndpointDescriptor endpointDescriptor) throws SearchApiException {
+    return getDataFromUrl(apiResourceDescriptor, endpointDescriptor, null);
   }
 
   /**
@@ -55,10 +57,12 @@ public class OpenIDHttpClient {
    * 
    * @throws SearchApiException in case of communication errors.
    */
-  public String getDataFromUrl(EndpointDescriptor endpointDescriptor, String objectId)
+  public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor,
+                               EndpointDescriptor endpointDescriptor,
+                               String objectId)
       throws SearchApiException {
 
-    HttpUrl route = validateArgumentAndCreateRoute(endpointDescriptor, objectId);
+    HttpUrl route = validateArgumentAndCreateRoute(endpointDescriptor, apiResourceDescriptor, objectId);
     try (Response response = executeGetRequest(route)) {
       if (response.isSuccessful()) {
         ResponseBody bodyContent = response.body();
@@ -88,14 +92,17 @@ public class OpenIDHttpClient {
    * 
    * @throws SearchApiException in case of a validation error.
    */
-  private HttpUrl validateArgumentAndCreateRoute(EndpointDescriptor endpointDescriptor, String objectId)
+  private HttpUrl validateArgumentAndCreateRoute(EndpointDescriptor endpointDescriptor,
+                                                 ApiResourceDescriptor apiResourceDescriptor,
+                                                 String objectId)
       throws SearchApiException {
 
     String pathParam = Objects.toString(objectId, "");
     Builder urlBuilder = null;
 
-    if (endpointDescriptor != null && endpointDescriptor.getTargetUrl() != null) {
-      HttpUrl parseResult = HttpUrl.parse(endpointDescriptor.getTargetUrl());
+    if (endpointDescriptor != null && StringUtils.isNotBlank(endpointDescriptor.getType())
+        && endpointDescriptor.getType().equals(apiResourceDescriptor.type())) {
+      HttpUrl parseResult = HttpUrl.parse(apiResourceDescriptor.url());
       if (parseResult != null) {
         urlBuilder = parseResult.newBuilder();
       } else {

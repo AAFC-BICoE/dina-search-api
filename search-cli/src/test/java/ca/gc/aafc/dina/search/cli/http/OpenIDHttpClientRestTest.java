@@ -70,11 +70,12 @@ public class OpenIDHttpClientRestTest {
 
     assertNotNull(openIdClient);
     assertEquals("http://localhost:8082/api/v1/person",
-        serviceEndpointProperties.getEndpoints().get("person").getTargetUrl());
+        serviceEndpointProperties.getApiResourceDescriptorForType("person").url());
 
     String dataFromPerson = 
             openIdClient.getDataFromUrl(
-                serviceEndpointProperties.getEndpoints().get("person"));
+                serviceEndpointProperties.getApiResourceDescriptorForType("person"),
+                serviceEndpointProperties.getEndpointDescriptorForType("person"));
 
     assertEquals(FAKE_RESPONSE_FAKE_RESPONSE, dataFromPerson);
   }
