@@ -1,19 +1,16 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
+import ca.gc.aafc.dina.json.JsonHelper;
+import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
+import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.DinaApiAccess;
-import ca.gc.aafc.dina.search.cli.json.JSONApiDocumentStructure;
-import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import org.springframework.stereotype.Component;
-
-import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
-import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
-
 import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
@@ -73,26 +70,21 @@ public class IndexableDocumentHandler {
     JsonNode document = OM.readTree(rawPayload);
     ObjectNode newData = OM.createObjectNode();
 
-    newData.set(JSONApiDocumentStructure.DATA, atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
+    newData.set(JSONApiDocumentStructure.DATA, JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API data section missing")));
 
     // included section is optional
-    atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(included -> {
+    JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(included -> {
       processIncluded(included);
       newData.set(JSONApiDocumentStructure.INCLUDED, included);
     });
 
-    JsonNode metaNode = atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
+    JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
     processMeta(metaNode);
     newData.set(JSONApiDocumentStructure.META, metaNode);
 
     return newData;
-  }
-
-  private static Optional<JsonNode> atJsonPtr(JsonNode document, JsonPointer ptr) {
-    JsonNode node = document.at(ptr);
-    return node.isMissingNode() ? Optional.empty() : Optional.of(node);
   }
 
   /**
@@ -136,7 +128,7 @@ public class IndexableDocumentHandler {
           String rawPayload = apiAccess.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
           JsonNode document = OM.readTree(rawPayload);
           // Take the data.attributes section to be embedded
-          Optional<JsonNode> dataObject = atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
+          Optional<JsonNode> dataObject = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
 
           if (dataObject.isPresent()) {
             ((ObjectNode) curObject).set(JSONApiDocumentStructure.ATTRIBUTES, dataObject.get());
