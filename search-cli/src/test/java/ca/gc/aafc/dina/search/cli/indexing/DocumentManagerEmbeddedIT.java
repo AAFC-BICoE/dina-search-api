@@ -3,7 +3,7 @@ package ca.gc.aafc.dina.search.cli.indexing;
 import ca.gc.aafc.dina.search.cli.TestConstants;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.CacheConfiguration;
-import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
@@ -118,10 +118,9 @@ public class DocumentManagerEmbeddedIT {
     MockKeyCloakAuthentication.mockKeycloak(client);
 
     // Here we register an endpoint for organization since this test assumes organization is an external relationship
-    EndpointDescriptor organizationDescriptor = new EndpointDescriptor();
-    organizationDescriptor.setType(TestConstants.ORGANIZATION_TYPE);
-    organizationDescriptor.setIndexName(TestConstants.AGENT_INDEX);
-    serviceEndpointProperties.addEndpointDescriptor("organization", organizationDescriptor);
+    IndexSettingDescriptor organizationDescriptor = new IndexSettingDescriptor(TestConstants.AGENT_INDEX,
+        TestConstants.ORGANIZATION_TYPE, null, null);
+    serviceEndpointProperties.addEndpointDescriptor(organizationDescriptor);
 
     ApiResourceDescriptor apiResourceDescriptor = new ApiResourceDescriptor(TestConstants.ORGANIZATION_TYPE, "http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE);
     serviceEndpointProperties.addApiResourceDescriptor(apiResourceDescriptor);
@@ -142,8 +141,8 @@ public class DocumentManagerEmbeddedIT {
 
     // Agent index can be skipped since it already has been added above.
     Set<String> indices = serviceEndpointProperties
-        .getFilteredEndpointDescriptorStream(ed -> !TestConstants.AGENT_INDEX.equals(ed.getIndexName()))
-        .map(EndpointDescriptor::getIndexName)
+        .getFilteredEndpointDescriptorStream(ed -> !TestConstants.AGENT_INDEX.equals(ed.indexName()))
+        .map(IndexSettingDescriptor::indexName)
         .collect(Collectors.toSet());
 
     // The other indices must exist, but can be empty for this test. Use the endpoint to generate them.
@@ -246,7 +245,7 @@ public class DocumentManagerEmbeddedIT {
     Cache cache = cacheManager.getCache(CacheableApiAccess.CACHE_NAME);
     Object objFromCache = cache.get(getCacheableApiAccessCacheKey(
         serviceEndpointProperties.getApiResourceDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
-        serviceEndpointProperties.getEndpointDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
+        serviceEndpointProperties.getIndexSettingDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
         EMBEDDED_DOCUMENT_INCLUDED_ID));
     assertNotNull(objFromCache);
   }
@@ -273,11 +272,11 @@ public class DocumentManagerEmbeddedIT {
    * @return
    */
   @SneakyThrows
-  public static String getCacheableApiAccessCacheKey(ApiResourceDescriptor apiResourceDescriptor, EndpointDescriptor endpointDescriptor, String objectId) {
+  public static String getCacheableApiAccessCacheKey(ApiResourceDescriptor apiResourceDescriptor, IndexSettingDescriptor endpointDescriptor, String objectId) {
     CacheConfiguration.MethodBasedKeyGenerator keyGen = new CacheConfiguration.MethodBasedKeyGenerator();
     // dummy instance only used to generate the key
     CacheableApiAccess cacheableApiAccess = new CacheableApiAccess(null);
-    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", ApiResourceDescriptor.class, EndpointDescriptor.class, String.class),
+    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", ApiResourceDescriptor.class, IndexSettingDescriptor.class, String.class),
         apiResourceDescriptor, endpointDescriptor, objectId).toString();
   }
 

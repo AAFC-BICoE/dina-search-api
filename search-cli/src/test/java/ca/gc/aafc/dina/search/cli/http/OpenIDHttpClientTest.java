@@ -48,7 +48,7 @@ public class OpenIDHttpClientTest {
         Assertions.assertThrows(
             SearchApiException.class, () -> {
               openIdClient.getDataFromUrl(serviceEndpointProperties.getApiResourceDescriptorForType("person"),
-                  serviceEndpointProperties.getEndpointDescriptorForType("person")
+                  serviceEndpointProperties.getIndexSettingDescriptorForType("person")
               );
             });
 

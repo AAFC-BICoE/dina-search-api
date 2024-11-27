@@ -44,7 +44,7 @@ public class GetDocument {
 
     try {
       msg = aClient.getDataFromUrl(svcEndpointProps.getApiResourceDescriptorForType(type),
-          svcEndpointProps.getEndpointDescriptorForType(type), documentId);
+          svcEndpointProps.getIndexSettingDescriptorForType(type), documentId);
 
       if (assemble) {
         msg = IndexableDocumentHandler.OM.writeValueAsString(indexableDocumentHandler.assembleDocument(msg));

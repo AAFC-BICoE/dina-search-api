@@ -4,7 +4,7 @@ import ca.gc.aafc.dina.client.AccessTokenAuthenticator;
 import ca.gc.aafc.dina.client.TokenBasedRequestBuilder;
 import ca.gc.aafc.dina.client.token.AccessTokenManager;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
-import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.HttpClientConfig;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
@@ -42,7 +42,7 @@ public class OpenIDHttpClient {
     httpClient = builder.build();
   }
 
-  public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor, EndpointDescriptor endpointDescriptor) throws SearchApiException {
+  public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor, IndexSettingDescriptor endpointDescriptor) throws SearchApiException {
     return getDataFromUrl(apiResourceDescriptor, endpointDescriptor, null);
   }
 
@@ -58,7 +58,7 @@ public class OpenIDHttpClient {
    * @throws SearchApiException in case of communication errors.
    */
   public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor,
-                               EndpointDescriptor endpointDescriptor,
+                               IndexSettingDescriptor endpointDescriptor,
                                String objectId)
       throws SearchApiException {
 
@@ -92,7 +92,7 @@ public class OpenIDHttpClient {
    * 
    * @throws SearchApiException in case of a validation error.
    */
-  private HttpUrl validateArgumentAndCreateRoute(EndpointDescriptor endpointDescriptor,
+  private HttpUrl validateArgumentAndCreateRoute(IndexSettingDescriptor endpointDescriptor,
                                                  ApiResourceDescriptor apiResourceDescriptor,
                                                  String objectId)
       throws SearchApiException {
@@ -100,8 +100,8 @@ public class OpenIDHttpClient {
     String pathParam = Objects.toString(objectId, "");
     Builder urlBuilder = null;
 
-    if (endpointDescriptor != null && StringUtils.isNotBlank(endpointDescriptor.getType())
-        && endpointDescriptor.getType().equals(apiResourceDescriptor.type())) {
+    if (endpointDescriptor != null && StringUtils.isNotBlank(endpointDescriptor.type())
+        && endpointDescriptor.type().equals(apiResourceDescriptor.type())) {
       HttpUrl parseResult = HttpUrl.parse(apiResourceDescriptor.url());
       if (parseResult != null) {
         urlBuilder = parseResult.newBuilder();
@@ -115,8 +115,8 @@ public class OpenIDHttpClient {
     /*
      * Add document include clause defined in the endpoints.yml file.
      */
-    if (endpointDescriptor.getRelationships() != null && !endpointDescriptor.getRelationships().isEmpty()) {
-      urlBuilder.addQueryParameter("include", String.join(",", endpointDescriptor.getRelationships()));
+    if (endpointDescriptor.relationships() != null && !endpointDescriptor.relationships().isEmpty()) {
+      urlBuilder.addQueryParameter("include", String.join(",", endpointDescriptor.relationships()));
     }
     urlBuilder.addPathSegment(pathParam);
     return urlBuilder.build();

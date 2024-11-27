@@ -126,7 +126,7 @@ public class IndexableDocumentHandler {
         // Best effort processing for assembling of include section
         try {
           String rawPayload = apiAccess.getFromApi(svcEndpointProps.getApiResourceDescriptorForType(type),
-              svcEndpointProps.getEndpointDescriptorForType(type), curObjectId);
+              svcEndpointProps.getIndexSettingDescriptorForType(type), curObjectId);
           JsonNode document = OM.readTree(rawPayload);
           // Take the data.attributes section to be embedded
           Optional<JsonNode> dataObject = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);

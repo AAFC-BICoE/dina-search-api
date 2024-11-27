@@ -1,7 +1,6 @@
 package ca.gc.aafc.dina.search.cli.config;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -20,22 +19,22 @@ import lombok.RequiredArgsConstructor;
 public class ServiceEndpointProperties {
 
   private final List<ApiResourceDescriptor> apiResources;
-  private final Map<String, EndpointDescriptor> endpoints;
+  private final List<IndexSettingDescriptor> indexSettings;
 
-  public EndpointDescriptor getEndpointDescriptorForType(String type) {
-    return endpoints.values().stream()
-        .filter(endpointDescriptor -> type.equals(endpointDescriptor.getType()))
+  public IndexSettingDescriptor getIndexSettingDescriptorForType(String type) {
+    return indexSettings.stream()
+        .filter(endpointDescriptor -> type.equals(endpointDescriptor.type()))
         .findFirst()
         .orElse(null);
   }
 
   public boolean isTypeSupportedForEndpointDescriptor(String type) {
-    return endpoints.values().stream()
-        .anyMatch(endpointDescriptor -> type.equals(endpointDescriptor.getType()));
+    return indexSettings.stream()
+        .anyMatch(endpointDescriptor -> type.equals(endpointDescriptor.type()));
   }
 
-  public Stream<EndpointDescriptor> getFilteredEndpointDescriptorStream(Predicate<EndpointDescriptor> predicate) {
-    return endpoints.values().stream()
+  public Stream<IndexSettingDescriptor> getFilteredEndpointDescriptorStream(Predicate<IndexSettingDescriptor> predicate) {
+    return indexSettings.stream()
         .filter(predicate);
   }
 
@@ -53,10 +52,10 @@ public class ServiceEndpointProperties {
     apiResources.remove(apiResourceDescriptor);
   }
 
-  public void addEndpointDescriptor(String key, EndpointDescriptor endpointDescriptor) {
-    endpoints.put(key,endpointDescriptor);
+  public void addEndpointDescriptor(IndexSettingDescriptor endpointDescriptor) {
+    indexSettings.add(endpointDescriptor);
   }
-  public void removeEndpointDescriptor(String key) {
-    endpoints.remove(key);
+  public void removeEndpointDescriptor(IndexSettingDescriptor endpointDescriptor) {
+    indexSettings.remove(endpointDescriptor);
   }
 }

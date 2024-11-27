@@ -31,8 +31,8 @@ public class ShowEndpointConfigTest {
 
     ApiResourceDescriptor apiResourceDescriptor = serviceEndpointProperties.getApiResourceDescriptorForType("storage-unit");
 
-    assertNotNull(serviceEndpointProperties.getEndpointDescriptorForType("metadata"));
-    assertNotNull(serviceEndpointProperties.getEndpointDescriptorForType("person"));
+    assertNotNull(serviceEndpointProperties.getIndexSettingDescriptorForType("metadata"));
+    assertNotNull(serviceEndpointProperties.getIndexSettingDescriptorForType("person"));
     assertNotNull(apiResourceDescriptor);
 
     assertEquals("http://localhost:8081/api/v1/metadata", serviceEndpointProperties.getApiResourceDescriptorForType("metadata").url());

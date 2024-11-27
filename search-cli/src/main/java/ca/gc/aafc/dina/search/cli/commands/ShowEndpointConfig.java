@@ -1,9 +1,5 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
-import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.stereotype.Component;

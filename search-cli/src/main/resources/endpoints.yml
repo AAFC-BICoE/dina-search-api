@@ -25,9 +25,8 @@ apiResources:
   - type: transaction
     url: ${LOAN_TRANSACTION_URL:http://localhost:8086/api/v1/transaction}
 
-endpoints:
-  material-sample:
-    indexName: dina_material_sample_index
+indexSettings:
+  - indexName: dina_material_sample_index
     type: material-sample
     relationships:
       - collectingEvent
@@ -48,8 +47,7 @@ endpoints:
 #    reverseRelationships:
 #      - type: x
 
-  metadata:
-    indexName: dina_object_store_index
+  - indexName: dina_object_store_index
     type: metadata
     relationships:
       - acMetadataCreator
@@ -58,23 +56,23 @@ endpoints:
     relationshipsType:
       - person
       - derivative
-  person:
+
+  - indexName: dina_agent_index
     type: person
-    indexName: dina_agent_index
     relationships:
       - organizations
     relationshipsType:
       - organization
-  storage-unit:
+
+  - indexName: dina_storage_index
     type: storage-unit
-    indexName: dina_storage_index
     relationships:
       - storageUnitChildren
       - storageUnitType
       - hierarchy
-  transaction:
+
+  - indexName: dina_loan_transaction_index
     type: transaction
-    indexName: dina_loan_transaction_index
     relationships:
       - involvedAgents
       - materialSamples
