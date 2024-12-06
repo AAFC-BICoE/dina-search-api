@@ -2,14 +2,19 @@ package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.json.JsonHelper;
 import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
+import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
+import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
+import ca.gc.aafc.dina.search.cli.config.ReverseRelationship;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
 import ca.gc.aafc.dina.search.cli.http.DinaApiAccess;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -126,7 +131,7 @@ public class IndexableDocumentHandler {
         // Best effort processing for assembling of include section
         try {
           String rawPayload = apiAccess.getFromApi(svcEndpointProps.getApiResourceDescriptorForType(type),
-              svcEndpointProps.getIndexSettingDescriptorForType(type), curObjectId);
+              svcEndpointProps.getIndexSettingDescriptorForType(type).relationships(), curObjectId);
           JsonNode document = OM.readTree(rawPayload);
           // Take the data.attributes section to be embedded
           Optional<JsonNode> dataObject = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
@@ -139,6 +144,27 @@ public class IndexableDocumentHandler {
           }
         } catch (SearchApiException | JsonProcessingException ex) {
           log.error("Error during processing of included section object type{}, id={}, message={}", type, curObjectId, ex.getMessage());
+        }
+      }
+    }
+  }
+
+  /**
+   * Check if the provided type has a possible reverse relationship. If yes, try to get it.
+   * @param documentType
+   * @param documentId
+   * @throws SearchApiException
+   */
+  public void processReverseRelationships(String documentType, String documentId) throws SearchApiException {
+    IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(documentType);
+
+    if (indexSettingDescriptor != null && CollectionUtils.isNotEmpty(indexSettingDescriptor.reverseRelationships())) {
+      for (ReverseRelationship rr : indexSettingDescriptor.reverseRelationships()) {
+        ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
+        try {
+          String documentToIndex = apiAccess.getFromApi(apiRd, null, documentId);
+        } catch (SearchApiNotFoundException ex) {
+          //no-op,
         }
       }
     }

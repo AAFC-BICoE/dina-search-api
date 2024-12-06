@@ -35,7 +35,7 @@ public class TestGetEndpoint {
 
     try {
       msg = aClient.getDataFromUrl(svcEndpointProps.getApiResourceDescriptorForType(type),
-          svcEndpointProps.getIndexSettingDescriptorForType(type));
+          svcEndpointProps.getIndexSettingDescriptorForType(type).relationships());
     } catch (SearchApiException sapiEx) {
       log.error("Error during operation execution", sapiEx);
     }

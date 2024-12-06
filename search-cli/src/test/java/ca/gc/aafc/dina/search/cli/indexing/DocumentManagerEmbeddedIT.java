@@ -119,7 +119,7 @@ public class DocumentManagerEmbeddedIT {
 
     // Here we register an endpoint for organization since this test assumes organization is an external relationship
     IndexSettingDescriptor organizationDescriptor = new IndexSettingDescriptor(TestConstants.AGENT_INDEX,
-        TestConstants.ORGANIZATION_TYPE, null, null);
+        TestConstants.ORGANIZATION_TYPE, null, null, null);
     serviceEndpointProperties.addEndpointDescriptor(organizationDescriptor);
 
     ApiResourceDescriptor apiResourceDescriptor = new ApiResourceDescriptor(TestConstants.ORGANIZATION_TYPE, "http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE);

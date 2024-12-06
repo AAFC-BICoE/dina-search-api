@@ -29,6 +29,7 @@
     <java.version>21</java.version>
 
     <jakarta.json.version>2.0.1</jakarta.json.version>
+    <apache.commons.collections4.version>4.4</apache.commons.collections4.version>
     <dina-base-api.version>0.132</dina-base-api.version>
 
     <!-- Build plugin properties -->

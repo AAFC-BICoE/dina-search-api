@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 /**
  * DocumentManager is responsible for:
  * - retrieving the document
@@ -65,7 +66,7 @@ public class DocumentManager {
     // Step #1: get the document
     log.info("Retrieving document id:{}", documentId);
 
-    String documentToIndex = aClient.getDataFromUrl(apiResourceDescriptor, endpointDescriptor, documentId);
+    String documentToIndex = aClient.getDataFromUrl(apiResourceDescriptor, endpointDescriptor.relationships(), documentId);
 
     // Step #2: Assemble the document into a JSON map
     log.info("Assembling document id:{}", documentId);

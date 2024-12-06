@@ -4,7 +4,6 @@ import ca.gc.aafc.dina.client.AccessTokenAuthenticator;
 import ca.gc.aafc.dina.client.TokenBasedRequestBuilder;
 import ca.gc.aafc.dina.client.token.AccessTokenManager;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
-import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.HttpClientConfig;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
@@ -14,11 +13,12 @@ import okhttp3.HttpUrl.Builder;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Set;
 
 @Log4j2
 @Service
@@ -42,8 +42,8 @@ public class OpenIDHttpClient {
     httpClient = builder.build();
   }
 
-  public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor, IndexSettingDescriptor endpointDescriptor) throws SearchApiException {
-    return getDataFromUrl(apiResourceDescriptor, endpointDescriptor, null);
+  public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes) throws SearchApiException {
+    return getDataFromUrl(apiResourceDescriptor, includes, null);
   }
 
   /**
@@ -58,11 +58,10 @@ public class OpenIDHttpClient {
    * @throws SearchApiException in case of communication errors.
    */
   public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor,
-                               IndexSettingDescriptor endpointDescriptor,
-                               String objectId)
+                               Set<String> includes, String objectId)
       throws SearchApiException {
 
-    HttpUrl route = validateArgumentAndCreateRoute(endpointDescriptor, apiResourceDescriptor, objectId);
+    HttpUrl route = validateArgumentAndCreateRoute(apiResourceDescriptor, includes, objectId);
     try (Response response = executeGetRequest(route)) {
       if (response.isSuccessful()) {
         ResponseBody bodyContent = response.body();
@@ -84,39 +83,32 @@ public class OpenIDHttpClient {
 
 
   /**
-   * Validate provided arguments and returns a route object to be used by the caller.
+   * Returns a route object to be used by the caller.
    * 
-   * @param endpointDescriptor
+   * @param apiResourceDescriptor
    * @param objectId
    * @return route object to be used by the calling method.
    * 
    * @throws SearchApiException in case of a validation error.
    */
-  private HttpUrl validateArgumentAndCreateRoute(IndexSettingDescriptor endpointDescriptor,
-                                                 ApiResourceDescriptor apiResourceDescriptor,
-                                                 String objectId)
-      throws SearchApiException {
+  private HttpUrl validateArgumentAndCreateRoute(ApiResourceDescriptor apiResourceDescriptor,
+                                                 Set<String> includes, String objectId) throws SearchApiException {
 
     String pathParam = Objects.toString(objectId, "");
-    Builder urlBuilder = null;
+    Builder urlBuilder;
 
-    if (endpointDescriptor != null && StringUtils.isNotBlank(endpointDescriptor.type())
-        && endpointDescriptor.type().equals(apiResourceDescriptor.type())) {
-      HttpUrl parseResult = HttpUrl.parse(apiResourceDescriptor.url());
-      if (parseResult != null) {
-        urlBuilder = parseResult.newBuilder();
-      } else {
-        throw new SearchApiException("Invalid endpoint descriptor, can not be null");
-      }
+    HttpUrl parseResult = HttpUrl.parse(apiResourceDescriptor.url());
+    if (parseResult != null) {
+      urlBuilder = parseResult.newBuilder();
     } else {
       throw new SearchApiException("Invalid endpoint descriptor, can not be null");
     }
 
     /*
-     * Add document include clause defined in the endpoints.yml file.
+     * Add document include clause
      */
-    if (endpointDescriptor.relationships() != null && !endpointDescriptor.relationships().isEmpty()) {
-      urlBuilder.addQueryParameter("include", String.join(",", endpointDescriptor.relationships()));
+    if (CollectionUtils.isNotEmpty(includes)) {
+      urlBuilder.addQueryParameter("include", String.join(",", includes));
     }
     urlBuilder.addPathSegment(pathParam);
     return urlBuilder.build();

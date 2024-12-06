@@ -88,7 +88,7 @@ public class DocumentManagerIT {
     MockKeyCloakAuthentication.mockKeycloak(client);
 
     // mock the organization endpoint as en external relationship just for the purpose of that test.
-    IndexSettingDescriptor epd = new IndexSettingDescriptor(TestConstants.AGENT_INDEX, TestConstants.ORGANIZATION_TYPE, null, null);
+    IndexSettingDescriptor epd = new IndexSettingDescriptor(TestConstants.AGENT_INDEX, TestConstants.ORGANIZATION_TYPE, null, null, null);
     serviceEndpointProperties.addEndpointDescriptor(epd);
 
     ApiResourceDescriptor apiResourceDescriptor = new ApiResourceDescriptor(TestConstants.ORGANIZATION_TYPE, "http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE);

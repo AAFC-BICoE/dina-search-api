@@ -24,6 +24,8 @@ apiResources:
     url: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
   - type: transaction
     url: ${LOAN_TRANSACTION_URL:http://localhost:8086/api/v1/transaction}
+  - type: generic-molecular-analysis-run-item
+    url: ${SEQDB_API_URL:http://localhost:8084/api/v1/}generic-molecular-analysis-run-item
 
 indexSettings:
   - indexName: dina_material_sample_index
@@ -44,8 +46,9 @@ indexSettings:
     relationshipsType:
       - person
       - collecting-event
-#    reverseRelationships:
-#      - type: x
+    reverseRelationships:
+      - type: generic-molecular-analysis-run-item
+        relationshipName: materialSample
 
   - indexName: dina_object_store_index
     type: metadata
