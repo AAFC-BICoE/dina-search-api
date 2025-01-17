@@ -105,7 +105,7 @@ public class OpenIDHttpClient {
     String pathParam = Objects.toString(objectId, "");
     Builder urlBuilder;
 
-    HttpUrl parseResult = HttpUrl.parse(apiResourceDescriptor.url());
+    HttpUrl parseResult = apiResourceDescriptor != null ? HttpUrl.parse(apiResourceDescriptor.url()) : null;
     if (parseResult != null) {
       urlBuilder = parseResult.newBuilder();
     } else {
