@@ -25,7 +25,7 @@ apiResources:
   - type: transaction
     url: ${LOAN_TRANSACTION_URL:http://localhost:8086/api/v1/transaction}
   - type: generic-molecular-analysis-run-item
-    url: ${SEQDB_API_URL:http://localhost:8084/api/v1/}generic-molecular-analysis-run-item
+    url: ${GENERIC_MOLECULAR_ANALYSIS_RUN_ITEM_API_URL:http://localhost:8084/api/v1/generic-molecular-analysis-run-item}
 
 indexSettings:
   - indexName: dina_material_sample_index

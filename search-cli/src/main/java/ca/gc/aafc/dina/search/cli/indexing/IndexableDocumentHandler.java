@@ -11,7 +11,7 @@ import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
 import ca.gc.aafc.dina.search.cli.http.DinaApiAccess;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -39,7 +39,7 @@ import java.util.function.Function;
 @Component
 public class IndexableDocumentHandler {
 
-  public static final ObjectMapper OM = new ObjectMapper();
+  public static final ObjectMapper OM = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   private static final List<JsonNodeTransformation>
       INCLUDED_NODE_TRANSFORMATION =
@@ -169,7 +169,7 @@ public class IndexableDocumentHandler {
       for (ReverseRelationship rr : indexSettingDescriptor.reverseRelationships()) {
         ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
         try {
-          String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
+          String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of(rr.relationshipName(), documentId));
 
           // this is expected to be an array
           JsonNode document = OM.readTree(rawPayload);

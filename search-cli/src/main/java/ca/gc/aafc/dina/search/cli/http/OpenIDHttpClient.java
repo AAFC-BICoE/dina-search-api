@@ -120,9 +120,13 @@ public class OpenIDHttpClient {
     }
 
     if (filter != null) {
-      urlBuilder.addQueryParameter(filter.getKey(), filter.getKey());
+      urlBuilder.addQueryParameter(filter.getKey(), filter.getValue());
     }
-    urlBuilder.addPathSegment(pathParam);
+
+    if (objectId != null) {
+      urlBuilder.addPathSegment(pathParam);
+    }
+    
     return urlBuilder.build();
   }
 
