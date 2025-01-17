@@ -15,17 +15,17 @@
 # apiResources links a type to an url to find a resource
 apiResources:
   - type: material-sample
-    url: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
+    url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/material-sample
   - type: person
-    url: ${PERSON_URL:http://localhost:8082/api/v1/person}
+    url: ${AGENT_API_URL:http://localhost:8082/api/v1}/person
   - type: storage-unit
-    url: ${STORAGE_UNIT_URL:http://localhost:8085/api/v1/storage-unit}
+    url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/storage-unit
   - type: metadata
-    url: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
+    url: ${OBJECT_STORE_API_URL:http://localhost:8081/api/v1}/metadata
   - type: transaction
-    url: ${LOAN_TRANSACTION_URL:http://localhost:8086/api/v1/transaction}
+    url: ${LOAN_TRANSACTION_API_URL:http://localhost:8086/api/v1}/transaction
   - type: generic-molecular-analysis-run-item
-    url: ${GENERIC_MOLECULAR_ANALYSIS_RUN_ITEM_API_URL:http://localhost:8084/api/v1/generic-molecular-analysis-run-item}
+    url: ${SEQDB_API_URL:http://localhost:8084/api/v1}/generic-molecular-analysis-run-item
 
 indexSettings:
   - indexName: dina_material_sample_index

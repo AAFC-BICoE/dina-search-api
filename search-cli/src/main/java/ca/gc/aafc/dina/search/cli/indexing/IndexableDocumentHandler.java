@@ -169,7 +169,7 @@ public class IndexableDocumentHandler {
       for (ReverseRelationship rr : indexSettingDescriptor.reverseRelationships()) {
         ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
         try {
-          String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of(rr.relationshipName(), documentId));
+          String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
 
           // this is expected to be an array
           JsonNode document = OM.readTree(rawPayload);
