@@ -2,6 +2,7 @@ package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.json.JsonHelper;
 import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
+import ca.gc.aafc.dina.jsonapi.JsonApiDocument;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ReverseRelationship;
@@ -76,7 +77,7 @@ public class IndexableDocumentHandler {
 
     JsonNode document = OM.readTree(rawPayload);
     ObjectNode newData = OM.createObjectNode();
-
+    
     newData.set(JSONApiDocumentStructure.DATA, JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API data section missing")));
 
@@ -85,6 +86,10 @@ public class IndexableDocumentHandler {
       processIncluded(included);
       newData.set(JSONApiDocumentStructure.INCLUDED, included);
     });
+
+    // Parse it as json:api document to make it easier
+    JsonApiDocument jsonApiDocument = OM.readValue(rawPayload, JsonApiDocument.class);
+    processReverseRelationships(jsonApiDocument.getData().getType(), jsonApiDocument.getId().toString());
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
