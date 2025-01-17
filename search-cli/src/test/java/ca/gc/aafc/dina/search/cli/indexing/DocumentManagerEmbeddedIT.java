@@ -236,7 +236,7 @@ public class DocumentManagerEmbeddedIT {
         "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
-    docFromElasticSearch = searchResponse.hits().hits().get(0).source();
+    docFromElasticSearch = searchResponse.hits().hits().getFirst().source();
 
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
     assertEquals("", docFromElasticSearch.at("/included/0/attributes").asText());
@@ -245,7 +245,7 @@ public class DocumentManagerEmbeddedIT {
     Cache cache = cacheManager.getCache(CacheableApiAccess.CACHE_NAME);
     Object objFromCache = cache.get(getCacheableApiAccessCacheKey(
         serviceEndpointProperties.getApiResourceDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
-        serviceEndpointProperties.getIndexSettingDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
+        serviceEndpointProperties.getIndexSettingDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE).relationships(),
         EMBEDDED_DOCUMENT_INCLUDED_ID));
     assertNotNull(objFromCache);
   }
@@ -272,12 +272,12 @@ public class DocumentManagerEmbeddedIT {
    * @return
    */
   @SneakyThrows
-  public static String getCacheableApiAccessCacheKey(ApiResourceDescriptor apiResourceDescriptor, IndexSettingDescriptor endpointDescriptor, String objectId) {
+  public static String getCacheableApiAccessCacheKey(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes, String objectId) {
     CacheConfiguration.MethodBasedKeyGenerator keyGen = new CacheConfiguration.MethodBasedKeyGenerator();
     // dummy instance only used to generate the key
     CacheableApiAccess cacheableApiAccess = new CacheableApiAccess(null);
-    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", ApiResourceDescriptor.class, IndexSettingDescriptor.class, String.class),
-        apiResourceDescriptor, endpointDescriptor, objectId).toString();
+    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", ApiResourceDescriptor.class, Set.class, String.class),
+        apiResourceDescriptor, includes, objectId).toString();
   }
 
 }
