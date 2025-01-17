@@ -14,6 +14,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -43,13 +44,13 @@ public class OpenIDHttpClient {
   }
 
   public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes) throws SearchApiException {
-    return getDataFromUrl(apiResourceDescriptor, includes, null);
+    return getDataById(apiResourceDescriptor, includes, null);
   }
 
   /**
    * Perform an HTTP GET operation on the provided targetUrl
    * 
-   * @param endpointDescriptor the target url endpoint
+   * @param apiResourceDescriptor the target url endpoint
    * @param objectId  the object identifier to be retrieved. 
    *                  If not defined the targetUrl will not be appended with the objectId
    * 
@@ -57,11 +58,19 @@ public class OpenIDHttpClient {
    * 
    * @throws SearchApiException in case of communication errors.
    */
-  public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor,
+  public String getDataById(ApiResourceDescriptor apiResourceDescriptor,
                                Set<String> includes, String objectId)
       throws SearchApiException {
+    return handleCall(validateArgumentAndCreateRoute(apiResourceDescriptor, includes, objectId, null));
+  }
 
-    HttpUrl route = validateArgumentAndCreateRoute(apiResourceDescriptor, includes, objectId);
+  public String getDataByFilter(ApiResourceDescriptor apiResourceDescriptor,
+                                Set<String> includes, Pair<String, String> filter)
+      throws SearchApiException {
+    return handleCall(validateArgumentAndCreateRoute(apiResourceDescriptor, includes, null, filter));
+  }
+
+  private String handleCall(HttpUrl route) throws SearchApiException {
     try (Response response = executeGetRequest(route)) {
       if (response.isSuccessful()) {
         ResponseBody bodyContent = response.body();
@@ -81,7 +90,6 @@ public class OpenIDHttpClient {
     }
   }
 
-
   /**
    * Returns a route object to be used by the caller.
    * 
@@ -92,7 +100,7 @@ public class OpenIDHttpClient {
    * @throws SearchApiException in case of a validation error.
    */
   private HttpUrl validateArgumentAndCreateRoute(ApiResourceDescriptor apiResourceDescriptor,
-                                                 Set<String> includes, String objectId) throws SearchApiException {
+                                                 Set<String> includes, String objectId, Pair<String, String> filter) throws SearchApiException {
 
     String pathParam = Objects.toString(objectId, "");
     Builder urlBuilder;
@@ -109,6 +117,10 @@ public class OpenIDHttpClient {
      */
     if (CollectionUtils.isNotEmpty(includes)) {
       urlBuilder.addQueryParameter("include", String.join(",", includes));
+    }
+
+    if (filter != null) {
+      urlBuilder.addQueryParameter(filter.getKey(), filter.getKey());
     }
     urlBuilder.addPathSegment(pathParam);
     return urlBuilder.build();

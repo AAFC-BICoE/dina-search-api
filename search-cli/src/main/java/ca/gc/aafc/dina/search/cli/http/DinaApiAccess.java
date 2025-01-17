@@ -2,6 +2,7 @@ package ca.gc.aafc.dina.search.cli.http;
 
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.Set;
 
@@ -19,4 +20,6 @@ public interface DinaApiAccess {
   String getFromApi(ApiResourceDescriptor apiResourceDescriptor,
                     Set<String> includes, String objectId) throws SearchApiException;
 
+  String getFromApiByFilter(ApiResourceDescriptor apiResourceDescriptor,
+                    Set<String> includes, Pair<String, String> filter) throws SearchApiException;
 }

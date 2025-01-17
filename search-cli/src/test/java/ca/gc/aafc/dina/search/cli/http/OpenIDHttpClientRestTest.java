@@ -75,7 +75,7 @@ public class OpenIDHttpClientRestTest {
     String dataFromPerson = 
             openIdClient.getDataFromUrl(
                 serviceEndpointProperties.getApiResourceDescriptorForType("person"),
-                serviceEndpointProperties.getIndexSettingDescriptorForType("person"));
+                serviceEndpointProperties.getIndexSettingDescriptorForType("person").relationships());
 
     assertEquals(FAKE_RESPONSE_FAKE_RESPONSE, dataFromPerson);
   }

@@ -43,7 +43,7 @@ public class GetDocument {
     }
 
     try {
-      msg = aClient.getDataFromUrl(svcEndpointProps.getApiResourceDescriptorForType(type),
+      msg = aClient.getDataById(svcEndpointProps.getApiResourceDescriptorForType(type),
           svcEndpointProps.getIndexSettingDescriptorForType(type).relationships(), documentId);
 
       if (assemble) {

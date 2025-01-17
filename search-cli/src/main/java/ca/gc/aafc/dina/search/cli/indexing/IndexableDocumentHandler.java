@@ -10,11 +10,13 @@ import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
 import ca.gc.aafc.dina.search.cli.http.DinaApiAccess;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -162,9 +164,17 @@ public class IndexableDocumentHandler {
       for (ReverseRelationship rr : indexSettingDescriptor.reverseRelationships()) {
         ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
         try {
-          String documentToIndex = apiAccess.getFromApi(apiRd, null, documentId);
+          String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
+
+          // this is expected to be an array
+          JsonNode document = OM.readTree(rawPayload);
+          // TODO
+          // iterate
+          // create add to included item
         } catch (SearchApiNotFoundException ex) {
           //no-op,
+        } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
         }
       }
     }

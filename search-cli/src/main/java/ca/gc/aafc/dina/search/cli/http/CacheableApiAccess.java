@@ -2,6 +2,7 @@ package ca.gc.aafc.dina.search.cli.http;
 
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +26,11 @@ public class CacheableApiAccess implements DinaApiAccess {
   @Cacheable(cacheNames = CACHE_NAME)
   public String getFromApi(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes, String objectId)
       throws SearchApiException {
-    return client.getDataFromUrl(apiResourceDescriptor, includes, objectId);
+    return client.getDataById(apiResourceDescriptor, includes, objectId);
+  }
+
+  public String getFromApiByFilter(ApiResourceDescriptor apiResourceDescriptor,
+                            Set<String> includes, Pair<String, String> filter) throws SearchApiException {
+    return client.getDataByFilter(apiResourceDescriptor, includes, filter);
   }
 }
