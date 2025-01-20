@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
@@ -89,7 +90,7 @@ public class IndexableDocumentHandler {
 
     // Parse it as json:api document to make it easier
     JsonApiDocument jsonApiDocument = OM.readValue(rawPayload, JsonApiDocument.class);
-    processReverseRelationships(jsonApiDocument.getData().getType(), jsonApiDocument.getId().toString());
+    processReverseRelationships(jsonApiDocument.getData().getType(), jsonApiDocument.getId().toString(), newData);
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
@@ -162,22 +163,41 @@ public class IndexableDocumentHandler {
    * @param documentId
    * @throws SearchApiException
    */
-  public void processReverseRelationships(String documentType, String documentId) throws SearchApiException {
+  public void processReverseRelationships(String documentType, String documentId, JsonNode newDoc) throws SearchApiException {
     IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(documentType);
 
     if (indexSettingDescriptor != null && CollectionUtils.isNotEmpty(indexSettingDescriptor.reverseRelationships())) {
       for (ReverseRelationship rr : indexSettingDescriptor.reverseRelationships()) {
         ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
         try {
-          String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
+          String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + ".id]", documentId));
 
           // this is expected to be an array
           JsonNode document = OM.readTree(rawPayload);
-          // TODO
-          // iterate
-          // create add to included item
+
+          if (document.has(JSONApiDocumentStructure.DATA)) {
+            JsonNode dataArray = document.get(JSONApiDocumentStructure.DATA);
+            if (dataArray.isArray()) {
+              for (JsonNode dataItem : dataArray) {
+                // Check if included section exists within the current document
+                if (newDoc.has(JSONApiDocumentStructure.INCLUDED)) {
+                  JsonNode included = newDoc.get(JSONApiDocumentStructure.INCLUDED);
+                  if (included.isArray()) {
+                    ((ArrayNode) included).add(dataItem);
+                  } else {
+                    log.error("Error processing reverse relationships : Included section is not an array");
+                  }
+                } else {
+                  // Create the included section if it does not exist.
+                  ArrayNode included = OM.createArrayNode();
+                  included.add(dataItem);
+                  ((ObjectNode) newDoc).set(JSONApiDocumentStructure.INCLUDED, included);
+                }
+              }
+            }
+          }
         } catch (SearchApiNotFoundException ex) {
-          //no-op,
+          // no-op,
         } catch (JsonProcessingException e) {
           throw new RuntimeException(e);
         }
