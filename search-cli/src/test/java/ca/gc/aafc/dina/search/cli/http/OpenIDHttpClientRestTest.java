@@ -61,7 +61,7 @@ public class OpenIDHttpClientRestTest {
         .when(
             MockKeyCloakAuthentication.setupMockRequest()
             .withMethod("GET")
-            .withPath("/api/v1/person/")
+            .withPath("/api/v1/person")
             .withQueryStringParameter("include", "organizations"))
           .respond(HttpResponse.response()
             .withStatusCode(200)
