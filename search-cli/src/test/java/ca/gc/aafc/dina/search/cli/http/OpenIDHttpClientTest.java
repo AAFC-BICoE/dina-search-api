@@ -54,7 +54,7 @@ public class OpenIDHttpClientTest {
 
     // validate that we et the proper exception
     // the exception is due to the fact that Keycloak url won't resolve but we know we got to the http request
-    String expectedMessage = "Exception during retrieval from http://localhost:8082/api/v1/person/?include=organizations";
+    String expectedMessage = "Exception during retrieval from http://localhost:8082/api/v1/person?include=organizations";
     assertEquals(expectedMessage, exception.getMessage());
   }
 
