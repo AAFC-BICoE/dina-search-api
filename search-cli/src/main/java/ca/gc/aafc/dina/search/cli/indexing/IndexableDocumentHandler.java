@@ -11,7 +11,6 @@ import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
 import ca.gc.aafc.dina.search.cli.http.DinaApiAccess;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -40,7 +39,7 @@ import java.util.function.Function;
 @Component
 public class IndexableDocumentHandler {
 
-  public static final ObjectMapper OM = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  public static final ObjectMapper OM = new ObjectMapper();
 
   private static final List<JsonNodeTransformation>
       INCLUDED_NODE_TRANSFORMATION =
@@ -90,7 +89,7 @@ public class IndexableDocumentHandler {
 
     // Parse it as json:api document to make it easier
     JsonApiDocument jsonApiDocument = OM.readValue(rawPayload, JsonApiDocument.class);
-    processReverseRelationships(jsonApiDocument.getData().getType(), jsonApiDocument.getId().toString(), newData);
+    processReverseRelationships(jsonApiDocument.getType(), jsonApiDocument.getIdAsStr(), newData);
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
