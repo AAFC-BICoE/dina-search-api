@@ -61,7 +61,7 @@ public class OpenIDHttpClientRestTest {
         .when(
             MockKeyCloakAuthentication.setupMockRequest()
             .withMethod("GET")
-            .withPath("/api/v1/person/")
+            .withPath("/api/v1/person")
             .withQueryStringParameter("include", "organizations"))
           .respond(HttpResponse.response()
             .withStatusCode(200)
@@ -70,11 +70,12 @@ public class OpenIDHttpClientRestTest {
 
     assertNotNull(openIdClient);
     assertEquals("http://localhost:8082/api/v1/person",
-        serviceEndpointProperties.getEndpoints().get("person").getTargetUrl());
+        serviceEndpointProperties.getApiResourceDescriptorForType("person").url());
 
     String dataFromPerson = 
             openIdClient.getDataFromUrl(
-                serviceEndpointProperties.getEndpoints().get("person"));
+                serviceEndpointProperties.getApiResourceDescriptorForType("person"),
+                serviceEndpointProperties.getIndexSettingDescriptorForType("person").relationships());
 
     assertEquals(FAKE_RESPONSE_FAKE_RESPONSE, dataFromPerson);
   }

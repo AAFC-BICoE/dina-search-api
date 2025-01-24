@@ -1,7 +1,8 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.search.cli.TestConstants;
-import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
+import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
@@ -87,10 +88,11 @@ public class DocumentManagerIT {
     MockKeyCloakAuthentication.mockKeycloak(client);
 
     // mock the organization endpoint as en external relationship just for the purpose of that test.
-    EndpointDescriptor epd = new EndpointDescriptor();
-    epd.setIndexName(TestConstants.AGENT_INDEX);
-    epd.setTargetUrl("http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE);
-    serviceEndpointProperties.getEndpoints().put(TestConstants.ORGANIZATION_TYPE, epd);
+    IndexSettingDescriptor epd = new IndexSettingDescriptor(TestConstants.AGENT_INDEX, TestConstants.ORGANIZATION_TYPE, null, null, null);
+    serviceEndpointProperties.addEndpointDescriptor(epd);
+
+    ApiResourceDescriptor apiResourceDescriptor = new ApiResourceDescriptor(TestConstants.ORGANIZATION_TYPE, "http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE);
+    serviceEndpointProperties.addApiResourceDescriptor(apiResourceDescriptor);
 
     // Mock the person request.
     client.when(MockKeyCloakAuthentication.setupMockRequest()
@@ -115,7 +117,8 @@ public class DocumentManagerIT {
     JsonNode jsonMessage = documentManager.indexDocument(TestConstants.PERSON_TYPE, DOCUMENT_ID);
 
     // remove to not interfere with other tests
-    serviceEndpointProperties.getEndpoints().remove(TestConstants.ORGANIZATION_TYPE);
+    serviceEndpointProperties.removeEndpointDescriptor(epd);
+    serviceEndpointProperties.removeApiResourceDescriptor(apiResourceDescriptor);
 
     // Test to ensure the person message was properly assembled.
     assertEquals(DOCUMENT_ID, jsonMessage.at("/data/id").asText());

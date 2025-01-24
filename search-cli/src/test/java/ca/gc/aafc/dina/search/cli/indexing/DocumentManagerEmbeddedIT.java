@@ -1,8 +1,9 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.search.cli.TestConstants;
+import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.CacheConfiguration;
-import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
@@ -15,7 +16,6 @@ import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -118,9 +118,12 @@ public class DocumentManagerEmbeddedIT {
     MockKeyCloakAuthentication.mockKeycloak(client);
 
     // Here we register an endpoint for organization since this test assumes organization is an external relationship
-    EndpointDescriptor organizationDescriptor = new EndpointDescriptor();
-    organizationDescriptor.setTargetUrl("http://localhost:8082/api/v1/organization");
-    serviceEndpointProperties.getEndpoints().put("organization", organizationDescriptor);
+    IndexSettingDescriptor organizationDescriptor = new IndexSettingDescriptor(TestConstants.AGENT_INDEX,
+        TestConstants.ORGANIZATION_TYPE, null, null, null);
+    serviceEndpointProperties.addEndpointDescriptor(organizationDescriptor);
+
+    ApiResourceDescriptor apiResourceDescriptor = new ApiResourceDescriptor(TestConstants.ORGANIZATION_TYPE, "http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE);
+    serviceEndpointProperties.addApiResourceDescriptor(apiResourceDescriptor);
 
     // Mock the person request/response.
     MockServerTestUtils.addMockGetResponse(client, EMBEDDED_DOCUMENT_TYPE,
@@ -137,10 +140,10 @@ public class DocumentManagerEmbeddedIT {
     ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
 
     // Agent index can be skipped since it already has been added above.
-    Set<String> indices = serviceEndpointProperties.getEndpoints().values().stream()
-        .map(EndpointDescriptor::getIndexName)
-        .filter(index -> !TestConstants.AGENT_INDEX.equals(index))
-            .collect(Collectors.toSet());
+    Set<String> indices = serviceEndpointProperties
+        .getFilteredEndpointDescriptorStream(ed -> !TestConstants.AGENT_INDEX.equals(ed.indexName()))
+        .map(IndexSettingDescriptor::indexName)
+        .collect(Collectors.toSet());
 
     // The other indices must exist, but can be empty for this test. Use the endpoint to generate them.
     createIndices(indices);
@@ -233,7 +236,7 @@ public class DocumentManagerEmbeddedIT {
         "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
-    docFromElasticSearch = searchResponse.hits().hits().get(0).source();
+    docFromElasticSearch = searchResponse.hits().hits().getFirst().source();
 
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
     assertEquals("", docFromElasticSearch.at("/included/0/attributes").asText());
@@ -241,27 +244,22 @@ public class DocumentManagerEmbeddedIT {
     // Validate that the API response is in the cache
     Cache cache = cacheManager.getCache(CacheableApiAccess.CACHE_NAME);
     Object objFromCache = cache.get(getCacheableApiAccessCacheKey(
-        serviceEndpointProperties.getEndpoints().get(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
+        serviceEndpointProperties.getApiResourceDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
+        serviceEndpointProperties.getIndexSettingDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE).relationships(),
         EMBEDDED_DOCUMENT_INCLUDED_ID));
     assertNotNull(objFromCache);
   }
 
   private void createIndices(Set<String> indices) {
-    serviceEndpointProperties.getEndpoints().values().forEach(desc -> {
-      if (StringUtils.isNotBlank (desc.getIndexName())) {
-
-        // Agent index can be skipped since it already has been added above.
-        if (desc.getIndexName().trim().equals(TestConstants.AGENT_INDEX)) return;
-
-        // Create the indices in elastic search.
-        try {
-          elasticSearchClient.indices().create(c -> c.index(desc.getIndexName().trim()));
-        } catch (ElasticsearchException e) {
-          fail(e);
-          e.printStackTrace();
-        } catch (IOException e) {
-          fail(e);
-        }
+    indices.forEach(indexName -> {
+      // Create the indices in elastic search.
+      try {
+        elasticSearchClient.indices().create(c -> c.index(indexName.trim()));
+      } catch (ElasticsearchException e) {
+        fail(e);
+        e.printStackTrace();
+      } catch (IOException e) {
+        fail(e);
       }
     });
   }
@@ -274,11 +272,12 @@ public class DocumentManagerEmbeddedIT {
    * @return
    */
   @SneakyThrows
-  public static String getCacheableApiAccessCacheKey(EndpointDescriptor endpointDescriptor, String objectId) {
+  public static String getCacheableApiAccessCacheKey(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes, String objectId) {
     CacheConfiguration.MethodBasedKeyGenerator keyGen = new CacheConfiguration.MethodBasedKeyGenerator();
     // dummy instance only used to generate the key
     CacheableApiAccess cacheableApiAccess = new CacheableApiAccess(null);
-    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", EndpointDescriptor.class, String.class), endpointDescriptor, objectId).toString();
+    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", ApiResourceDescriptor.class, Set.class, String.class),
+        apiResourceDescriptor, includes, objectId).toString();
   }
 
 }

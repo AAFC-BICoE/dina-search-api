@@ -2,14 +2,22 @@ package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.json.JsonHelper;
 import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
+import ca.gc.aafc.dina.jsonapi.JsonApiDocument;
+import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
+import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
+import ca.gc.aafc.dina.search.cli.config.ReverseRelationship;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
 import ca.gc.aafc.dina.search.cli.http.DinaApiAccess;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -69,7 +77,7 @@ public class IndexableDocumentHandler {
 
     JsonNode document = OM.readTree(rawPayload);
     ObjectNode newData = OM.createObjectNode();
-
+    
     newData.set(JSONApiDocumentStructure.DATA, JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API data section missing")));
 
@@ -78,6 +86,14 @@ public class IndexableDocumentHandler {
       processIncluded(included);
       newData.set(JSONApiDocumentStructure.INCLUDED, included);
     });
+
+    // Parse it as json:api document to make it easier
+    // Currently included is not supported on the JsonApiDocument, in the future this will be added
+    // so we don't have to remove the included part before reading it.
+    ObjectNode rawPayloadObject = (ObjectNode) document;
+    rawPayloadObject.remove("included");
+    JsonApiDocument jsonApiDocument = OM.readValue(rawPayloadObject.toPrettyString(), JsonApiDocument.class);
+    processReverseRelationships(jsonApiDocument.getType(), jsonApiDocument.getIdAsStr(), newData);
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
@@ -117,7 +133,7 @@ public class IndexableDocumentHandler {
       // Getting the type and perform a level #1 retrieval of attributes
       //
       String type = curObject.get(JSONApiDocumentStructure.TYPE).asText();
-      if (svcEndpointProps.getEndpoints().containsKey(type)) {
+      if (svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
 
         // Get the Id and retrieved the attributes from the related object.
         //
@@ -125,7 +141,8 @@ public class IndexableDocumentHandler {
 
         // Best effort processing for assembling of include section
         try {
-          String rawPayload = apiAccess.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
+          String rawPayload = apiAccess.getFromApi(svcEndpointProps.getApiResourceDescriptorForType(type),
+              svcEndpointProps.getIndexSettingDescriptorForType(type).relationships(), curObjectId);
           JsonNode document = OM.readTree(rawPayload);
           // Take the data.attributes section to be embedded
           Optional<JsonNode> dataObject = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
@@ -138,6 +155,54 @@ public class IndexableDocumentHandler {
           }
         } catch (SearchApiException | JsonProcessingException ex) {
           log.error("Error during processing of included section object type{}, id={}, message={}", type, curObjectId, ex.getMessage());
+        }
+      }
+    }
+  }
+
+  /**
+   * Check if the provided type has a possible reverse relationship. If yes, try to get it.
+   * @param documentType
+   * @param documentId
+   * @throws SearchApiException
+   */
+  public void processReverseRelationships(String documentType, String documentId, JsonNode newDoc) throws SearchApiException {
+    IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(documentType);
+
+    if (indexSettingDescriptor != null && CollectionUtils.isNotEmpty(indexSettingDescriptor.reverseRelationships())) {
+      for (ReverseRelationship rr : indexSettingDescriptor.reverseRelationships()) {
+        ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
+        try {
+          String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
+
+          // this is expected to be an array
+          JsonNode document = OM.readTree(rawPayload);
+
+          if (document.has(JSONApiDocumentStructure.DATA)) {
+            JsonNode dataArray = document.get(JSONApiDocumentStructure.DATA);
+            if (dataArray.isArray()) {
+              for (JsonNode dataItem : dataArray) {
+                // Check if included section exists within the current document
+                if (newDoc.has(JSONApiDocumentStructure.INCLUDED)) {
+                  JsonNode included = newDoc.get(JSONApiDocumentStructure.INCLUDED);
+                  if (included.isArray()) {
+                    ((ArrayNode) included).add(dataItem);
+                  } else {
+                    log.error("Error processing reverse relationships : Included section is not an array");
+                  }
+                } else {
+                  // Create the included section if it does not exist.
+                  ArrayNode included = OM.createArrayNode();
+                  included.add(dataItem);
+                  ((ObjectNode) newDoc).set(JSONApiDocumentStructure.INCLUDED, included);
+                }
+              }
+            }
+          }
+        } catch (SearchApiNotFoundException ex) {
+          // no-op,
+        } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
         }
       }
     }

@@ -3,7 +3,7 @@ package ca.gc.aafc.dina.search.cli.http;
 import ca.gc.aafc.dina.client.AccessTokenAuthenticator;
 import ca.gc.aafc.dina.client.TokenBasedRequestBuilder;
 import ca.gc.aafc.dina.client.token.AccessTokenManager;
-import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.HttpClientConfig;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
@@ -13,10 +13,13 @@ import okhttp3.HttpUrl.Builder;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Set;
 
 @Log4j2
 @Service
@@ -40,14 +43,14 @@ public class OpenIDHttpClient {
     httpClient = builder.build();
   }
 
-  public String getDataFromUrl(EndpointDescriptor endpointDescriptor) throws SearchApiException {
-    return getDataFromUrl(endpointDescriptor, null);
+  public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes) throws SearchApiException {
+    return getDataById(apiResourceDescriptor, includes, null);
   }
 
   /**
    * Perform an HTTP GET operation on the provided targetUrl
    * 
-   * @param endpointDescriptor the target url endpoint
+   * @param apiResourceDescriptor the target url endpoint
    * @param objectId  the object identifier to be retrieved. 
    *                  If not defined the targetUrl will not be appended with the objectId
    * 
@@ -55,10 +58,19 @@ public class OpenIDHttpClient {
    * 
    * @throws SearchApiException in case of communication errors.
    */
-  public String getDataFromUrl(EndpointDescriptor endpointDescriptor, String objectId)
+  public String getDataById(ApiResourceDescriptor apiResourceDescriptor,
+                               Set<String> includes, String objectId)
       throws SearchApiException {
+    return handleCall(validateArgumentAndCreateRoute(apiResourceDescriptor, includes, objectId, null));
+  }
 
-    HttpUrl route = validateArgumentAndCreateRoute(endpointDescriptor, objectId);
+  public String getDataByFilter(ApiResourceDescriptor apiResourceDescriptor,
+                                Set<String> includes, Pair<String, String> filter)
+      throws SearchApiException {
+    return handleCall(validateArgumentAndCreateRoute(apiResourceDescriptor, includes, null, filter));
+  }
+
+  private String handleCall(HttpUrl route) throws SearchApiException {
     try (Response response = executeGetRequest(route)) {
       if (response.isSuccessful()) {
         ResponseBody bodyContent = response.body();
@@ -78,40 +90,43 @@ public class OpenIDHttpClient {
     }
   }
 
-
   /**
-   * Validate provided arguments and returns a route object to be used by the caller.
+   * Returns a route object to be used by the caller.
    * 
-   * @param endpointDescriptor
+   * @param apiResourceDescriptor
    * @param objectId
    * @return route object to be used by the calling method.
    * 
    * @throws SearchApiException in case of a validation error.
    */
-  private HttpUrl validateArgumentAndCreateRoute(EndpointDescriptor endpointDescriptor, String objectId)
-      throws SearchApiException {
+  private HttpUrl validateArgumentAndCreateRoute(ApiResourceDescriptor apiResourceDescriptor,
+                                                 Set<String> includes, String objectId, Pair<String, String> filter) throws SearchApiException {
 
     String pathParam = Objects.toString(objectId, "");
-    Builder urlBuilder = null;
+    Builder urlBuilder;
 
-    if (endpointDescriptor != null && endpointDescriptor.getTargetUrl() != null) {
-      HttpUrl parseResult = HttpUrl.parse(endpointDescriptor.getTargetUrl());
-      if (parseResult != null) {
-        urlBuilder = parseResult.newBuilder();
-      } else {
-        throw new SearchApiException("Invalid endpoint descriptor, can not be null");
-      }
+    HttpUrl parseResult = apiResourceDescriptor != null ? HttpUrl.parse(apiResourceDescriptor.url()) : null;
+    if (parseResult != null) {
+      urlBuilder = parseResult.newBuilder();
     } else {
       throw new SearchApiException("Invalid endpoint descriptor, can not be null");
     }
 
     /*
-     * Add document include clause defined in the endpoints.yml file.
+     * Add document include clause
      */
-    if (endpointDescriptor.getRelationships() != null && !endpointDescriptor.getRelationships().isEmpty()) {
-      urlBuilder.addQueryParameter("include", String.join(",", endpointDescriptor.getRelationships()));
+    if (CollectionUtils.isNotEmpty(includes)) {
+      urlBuilder.addQueryParameter("include", String.join(",", includes));
     }
-    urlBuilder.addPathSegment(pathParam);
+
+    if (filter != null) {
+      urlBuilder.addQueryParameter(filter.getKey(), filter.getValue());
+    }
+
+    if (objectId != null) {
+      urlBuilder.addPathSegment(pathParam);
+    }
+    
     return urlBuilder.build();
   }
 
