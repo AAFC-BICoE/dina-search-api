@@ -88,7 +88,11 @@ public class IndexableDocumentHandler {
     });
 
     // Parse it as json:api document to make it easier
-    JsonApiDocument jsonApiDocument = OM.readValue(rawPayload, JsonApiDocument.class);
+    // Currently included is not supported on the JsonApiDocument, in the future this will be added
+    // so we don't have to remove the included part before reading it.
+    ObjectNode rawPayloadObject = (ObjectNode) document;
+    rawPayloadObject.remove("included");
+    JsonApiDocument jsonApiDocument = OM.readValue(rawPayloadObject.toPrettyString(), JsonApiDocument.class);
     processReverseRelationships(jsonApiDocument.getType(), jsonApiDocument.getIdAsStr(), newData);
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
