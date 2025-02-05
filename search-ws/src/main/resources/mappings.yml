@@ -173,6 +173,17 @@ mappings:
       type: text
       distinctTermAgg: true
 
+  run-summary:
+    - name: name
+      type: text
+    - name: items.genericMolecularAnalysisItemSummary.name
+      type: text
+    - name: items.genericMolecularAnalysisItemSummary.genericMolecularAnalysisSummary.name
+      type: text
+    - name: items.genericMolecularAnalysisItemSummary.genericMolecularAnalysisSummary.analysisType
+      type: text
+      distinctTermAgg: true
+
   metadata:
     - name: createdBy
       type: text

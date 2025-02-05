@@ -2,7 +2,7 @@ package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.json.JsonHelper;
 import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
-import ca.gc.aafc.dina.jsonapi.JsonApiDocument;
+import ca.gc.aafc.dina.jsonapi.JsonApiCompoundDocument;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ReverseRelationship;
@@ -88,12 +88,8 @@ public class IndexableDocumentHandler {
     });
 
     // Parse it as json:api document to make it easier
-    // Currently included is not supported on the JsonApiDocument, in the future this will be added
-    // so we don't have to remove the included part before reading it.
-    ObjectNode rawPayloadObject = (ObjectNode) document;
-    rawPayloadObject.remove("included");
-    JsonApiDocument jsonApiDocument = OM.readValue(rawPayloadObject.toPrettyString(), JsonApiDocument.class);
-    processReverseRelationships(jsonApiDocument.getType(), jsonApiDocument.getIdAsStr(), newData);
+    JsonApiCompoundDocument jsonApiCompoundDocument = OM.readValue(rawPayload, JsonApiCompoundDocument.class);
+    processReverseRelationships(jsonApiCompoundDocument.getType(), jsonApiCompoundDocument.getIdAsStr(), newData);
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
