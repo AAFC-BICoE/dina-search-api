@@ -24,6 +24,8 @@ apiResources:
     url: ${OBJECT_STORE_API_URL:http://localhost:8081/api/v1}/metadata
   - type: transaction
     url: ${LOAN_TRANSACTION_API_URL:http://localhost:8086/api/v1}/transaction
+  - type: run-summary
+    url: ${SEQDB_API_URL:http://localhost:8084/api}/run-summary
 
 indexSettings:
   - indexName: dina_material_sample_index
@@ -44,6 +46,9 @@ indexSettings:
     relationshipsType:
       - person
       - collecting-event
+    reverseRelationships:
+      - type: run-summary
+        relationshipName: materialSample
 
   - indexName: dina_object_store_index
     type: metadata
