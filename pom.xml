@@ -181,6 +181,7 @@
         <version>${dependency.check.version}</version>
         <configuration>
           <format>xml</format>
+          <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
           <failBuildOnCVSS>8</failBuildOnCVSS>
           <suppressionFiles>
             <suppressionFile>owasp-suppression.xml</suppressionFile>
