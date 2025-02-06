@@ -40,8 +40,8 @@
 
     <spotbugs-maven-plugin.version>4.8.5.0</spotbugs-maven-plugin.version>
     <spotbugs.version>4.8.5</spotbugs.version>
-
-    <dependency.check.version>8.0.2</dependency.check.version>
+    
+    <dependency.check.version>8.4.3</dependency.check.version>
     <lombok.version>1.18.30</lombok.version>
     <lombok-maven-plugin.version>1.18.20.0</lombok-maven-plugin.version>
 
