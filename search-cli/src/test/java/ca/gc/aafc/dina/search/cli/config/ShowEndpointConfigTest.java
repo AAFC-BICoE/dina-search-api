@@ -1,21 +1,14 @@
 package ca.gc.aafc.dina.search.cli.config;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-import ca.gc.aafc.dina.testsupport.DatabaseSupportService;
+import ca.gc.aafc.dina.search.cli.commands.ShowEndpointConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import ca.gc.aafc.dina.search.cli.commands.ShowEndpointConfig;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.FilterType;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit test for show endpoint cli command.
@@ -36,15 +29,15 @@ public class ShowEndpointConfigTest {
     assertNotNull(showEndpointConfig.showEndpointConfig());
     assertNotEquals("", showEndpointConfig.showEndpointConfig());
 
-    EndpointDescriptor storageDescriptor = serviceEndpointProperties.getEndpoints().get("storage-unit");
+    ApiResourceDescriptor apiResourceDescriptor = serviceEndpointProperties.getApiResourceDescriptorForType("storage-unit");
 
-    assertNotNull(serviceEndpointProperties.getEndpoints().get("metadata"));
-    assertNotNull(serviceEndpointProperties.getEndpoints().get("person"));
-    assertNotNull(storageDescriptor);
+    assertNotNull(serviceEndpointProperties.getIndexSettingDescriptorForType("metadata"));
+    assertNotNull(serviceEndpointProperties.getIndexSettingDescriptorForType("person"));
+    assertNotNull(apiResourceDescriptor);
 
-    assertEquals("http://localhost:8081/api/v1/metadata", serviceEndpointProperties.getEndpoints().get("metadata").getTargetUrl());
-    assertEquals("http://localhost:8082/api/v1/person", serviceEndpointProperties.getEndpoints().get("person").getTargetUrl());
-    assertEquals("http://localhost:8085/api/v1/material-sample", serviceEndpointProperties.getEndpoints().get("material-sample").getTargetUrl());
-    assertEquals("http://localhost:8085/api/v1/storage-unit", storageDescriptor.getTargetUrl());
+    assertEquals("http://localhost:8081/api/v1/metadata", serviceEndpointProperties.getApiResourceDescriptorForType("metadata").url());
+    assertEquals("http://localhost:8082/api/v1/person", serviceEndpointProperties.getApiResourceDescriptorForType("person").url());
+    assertEquals("http://localhost:8085/api/v1/material-sample", serviceEndpointProperties.getApiResourceDescriptorForType("material-sample").url());
+    assertEquals("http://localhost:8085/api/v1/storage-unit", apiResourceDescriptor.url());
   }
 }

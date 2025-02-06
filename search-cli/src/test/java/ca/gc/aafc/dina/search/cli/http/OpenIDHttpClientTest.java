@@ -31,7 +31,7 @@ public class OpenIDHttpClientTest {
     assertNotNull(openIdClient);
     Exception exception = Assertions.assertThrows(
       SearchApiException.class, () -> {
-        openIdClient.getDataFromUrl(serviceEndpointProperties.getEndpoints().get("Unknow Type"));
+        openIdClient.getDataFromUrl(null, null);
       });
     String expectedMessage = "Invalid endpoint descriptor, can not be null";
     assertEquals(expectedMessage, exception.getMessage());
@@ -42,17 +42,19 @@ public class OpenIDHttpClientTest {
   public void getDataFromUrlWithPersonEndpointDescriptor() {
 
     assertNotNull(openIdClient);
-    assertEquals("http://localhost:8082/api/v1/person", serviceEndpointProperties.getEndpoints().get("person").getTargetUrl());
+    assertEquals("http://localhost:8082/api/v1/person", serviceEndpointProperties.getApiResourceDescriptorForType("person").url());
 
-    Exception exception = 
-      Assertions.assertThrows(
-        SearchApiException.class, () -> {
-          openIdClient.getDataFromUrl(serviceEndpointProperties.getEndpoints().get("person"));
-        });
+    Exception exception =
+        Assertions.assertThrows(
+            SearchApiException.class, () -> {
+              openIdClient.getDataFromUrl(serviceEndpointProperties.getApiResourceDescriptorForType("person"),
+                  serviceEndpointProperties.getIndexSettingDescriptorForType("person").relationships()
+              );
+            });
 
     // validate that we et the proper exception
     // the exception is due to the fact that Keycloak url won't resolve but we know we got to the http request
-    String expectedMessage = "Exception during retrieval from http://localhost:8082/api/v1/person/?include=organizations";
+    String expectedMessage = "Exception during retrieval from http://localhost:8082/api/v1/person?include=organizations";
     assertEquals(expectedMessage, exception.getMessage());
   }
 

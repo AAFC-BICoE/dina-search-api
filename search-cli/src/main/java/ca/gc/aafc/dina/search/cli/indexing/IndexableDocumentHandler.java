@@ -1,19 +1,24 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
+import ca.gc.aafc.dina.json.JsonHelper;
+import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
+import ca.gc.aafc.dina.jsonapi.JsonApiCompoundDocument;
+import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
+import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
+import ca.gc.aafc.dina.search.cli.config.ReverseRelationship;
+import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
 import ca.gc.aafc.dina.search.cli.http.DinaApiAccess;
-import ca.gc.aafc.dina.search.cli.json.JSONApiDocumentStructure;
-import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import org.springframework.stereotype.Component;
-
-import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
-import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
-
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
@@ -72,27 +77,26 @@ public class IndexableDocumentHandler {
 
     JsonNode document = OM.readTree(rawPayload);
     ObjectNode newData = OM.createObjectNode();
-
-    newData.set(JSONApiDocumentStructure.DATA, atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
+    
+    newData.set(JSONApiDocumentStructure.DATA, JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API data section missing")));
 
     // included section is optional
-    atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(included -> {
+    JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(included -> {
       processIncluded(included);
       newData.set(JSONApiDocumentStructure.INCLUDED, included);
     });
 
-    JsonNode metaNode = atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
+    // Parse it as json:api document to make it easier
+    JsonApiCompoundDocument jsonApiCompoundDocument = OM.readValue(rawPayload, JsonApiCompoundDocument.class);
+    processReverseRelationships(jsonApiCompoundDocument.getType(), jsonApiCompoundDocument.getIdAsStr(), newData);
+
+    JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
     processMeta(metaNode);
     newData.set(JSONApiDocumentStructure.META, metaNode);
 
     return newData;
-  }
-
-  private static Optional<JsonNode> atJsonPtr(JsonNode document, JsonPointer ptr) {
-    JsonNode node = document.at(ptr);
-    return node.isMissingNode() ? Optional.empty() : Optional.of(node);
   }
 
   /**
@@ -125,7 +129,7 @@ public class IndexableDocumentHandler {
       // Getting the type and perform a level #1 retrieval of attributes
       //
       String type = curObject.get(JSONApiDocumentStructure.TYPE).asText();
-      if (svcEndpointProps.getEndpoints().containsKey(type)) {
+      if (svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
 
         // Get the Id and retrieved the attributes from the related object.
         //
@@ -133,10 +137,11 @@ public class IndexableDocumentHandler {
 
         // Best effort processing for assembling of include section
         try {
-          String rawPayload = apiAccess.getFromApi(svcEndpointProps.getEndpoints().get(type), curObjectId);
+          String rawPayload = apiAccess.getFromApi(svcEndpointProps.getApiResourceDescriptorForType(type),
+              svcEndpointProps.getIndexSettingDescriptorForType(type).relationships(), curObjectId);
           JsonNode document = OM.readTree(rawPayload);
           // Take the data.attributes section to be embedded
-          Optional<JsonNode> dataObject = atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
+          Optional<JsonNode> dataObject = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
 
           if (dataObject.isPresent()) {
             ((ObjectNode) curObject).set(JSONApiDocumentStructure.ATTRIBUTES, dataObject.get());
@@ -146,6 +151,54 @@ public class IndexableDocumentHandler {
           }
         } catch (SearchApiException | JsonProcessingException ex) {
           log.error("Error during processing of included section object type{}, id={}, message={}", type, curObjectId, ex.getMessage());
+        }
+      }
+    }
+  }
+
+  /**
+   * Check if the provided type has a possible reverse relationship. If yes, try to get it.
+   * @param documentType
+   * @param documentId
+   * @throws SearchApiException
+   */
+  public void processReverseRelationships(String documentType, String documentId, JsonNode newDoc) throws SearchApiException {
+    IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(documentType);
+
+    if (indexSettingDescriptor != null && CollectionUtils.isNotEmpty(indexSettingDescriptor.reverseRelationships())) {
+      for (ReverseRelationship rr : indexSettingDescriptor.reverseRelationships()) {
+        ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
+        try {
+          String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
+
+          // this is expected to be an array
+          JsonNode document = OM.readTree(rawPayload);
+
+          if (document.has(JSONApiDocumentStructure.DATA)) {
+            JsonNode dataArray = document.get(JSONApiDocumentStructure.DATA);
+            if (dataArray.isArray()) {
+              for (JsonNode dataItem : dataArray) {
+                // Check if included section exists within the current document
+                if (newDoc.has(JSONApiDocumentStructure.INCLUDED)) {
+                  JsonNode included = newDoc.get(JSONApiDocumentStructure.INCLUDED);
+                  if (included.isArray()) {
+                    ((ArrayNode) included).add(dataItem);
+                  } else {
+                    log.error("Error processing reverse relationships : Included section is not an array");
+                  }
+                } else {
+                  // Create the included section if it does not exist.
+                  ArrayNode included = OM.createArrayNode();
+                  included.add(dataItem);
+                  ((ObjectNode) newDoc).set(JSONApiDocumentStructure.INCLUDED, included);
+                }
+              }
+            }
+          }
+        } catch (SearchApiNotFoundException ex) {
+          // no-op,
+        } catch (JsonProcessingException e) {
+          throw new RuntimeException(e);
         }
       }
     }

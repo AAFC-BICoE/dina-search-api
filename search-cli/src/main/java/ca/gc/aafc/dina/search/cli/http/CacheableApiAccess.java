@@ -1,9 +1,12 @@
 package ca.gc.aafc.dina.search.cli.http;
 
-import ca.gc.aafc.dina.search.cli.config.EndpointDescriptor;
+import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
+
+import java.util.Set;
 
 /**
  * Adds an indirection around {@link OpenIDHttpClient} to allow caching of the API response.
@@ -20,17 +23,14 @@ public class CacheableApiAccess implements DinaApiAccess {
     client = aClient;
   }
 
-  /**
-   * Retrieves data from the API based on the provided endpoint descriptor and object ID.
-   *
-   * @param endpointDescriptor The descriptor for the API endpoint.
-   * @param objectId           The ID of the object to retrieve data for. Can be null.
-   * @return The data retrieved from the API.
-   * @throws SearchApiException If an error occurs while interacting with the Search API.
-   */
   @Cacheable(cacheNames = CACHE_NAME)
-  public String getFromApi(EndpointDescriptor endpointDescriptor, String objectId)
+  public String getFromApi(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes, String objectId)
       throws SearchApiException {
-    return client.getDataFromUrl(endpointDescriptor, objectId);
+    return client.getDataById(apiResourceDescriptor, includes, objectId);
+  }
+
+  public String getFromApiByFilter(ApiResourceDescriptor apiResourceDescriptor,
+                            Set<String> includes, Pair<String, String> filter) throws SearchApiException {
+    return client.getDataByFilter(apiResourceDescriptor, includes, filter);
   }
 }

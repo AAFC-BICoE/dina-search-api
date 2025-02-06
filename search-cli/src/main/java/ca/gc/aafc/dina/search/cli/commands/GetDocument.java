@@ -36,14 +36,15 @@ public class GetDocument {
                   @ShellOption(help = "Assemble a document", defaultValue = "false", value = "--assemble" ) boolean assemble) {
 
     String msg = null;
-    if (!svcEndpointProps.getEndpoints().containsKey(type)) {
+    if (!svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
       msg = "Unsupported endpoint type:" + type;
       log.error(msg);
       return msg;
     }
 
     try {
-      msg = aClient.getDataFromUrl(svcEndpointProps.getEndpoints().get(type), documentId);
+      msg = aClient.getDataById(svcEndpointProps.getApiResourceDescriptorForType(type),
+          svcEndpointProps.getIndexSettingDescriptorForType(type).relationships(), documentId);
 
       if (assemble) {
         msg = IndexableDocumentHandler.OM.writeValueAsString(indexableDocumentHandler.assembleDocument(msg));

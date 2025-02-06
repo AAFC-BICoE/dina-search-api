@@ -11,11 +11,25 @@
 # Augmentation of objects is done using the same endpoint when external object references
 # are found during processing of an object.
 #
-#
-endpoints:
-  material-sample:
-    indexName: dina_material_sample_index
-    targetUrl: ${MATERIAL_SAMPLE_URL:http://localhost:8085/api/v1/material-sample}
+
+# apiResources links a type to an url to find a resource
+apiResources:
+  - type: material-sample
+    url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/material-sample
+  - type: person
+    url: ${AGENT_API_URL:http://localhost:8082/api/v1}/person
+  - type: storage-unit
+    url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/storage-unit
+  - type: metadata
+    url: ${OBJECT_STORE_API_URL:http://localhost:8081/api/v1}/metadata
+  - type: transaction
+    url: ${LOAN_TRANSACTION_API_URL:http://localhost:8086/api/v1}/transaction
+  - type: run-summary
+    url: ${SEQDB_API_URL:http://localhost:8084/api}/run-summary
+
+indexSettings:
+  - indexName: dina_material_sample_index
+    type: material-sample
     relationships:
       - collectingEvent
       - organism
@@ -32,9 +46,12 @@ endpoints:
     relationshipsType:
       - person
       - collecting-event
-  metadata:
-    indexName: dina_object_store_index
-    targetUrl: ${METADATA_URL:http://localhost:8081/api/v1/metadata}
+    reverseRelationships:
+      - type: run-summary
+        relationshipName: materialSample
+
+  - indexName: dina_object_store_index
+    type: metadata
     relationships:
       - acMetadataCreator
       - dcCreator
@@ -42,23 +59,23 @@ endpoints:
     relationshipsType:
       - person
       - derivative
-  person: 
-    targetUrl: ${PERSON_URL:http://localhost:8082/api/v1/person}
-    indexName: dina_agent_index
+
+  - indexName: dina_agent_index
+    type: person
     relationships:
       - organizations
     relationshipsType:
       - organization
-  storage-unit:
-    targetUrl: ${STORAGE_UNIT_URL:http://localhost:8085/api/v1/storage-unit}
-    indexName: dina_storage_index
+
+  - indexName: dina_storage_index
+    type: storage-unit
     relationships:
       - storageUnitChildren
       - storageUnitType
       - hierarchy
-  transaction:
-    targetUrl: ${LOAN_TRANSACTION_URL:http://localhost:8086/api/v1/transaction}
-    indexName: dina_loan_transaction_index
+
+  - indexName: dina_loan_transaction_index
+    type: transaction
     relationships:
       - involvedAgents
       - materialSamples
