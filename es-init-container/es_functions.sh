@@ -90,8 +90,6 @@ check_mapping_version(){
 
     remote_schema="$(curl -s -X GET "$elastic_server_url/$source_index_name/_mapping?pretty")"
 
-    >&2 echo "Remote schema: $remote_schema"
-
     remote_version=$(echo "$remote_schema" | jq -r ".$source_index_name.mappings._meta.version.number // \"0\"" | bc -l)
 
     local_mappings=$(cat $settings_file | jq '.mappings')
