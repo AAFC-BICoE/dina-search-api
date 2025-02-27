@@ -55,26 +55,46 @@ add_index_alias() {
 }
 
 reindex_request() {
-    local elastic_server_url="$1"    # Host name in the url format
+    local elastic_server_url="$1"    # Host name in the URL format
     local source_index_name="$2"     # ES index name (source)
-    local dest_index_name="$3"       # prefix to use to create the new index name prefix + timestamp
+    local dest_index_name="$3"       # Prefix to use to create the new index name prefix + timestamp
 
-    local returnedCode
+    # Validate parameters
+    if [[ -z "$elastic_server_url" || -z "$source_index_name" || -z "$dest_index_name" ]]; then
+        >&2 echo "Error: Missing required parameters."
+        return 1
+    fi
 
     >&2 echo "Re-indexing documents."
-
     >&2 echo "Source index is: $source_index_name and destination index is: $dest_index_name"
 
-    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex" -d'{
+    # Perform the reindex request and capture the response and HTTP status code
+    local response
+    response=$(curl -s -w "\n%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex" -d'{
         "source": {
-        "index": "'$source_index_name'"
+            "index": "'"$source_index_name"'"
         },
         "dest": {
-        "index": "'$dest_index_name'"
+            "index": "'"$dest_index_name"'"
         }
     }')
+
+    # Extract the HTTP status code from the response
+    local http_code
+    http_code=$(echo "$response" | tail -n1)
+    returnedCode="$http_code"
+
+    # Print the response (excluding the HTTP status code)
+    echo "$response" | sed '$d'
+
+    # Check if the request was successful
+    if [[ "$returnedCode" -ne 200 ]]; then
+        >&2 echo "Error: Reindex request failed with response code $returnedCode"
+        return 1
+    fi
+
     sleep 2
-    >&2 echo "Response is: $returnedCode"
+    >&2 echo "Response code is: $returnedCode"
 
     echo "$returnedCode"
 }
