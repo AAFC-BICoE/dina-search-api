@@ -89,7 +89,8 @@ else
 
         STATUS_CODE_READ_ONLY=$(set_read_only_allow_delete "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "true")
 
-          
+        >&2 echo "The read only operation status before reindex is: $STATUS_CODE_READ_ONLY"
+
         #re-index
         response=$(reindex_request "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "$NEW_INDEX")
 
