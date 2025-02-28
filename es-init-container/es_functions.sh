@@ -43,8 +43,8 @@ wait_for_document_count() {
             return 1
         fi
 
-        if (( current_count >= target_count )); then
-            echo "Target document count of $target_count reached with $current_count documents."
+        if (( current_count == target_count )); then
+            echo "Target document count of $target_count reached."
             return 0
         fi
 
@@ -120,9 +120,7 @@ reindex_request() {
          "index": "'"$dest_index_name"'"
        }
    }')
-   sleep 2
    >&2 echo "Response is: $returnedCode"
-
    echo "$returnedCode"
 }
 
