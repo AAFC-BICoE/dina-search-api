@@ -96,17 +96,11 @@ else
 
         #if re-index successful
         if [[ $response == '200' ]]; then
-          #get total number of documents in old_index
+          # Get total number of documents in old_index
           num_docs_old=$(get_document_count "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" )
 
-          #get total number of documents in new_index
-
-          num_docs_new=$(get_document_count "$ELASTIC_SERVER_URL" "$NEW_INDEX")
-
-          >&2 echo -e "Old index doc count: $num_docs_old \nNew index doc count: $num_docs_new"
-
-          #only when old index is deleted add-alias is evoked
-          if [ "$num_docs_old" -eq "$num_docs_new" ]; then
+          # Make sure we reach the right number of document
+          if wait_for_document_count "$ELASTIC_SERVER_URL" "$NEW_INDEX" "$num_docs_old"; then
             # Deleting old index..."
             >&2 echo "Document counts match. Proceeding with deletion of old index and setting alias..."
             while true; do
