@@ -16,6 +16,47 @@ get_document_count() {
     echo "$num_docs"  # Print the document count
 }
 
+# Repeatedly calls get_document_count to check the document count in the provided Elasticsearch index.
+# Waits 1 second between calls, up to a maximum of 25 attempts, until the target count is reached.
+#
+# Parameters:
+# - elastic_server_url: URL of the Elasticsearch server.
+# - index_name: Name of the index to query.
+# - target_count: Document count to reach.
+#
+# Returns 0 if the target count is reached, 1 otherwise.
+wait_for_document_count() {
+    local elastic_server_url="$1"
+    local index_name="$2"
+    local target_count="$3"
+
+    local max_attempts=25
+    local attempt=0
+
+    while (( attempt < max_attempts )); do
+        local current_count
+        current_count=$(get_document_count "$elastic_server_url" "$index_name")
+
+        # Check if the returned value is a valid number
+        if ! [[ "$current_count" =~ ^[0-9]+$ ]]; then
+            echo "Error: Invalid document count returned: $current_count"
+            return 1
+        fi
+
+        if (( current_count == target_count )); then
+            echo "Target document count of $target_count reached."
+            return 0
+        fi
+
+        echo "Current document count: $current_count. Waiting for target count of $target_count..."
+        (( attempt++ ))
+        sleep 1
+    done
+
+    echo "Maximum attempts reached. Target document count of $target_count not reached."
+    return 1
+}
+
 set_read_only_allow_delete() {
     local elastic_server_url="$1"
     local index_name="$2"
@@ -55,28 +96,32 @@ add_index_alias() {
 }
 
 reindex_request() {
-    local elastic_server_url="$1"    # Host name in the url format
+    local elastic_server_url="$1"    # Host name in the URL format
     local source_index_name="$2"     # ES index name (source)
-    local dest_index_name="$3"       # prefix to use to create the new index name prefix + timestamp
+    local dest_index_name="$3"       # Prefix to use to create the new index name prefix + timestamp
 
-    local returnedCode
+    # Validate parameters
+    if [[ -z "$elastic_server_url" || -z "$source_index_name" || -z "$dest_index_name" ]]; then
+        >&2 echo "Error: Missing required parameters."
+        return 1
+    fi
 
-    >&2 echo "Re-indexing documents."
+   local returnedCode
 
-    >&2 echo "Source index is: $source_index_name and destination index is: $dest_index_name"
+   >&2 echo "Re-indexing documents."
 
-    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex" -d'{
-        "source": {
-        "index": "'$source_index_name'"
-        },
-        "dest": {
-        "index": "'$dest_index_name'"
-        }
-    }')
-    sleep 2
-    >&2 echo "Response is: $returnedCode"
+   >&2 echo "Source index is: $source_index_name and destination index is: $dest_index_name"
 
-    echo "$returnedCode"
+   returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex" -d'{
+       "source": {
+         "index": "'"$source_index_name"'"
+       },
+       "dest": {
+         "index": "'"$dest_index_name"'"
+       }
+   }')
+   >&2 echo "Response is: $returnedCode"
+   echo "$returnedCode"
 }
 
 check_mapping_version(){
@@ -89,8 +134,6 @@ check_mapping_version(){
     >&2 echo -e "\n\n Checking mapping version"
 
     remote_schema="$(curl -s -X GET "$elastic_server_url/$source_index_name/_mapping?pretty")"
-
-    >&2 echo "Remote schema: $remote_schema"
 
     remote_version=$(echo "$remote_schema" | jq -r ".$source_index_name.mappings._meta.version.number // \"0\"" | bc -l)
 
