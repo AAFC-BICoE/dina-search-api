@@ -32,6 +32,8 @@ mappings:
       type: text
     - name: targetOrganismPrimaryScientificName
       type: text
+    - name: targetOrganismPrimaryClassification
+      type: object
     - name: extensionValues
       type: object
     - name: restrictionFieldsExtension
