@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.aafc-bicoe</groupId>
   <artifactId>search-api-parent</artifactId>
-  <version>0.38</version>
+  <version>0.39</version>
 
   <packaging>pom</packaging>
 
@@ -50,6 +50,7 @@
 
     <!-- versions override-->
     <spring-framework.version>5.3.39</spring-framework.version>
+    <tomcat.version>9.0.99</tomcat.version>
 
   </properties>
 
