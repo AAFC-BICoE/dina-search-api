@@ -104,6 +104,17 @@ mappings:
     - name: dwcStateProvince
       type: text
       distinctTermAgg: true
+    - name: verbatimEventDateTime
+      type: text
+    - name: geographicThesaurus.preferredTerm
+      type: text
+    - name: geographicThesaurus.preferredParent
+      type: text
+    - name: geographicThesaurus.additionalParents
+      type: text
+    - name: geographicThesaurus.source
+      type: text
+      distinctTermAgg: true
 
   organism:
     - name: determination.verbatimScientificName
