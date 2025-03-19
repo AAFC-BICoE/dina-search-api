@@ -32,6 +32,8 @@ mappings:
       type: text
     - name: targetOrganismPrimaryScientificName
       type: text
+    - name: targetOrganismPrimaryClassification
+      type: object
     - name: extensionValues
       type: object
     - name: restrictionFieldsExtension
@@ -100,6 +102,17 @@ mappings:
       type: text
       distinctTermAgg: true
     - name: dwcStateProvince
+      type: text
+      distinctTermAgg: true
+    - name: verbatimEventDateTime
+      type: text
+    - name: geographicThesaurus.preferredTerm
+      type: text
+    - name: geographicThesaurus.preferredParent
+      type: text
+    - name: geographicThesaurus.additionalParents
+      type: text
+    - name: geographicThesaurus.source
       type: text
       distinctTermAgg: true
 

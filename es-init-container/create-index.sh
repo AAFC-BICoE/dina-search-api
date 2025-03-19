@@ -16,8 +16,6 @@ INDEX_TIMESTAMP=${INDEX_PREFIX}_${TIMESTAMP}
 
 >&2 echo "Creating index $INDEX_TIMESTAMP"
 
->&2 echo "Mapping definition:"
->&2 cat "$SETTINGS_FILE"
 curl -s -o /dev/null -X PUT "$HOST/$INDEX_TIMESTAMP/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
 
 echo $INDEX_TIMESTAMP
