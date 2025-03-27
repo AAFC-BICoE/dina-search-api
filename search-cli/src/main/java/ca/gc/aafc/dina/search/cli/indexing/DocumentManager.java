@@ -181,13 +181,15 @@ public class DocumentManager {
   }
 
   /**
-   * Get a list of distinct index name that are using the provided type in relationship.
+   * Get a list of distinct index name that are using the provided type in relationship or
+   * reverse relationship.
    * @param type
    * @return list of unique index or empty list
    */
   public List<String> getIndexForRelationshipType(String type) {
     return svcEndpointProps.
-        getFilteredEndpointDescriptorStream(ed -> ed.containsRelationshipsType(type))
+        getFilteredEndpointDescriptorStream(
+            ed -> ed.containsRelationshipsType(type) || ed.containsReverseRelationshipsType(type))
         .map(IndexSettingDescriptor::indexName)
         .distinct()
         .collect(Collectors.toList());
