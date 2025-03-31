@@ -1,4 +1,4 @@
-package ca.gc.aafc.dina.search.messaging.producer;
+package ca.gc.aafc.dina.search.cli.messaging;
 
 import ca.gc.aafc.dina.messaging.config.RabbitMQQueueProperties;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
