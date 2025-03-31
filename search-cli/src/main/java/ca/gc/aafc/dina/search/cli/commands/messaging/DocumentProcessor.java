@@ -58,6 +58,7 @@ public class DocumentProcessor implements IMessageProcessor {
       switch (docOpMessage.getOperationType()) {
         case ADD:
         case UPDATE:
+        case REFRESH:
           documentManager.indexDocument(docOpMessage.getDocumentType(), docOpMessage.getDocumentId());
           break;
         case DELETE:
