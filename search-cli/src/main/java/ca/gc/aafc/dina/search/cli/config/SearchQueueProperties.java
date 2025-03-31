@@ -1,4 +1,4 @@
-package ca.gc.aafc.dina.search.common.config;
+package ca.gc.aafc.dina.search.cli.config;
 
 import ca.gc.aafc.dina.messaging.config.RabbitMQQueueProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;

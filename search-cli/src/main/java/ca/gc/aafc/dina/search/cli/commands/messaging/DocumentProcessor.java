@@ -2,7 +2,7 @@ package ca.gc.aafc.dina.search.cli.commands.messaging;
 
 import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import ca.gc.aafc.dina.search.cli.indexing.DocumentManager;
-import ca.gc.aafc.dina.search.messaging.consumer.IMessageProcessor;
+import ca.gc.aafc.dina.search.cli.messaging.IMessageProcessor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
