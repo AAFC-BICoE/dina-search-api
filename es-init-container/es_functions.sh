@@ -153,6 +153,7 @@ check_mapping_version(){
     fi
 
 }
+
 update_request() {
     local elastic_server_url="$1"    # Host name in the url format
     local index_name="$2"     # ES index name (source)
@@ -162,8 +163,14 @@ update_request() {
 
     returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$elastic_server_url/$index_name/_mapping" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$mapping_file")
 
-    echo "$returnedCode"
-
+    if [[ "$returnedCode" -ge 400 ]]; then
+        echo "ERROR: Mapping update failed. HTTP Status Code: $returnedCode" >&2
+        # Fetch and print the full error response from Elasticsearch
+        error_response=$(curl -s -X POST "$elastic_server_url/$index_name/_mapping" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$mapping_file")
+        echo "Elasticsearch Error Response: $error_response" >&2
+        return 1
+    fi
+    return 0
 }
 
 create_index(){
