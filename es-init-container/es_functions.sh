@@ -124,6 +124,20 @@ reindex_request() {
    echo "$returnedCode"
 }
 
+# Compares the local version with the remote version and determines if an update is required.
+#
+# Parameters:
+#   $1 (elastic_server_url): The Elasticsearch server URL
+#   $2 (source_index_name): The name of the Elasticsearch index to check (e.g., "my_index")
+#   $3 (settings_file): The path to a JSON file containing the local mapping settings
+#
+# Returns:
+#   0: If the remote version is greater than or equal to the local version (no update needed).
+#   1: If the local version is greater than the remote version (update required).
+#
+# Notes:
+#   - Assumes local_version and remote_version are defined as strings in a format suitable for version sorting (e.g., "1.2.3").
+#   - Uses the 'sort -Vr' command for version comparison.
 check_mapping_version(){
     local elastic_server_url="$1"    # Host name in the url format
     local source_index_name="$2"     # ES index name (source)
@@ -137,21 +151,20 @@ check_mapping_version(){
 
     remote_version=$(echo "$remote_schema" | jq -r ".$source_index_name.mappings._meta.version.number // \"0\"" | bc -l)
 
-    local_mappings=$(cat $settings_file | jq '.mappings')
+    local_mappings=$(jq -r '.mappings' < "$settings_file")
+    # Extract local version from the settings file
     local_version=$(echo "$local_mappings" | jq '._meta.version.number' | bc -l)
 
     >&2 echo "Local version: $local_version"
     >&2 echo "Remote version: $remote_version"
 
-    if [ $(echo "$local_version > $remote_version" | bc -l) -eq 1 ]; then
-    
-    >&2 echo "Versions are different."
-    return 1
+    if [ "$(printf '%s\n' "$local_version" "$remote_version" | sort -Vr | head -n1)" == "$remote_version" ]; then
+      echo "Remote version is higher than or equal to local version , no need for update"
+      return 0
     else
-    >&2 echo "Remote version is higher than or equal to local version , no need for update"
-    return 0
+      echo "local_version is greater than remote_version. Schema update required"
+      return 1
     fi
-
 }
 
 update_request() {
