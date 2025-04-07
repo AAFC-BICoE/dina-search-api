@@ -106,22 +106,34 @@ reindex_request() {
         return 1
     fi
 
-   local returnedCode
+    local returnedCode
 
-   >&2 echo "Re-indexing documents."
+    >&2 echo "Re-indexing documents."
 
-   >&2 echo "Source index is: $source_index_name and destination index is: $dest_index_name"
+    >&2 echo "Source index is: $source_index_name and destination index is: $dest_index_name"
 
-   returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex" -d'{
-       "source": {
-         "index": "'"$source_index_name"'"
-       },
-       "dest": {
-         "index": "'"$dest_index_name"'"
-       }
-   }')
-   >&2 echo "Response is: $returnedCode"
-   echo "$returnedCode"
+    reindex_payload='{
+        "source": {
+          "index": "'"$source_index_name"'"
+        },
+        "dest": {
+          "index": "'"$dest_index_name"'"
+        }
+    }'
+
+    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex" -d "$reindex_payload")
+
+    >&2 echo "Response is: $returnedCode"
+
+    if [[ "$returnedCode" -ge 400 ]]; then
+        echo "ERROR: Reindex failed. HTTP Status Code: $returnedCode" >&2
+
+        # Fetch and print the full error response from Elasticsearch
+        error_response=$(curl -s -X POST "$elastic_server_url/_reindex" -H 'Content-Type:application/json' -H 'Accept: application/json' -d "$reindex_payload")
+        echo "Elasticsearch Error Response: $error_response" >&2
+    fi
+
+    echo "$returnedCode"
 }
 
 # Compares the local version with the remote version and determines if an update is required.
