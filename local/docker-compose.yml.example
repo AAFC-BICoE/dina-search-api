@@ -40,7 +40,7 @@ services:
     environment:
       ELASTIC_SERVER_URL: $ELASTIC_SERVER_URL
       INDEX_CREATE_CMD: $INDEX_CREATE_CMD
-      DINA_INDEX_DECLARATIONS: AGENT MATERIAL_SAMPLE STORAGE OBJECT_STORE LOAN_TRANSACTION
+      DINA_INDEX_DECLARATIONS: AGENT MATERIAL_SAMPLE STORAGE OBJECT_STORE LOAN_TRANSACTION PROJECT
       DINA_AGENT_INDEX_NAME: $DINA_AGENT_INDEX_NAME
       DINA_AGENT_INDEX_SETTINGS_FILE: $DINA_AGENT_INDEX_SETTINGS_FILE
       DINA_MATERIAL_SAMPLE_INDEX_NAME: $DINA_MATERIAL_SAMPLE_INDEX_NAME
@@ -51,6 +51,8 @@ services:
       DINA_OBJECT_STORE_INDEX_SETTINGS_FILE: $DINA_OBJECT_SETTINGS_FILE
       DINA_LOAN_TRANSACTION_INDEX_NAME: $DINA_LOAN_TRANSACTION_NAME
       DINA_LOAN_TRANSACTION_SETTINGS_FILE: $DINA_LOAN_TRANSACTION_SETTINGS_FILE
+      DINA_PROJECT_INDEX_NAME: $DINA_PROJECT_NAME
+      DINA_PROJECT_SETTINGS_FILE: $DINA_PROJECT_SETTINGS_FILE
 
     volumes:
       - ./elastic-configurator-settings:/usr/share/elastic-configurator/settings
@@ -67,7 +69,7 @@ services:
   #    - elasticsearch-dina
 
   search-cli:
-    image: aafcbicoe/dina-search-cli:0.21
+    image: aafcbicoe/dina-search-cli:0.39
     stdin_open: true
     tty: true
     environment:
@@ -78,7 +80,7 @@ services:
       - dina_rabbitmq_net
 
   search-ws:
-    image: aafcbicoe/dina-search-ws:0.21
+    image: aafcbicoe/dina-search-ws:0.39
     ports:
       - 8085:8085
 
