@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set VERSION_TAG ENV variable
         run: |
-          echo "VERSION_TAG=$(cat version.txt)" >> $GITHUB_ENV
+          echo "VERSION_TAG=$(cat es-init-container/version.txt)" >> $GITHUB_ENV
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
