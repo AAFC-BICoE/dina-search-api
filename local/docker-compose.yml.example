@@ -3,7 +3,7 @@ version: "3.7"
 services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    container_name: 'rabbitmq-dina'
+    container_name: 'search-local-rabbitmq-dina'
     ports:
         - 5672:5672
         - 15672:15672
@@ -36,10 +36,10 @@ services:
       - 9300:9300
 
   elastic-configurator:
-    image: aafcbicoe/es-init-container:0.6
+    image: aafcbicoe/es-init-container:0.12
     environment:
       ELASTIC_SERVER_URL: $ELASTIC_SERVER_URL
-      INDEX_CREATE_CMD: $INDEX_CREATE_CMD
+      # PREPARE_ENV: true
       DINA_INDEX_DECLARATIONS: AGENT MATERIAL_SAMPLE STORAGE OBJECT_STORE LOAN_TRANSACTION PROJECT
       DINA_AGENT_INDEX_NAME: $DINA_AGENT_INDEX_NAME
       DINA_AGENT_INDEX_SETTINGS_FILE: $DINA_AGENT_INDEX_SETTINGS_FILE
@@ -69,7 +69,7 @@ services:
   #    - elasticsearch-dina
 
   search-cli:
-    image: aafcbicoe/dina-search-cli:0.39
+    image: aafcbicoe/dina-search-cli:0.40
     stdin_open: true
     tty: true
     environment:
@@ -80,7 +80,7 @@ services:
       - dina_rabbitmq_net
 
   search-ws:
-    image: aafcbicoe/dina-search-ws:0.39
+    image: aafcbicoe/dina-search-ws:0.40
     ports:
       - 8085:8085
 
