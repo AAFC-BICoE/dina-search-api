@@ -9,6 +9,7 @@ import java.util.Set;
  * @param type
  * @param relationships
  * @param relationshipsType
+ * @param reverseRelationships
  */
 public record IndexSettingDescriptor(String indexName, String type,
                                      Set<String> relationships,
@@ -24,5 +25,17 @@ public record IndexSettingDescriptor(String indexName, String type,
       return false;
     }
     return relationshipsType.contains(type);
+  }
+
+  /**
+   * null-safe contains for reverseRelationships
+   * @param type
+   * @return
+   */
+  public boolean containsReverseRelationshipsType(String type) {
+    if (reverseRelationships == null) {
+      return false;
+    }
+    return reverseRelationships.stream().anyMatch(rr -> type.equals(rr.type()));
   }
 }

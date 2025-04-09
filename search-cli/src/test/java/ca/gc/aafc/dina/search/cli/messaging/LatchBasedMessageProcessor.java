@@ -1,7 +1,6 @@
 package ca.gc.aafc.dina.search.cli.messaging;
 
 import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
-import ca.gc.aafc.dina.search.messaging.consumer.IMessageProcessor;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Map;
@@ -56,7 +55,7 @@ public class LatchBasedMessageProcessor implements IMessageProcessor {
     if(LATCH_MAP.get(key).await(MAX_WAIT_SEC, TimeUnit.SECONDS)) {
       return RECEIVED_MESSAGES.get(key);
     }
-    log.warn("latch timed-out for key " + key);
+    log.warn("latch timed-out for key {}", key);
     return null;
   }
 

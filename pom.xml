@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.aafc-bicoe</groupId>
   <artifactId>search-api-parent</artifactId>
-  <version>0.39</version>
+  <version>0.40</version>
 
   <packaging>pom</packaging>
 
@@ -18,7 +18,6 @@
   </parent>
 
   <modules>
-    <module>search-messaging</module>
     <module>search-cli</module>
     <module>search-ws</module>
   </modules>
@@ -30,7 +29,7 @@
 
     <jakarta.json.version>2.0.1</jakarta.json.version>
     <apache.commons.collections4.version>4.4</apache.commons.collections4.version>
-    <dina-base-api.version>0.136</dina-base-api.version>
+    <dina-base-api.version>0.139</dina-base-api.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.4.0</maven-checkstyle-plugin.version>

@@ -5,7 +5,7 @@
   <parent>
     <artifactId>search-api-parent</artifactId>
     <groupId>io.github.aafc-bicoe</groupId>
-    <version>0.39</version>
+    <version>0.40</version>
   </parent>
 
   <artifactId>search-cli</artifactId>
@@ -26,8 +26,14 @@
 
     <dependency>
       <groupId>io.github.aafc-bicoe</groupId>
-      <artifactId>search-messaging</artifactId>
-      <version>0.39</version>
+      <artifactId>dina-messaging</artifactId>
+      <version>${dina-base-api.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
