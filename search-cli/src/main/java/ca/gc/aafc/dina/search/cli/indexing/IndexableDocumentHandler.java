@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 /**
@@ -50,6 +51,7 @@ public class IndexableDocumentHandler {
 
   private final DinaApiAccess apiAccess;
   private final ServiceEndpointProperties svcEndpointProps;
+  private final AtomicBoolean reverseRelationshipErrorReported = new AtomicBoolean(false);
 
   public IndexableDocumentHandler(DinaApiAccess apiAccess, ServiceEndpointProperties svcEndpointProps) {
     this.apiAccess = apiAccess;
@@ -168,15 +170,14 @@ public class IndexableDocumentHandler {
     if (indexSettingDescriptor != null && CollectionUtils.isNotEmpty(indexSettingDescriptor.reverseRelationships())) {
       for (ReverseRelationship rr : indexSettingDescriptor.reverseRelationships()) {
         ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
-        try {
-          String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
+        if(apiRd != null && apiRd.isEnabled(true)) {
+          try {
+            String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
 
-          // this is expected to be an array
-          JsonNode document = OM.readTree(rawPayload);
-
-          if (document.has(JSONApiDocumentStructure.DATA)) {
-            JsonNode dataArray = document.get(JSONApiDocumentStructure.DATA);
-            if (dataArray.isArray()) {
+            // this is expected to be an array
+            JsonNode document = OM.readTree(rawPayload);
+            if (JsonHelper.hasFieldAndIsArray(document, JSONApiDocumentStructure.DATA)) {
+              JsonNode dataArray = document.get(JSONApiDocumentStructure.DATA);
               for (JsonNode dataItem : dataArray) {
                 // Check if included section exists within the current document
                 if (newDoc.has(JSONApiDocumentStructure.INCLUDED)) {
@@ -194,11 +195,15 @@ public class IndexableDocumentHandler {
                 }
               }
             }
+          } catch (SearchApiNotFoundException ex) {
+            // no-op,
+          } catch (SearchApiException ex) {
+            if (reverseRelationshipErrorReported.compareAndSet(false, true)) {
+              log.error("Exception processing reverse relationships. This won't be reported again.", ex);
+            }
+          } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
           }
-        } catch (SearchApiNotFoundException ex) {
-          // no-op,
-        } catch (JsonProcessingException e) {
-          throw new RuntimeException(e);
         }
       }
     }
