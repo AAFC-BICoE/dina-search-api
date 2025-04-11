@@ -26,6 +26,7 @@ apiResources:
     url: ${LOAN_TRANSACTION_API_URL:http://localhost:8086/api/v1}/transaction
   - type: run-summary
     url: ${SEQDB_API_URL:http://localhost:8084/api}/run-summary
+    enabled: ${SEQDB_API_ENABLED:true}
 
 indexSettings:
   - indexName: dina_material_sample_index
