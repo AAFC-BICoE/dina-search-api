@@ -170,7 +170,7 @@ public class IndexableDocumentHandler {
     if (indexSettingDescriptor != null && CollectionUtils.isNotEmpty(indexSettingDescriptor.reverseRelationships())) {
       for (ReverseRelationship rr : indexSettingDescriptor.reverseRelationships()) {
         ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
-        if(apiRd != null && apiRd.isEnabled(true)) {
+        if (apiRd != null && apiRd.isEnabled(true)) {
           try {
             String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
 
