@@ -122,7 +122,7 @@ public class DocumentManagerEmbeddedIT {
         TestConstants.ORGANIZATION_TYPE, null, null, null);
     serviceEndpointProperties.addEndpointDescriptor(organizationDescriptor);
 
-    ApiResourceDescriptor apiResourceDescriptor = new ApiResourceDescriptor(TestConstants.ORGANIZATION_TYPE, "http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE);
+    ApiResourceDescriptor apiResourceDescriptor = new ApiResourceDescriptor(TestConstants.ORGANIZATION_TYPE, "http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE, true);
     serviceEndpointProperties.addApiResourceDescriptor(apiResourceDescriptor);
 
     // Mock the person request/response.
