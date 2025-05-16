@@ -99,6 +99,7 @@ reindex_request() {
     local elastic_server_url="$1"    # Host name in the URL format
     local source_index_name="$2"     # ES index name (source)
     local dest_index_name="$3"       # Prefix to use to create the new index name prefix + timestamp
+    local reindex_script="$4"        # optional painless script
 
     # Validate parameters
     if [[ -z "$elastic_server_url" || -z "$source_index_name" || -z "$dest_index_name" ]]; then
@@ -112,14 +113,26 @@ reindex_request() {
 
     >&2 echo "Source index is: $source_index_name and destination index is: $dest_index_name"
 
+    # Base reindex_payload
     reindex_payload='{
-        "source": {
-          "index": "'"$source_index_name"'"
-        },
-        "dest": {
-          "index": "'"$dest_index_name"'"
-        }
-    }'
+      "source": {
+        "index": "'"$source_index_name"'"
+      },
+      "dest": {
+        "index": "'"$dest_index_name"'"
+      }'
+
+    # Add painless script block if provided
+    if [[ -n "$reindex_script" ]]; then
+      reindex_payload+=',
+      "script": {
+        "lang": "painless",
+        "source": "'"$reindex_script"'"
+      }'
+    fi
+
+    # Close the reindex_payload
+    reindex_payload+="}"
 
     returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex" -d "$reindex_payload")
 
@@ -180,9 +193,9 @@ check_mapping_version(){
 }
 
 update_request() {
-    local elastic_server_url="$1"    # Host name in the url format
-    local index_name="$2"     # ES index name (source)
-    local mapping_file="$3"       # prefix to use to create the new index name prefix + timestamp
+    local elastic_server_url="$1" # Host name in the url format
+    local index_name="$2"         # ES index name (source)
+    local mapping_file="$3"       # file including the mapping to use
 
     local returnedCode
 
