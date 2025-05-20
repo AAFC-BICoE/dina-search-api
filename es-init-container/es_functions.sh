@@ -124,6 +124,7 @@ reindex_request() {
 
     # Add painless script block if provided
     if [[ -n "$reindex_script" ]]; then
+      >&2 echo "Re-index painless script provided."
       reindex_payload+=',
       "script": {
         "lang": "painless",
