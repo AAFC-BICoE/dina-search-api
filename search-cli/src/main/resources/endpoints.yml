@@ -16,10 +16,12 @@
 apiResources:
   - type: material-sample
     url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/material-sample
-  - type: person
-    url: ${AGENT_API_URL:http://localhost:8082/api/v1}/person
+  - type: project
+    url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/project
   - type: storage-unit
     url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/storage-unit
+  - type: person
+    url: ${AGENT_API_URL:http://localhost:8082/api/v1}/person
   - type: metadata
     url: ${OBJECT_STORE_API_URL:http://localhost:8081/api/v1}/metadata
   - type: transaction
@@ -80,3 +82,6 @@ indexSettings:
     relationships:
       - involvedAgents
       - materialSamples
+
+  - indexName: dina_project_index
+    type: project
