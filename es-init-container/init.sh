@@ -91,8 +91,11 @@ else
 
         >&2 echo "The read only operation status before reindex is: $STATUS_CODE_READ_ONLY"
 
-        #re-index
-        response=$(reindex_request "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "$NEW_INDEX")
+        #m re-index ---
+        # reindex script is optional
+        reindex_script_var="DINA_${currIndex}_REINDEX_SCRIPT"
+        reindex_script="${!reindex_script_var}"
+        response=$(reindex_request "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "$NEW_INDEX" "$reindex_script")
 
         #if re-index successful
         if [[ $response == '200' ]]; then
