@@ -49,7 +49,7 @@
 
     <!-- versions override-->
     <spring-framework.version>5.3.39</spring-framework.version>
-    <tomcat.version>9.0.99</tomcat.version>
+    <tomcat.version>9.0.104</tomcat.version>
 
   </properties>
 
