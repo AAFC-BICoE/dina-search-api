@@ -93,7 +93,7 @@ else
 
         #m re-index ---
         # reindex script is optional
-        reindex_script_var="DINA_${CURRENT_INDEX_NAME}_REINDEX_SCRIPT"
+        reindex_script_var="DINA_${currIndex}_REINDEX_SCRIPT"
         reindex_script="${!reindex_script_var}"
         response=$(reindex_request "$ELASTIC_SERVER_URL" "$CURRENT_INDEX_NAME" "$NEW_INDEX" "$reindex_script")
 
