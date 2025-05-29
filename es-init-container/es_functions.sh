@@ -175,11 +175,11 @@ check_mapping_version(){
 
     remote_schema="$(curl -s -X GET "$elastic_server_url/$source_index_name/_mapping?pretty")"
 
-    remote_version=$(echo "$remote_schema" | jq -r ".$source_index_name.mappings._meta.version.number // \"0\"" | bc -l)
+    remote_version=$(echo "$remote_schema" | jq -r ".$source_index_name.mappings._meta.version.number // \"0.0\"")
 
     local_mappings=$(jq -r '.mappings' < "$settings_file")
     # Extract local version from the settings file
-    local_version=$(echo "$local_mappings" | jq '._meta.version.number' | bc -l)
+    local_version=$(echo "$local_mappings" | jq '._meta.version.number')
 
     >&2 echo "Local version: $local_version"
     >&2 echo "Remote version: $remote_version"
