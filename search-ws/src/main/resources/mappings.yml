@@ -185,6 +185,22 @@ mappings:
     - name: name
       type: text
       distinctTermAgg: true
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date
+      dateSubtype: DATE_TIME
+    - name: status
+      type: text
+      distinctTermAgg: true
+    - name: startDate
+      type: date
+      dateSubtype: LOCAL_DATE
+    - name: endDate
+      type: date
+      dateSubtype: LOCAL_DATE
+    - name: extensionValues
+      type: object
 
   run-summary:
     - name: name
