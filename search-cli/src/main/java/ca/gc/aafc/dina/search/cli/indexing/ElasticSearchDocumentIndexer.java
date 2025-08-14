@@ -1,20 +1,26 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.helper.ESClientHelper;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch._types.ShardFailure;
 import co.elastic.clients.elasticsearch._types.ShardStatistics;
+import co.elastic.clients.elasticsearch._types.SortOptions;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchPhraseQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -26,9 +32,12 @@ import java.util.List;
 @Service
 public class ElasticSearchDocumentIndexer implements DocumentIndexer {
 
-  private final ElasticsearchClient client;
+  private static final SortOptions DEFAULT_SORT =
+      new SortOptions.Builder().field(fs -> fs.field("_id").order(SortOrder.Asc)).build();
+  public static final int ES_PAGE_SIZE = 20;
 
   private static final List<String> SEARCH_FIELDS_TO_RETURN = List.of("data.id", "data.type");
+  private final ElasticsearchClient client;
 
   public ElasticSearchDocumentIndexer(ElasticsearchClient client) {
     this.client = client;
@@ -120,29 +129,90 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   public SearchResponse<JsonNode> search(List<String> indexNames, String documentType, String documentId) throws SearchApiException {
 
     try {
-      // Match phrase query
-      MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id").query(documentId);
-      MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type").query(documentType);
-      
-      List<Query> matchPhraseQueries = new ArrayList<>(2);
-      matchPhraseQueries.add(documentIdMatchPhrase.build()._toQuery());
-      matchPhraseQueries.add(documentTypeMatchPhrase.build()._toQuery());
-
-      // Nested query
-      NestedQuery.Builder nestedIncluded = QueryBuilders.nested()
-                                                          .path("included")
-                                                          .query(QueryBuilders.bool()
-                                                          .must(matchPhraseQueries).build()._toQuery()); 
-
       return client.search(searchBuilder -> searchBuilder
           .index(indexNames)
-          .query(nestedIncluded.build()._toQuery())
+          .query(buildSearchIncludedDocumentQuery(documentType, documentId))
           .storedFields(SEARCH_FIELDS_TO_RETURN)
           .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(SEARCH_FIELDS_TO_RETURN))), JsonNode.class);
 
     } catch (IOException | ElasticsearchException ex) {
       throw new SearchApiException("Error during search processing", ex);
     }
+  }
+
+  public long count(List<String> indexNames, String documentType, String documentId) throws SearchApiException {
+    try {
+      return client.count(cb -> cb.index(indexNames).query(buildSearchIncludedDocumentQuery(documentType, documentId))).count();
+    } catch (IOException ex) {
+      throw new SearchApiException("Error during search processing", ex);
+    }
+  }
+
+  private static Query buildSearchIncludedDocumentQuery(String documentType, String documentId) {
+    // Match phrase query
+    MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id").query(documentId);
+    MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type").query(documentType);
+
+    List<Query> matchPhraseQueries = new ArrayList<>(2);
+    matchPhraseQueries.add(documentIdMatchPhrase.build()._toQuery());
+    matchPhraseQueries.add(documentTypeMatchPhrase.build()._toQuery());
+
+    // Nested query
+    NestedQuery.Builder nestedIncluded = QueryBuilders.nested()
+        .path("included")
+        .query(QueryBuilders.bool()
+            .must(matchPhraseQueries).build()._toQuery());
+    return nestedIncluded.build()._toQuery();
+  }
+
+  public SearchResponse<JsonNode> searchWithPIT(List<String> indices, String documentType, String documentId) throws SearchApiException {
+
+    try {
+      // create the PIT
+      String pitId = ESClientHelper.openPointInTime(client, indices);
+      SearchRequest sr = buildSearchRequestWithPIT(pitId, buildSearchIncludedDocumentQuery(documentType, documentId),  null);
+      return client.search(sr, JsonNode.class);
+    } catch (IOException ex) {
+      throw new SearchApiException("Error during search processing", ex);
+    }
+  }
+
+
+  public SearchResponse<JsonNode> searchAfter(String pitId, String documentType, String documentId, List<FieldValue> sortFieldValues) throws SearchApiException {
+    SearchRequest sr = buildSearchRequestWithPIT(pitId, buildSearchIncludedDocumentQuery(documentType, documentId), sortFieldValues);
+    try {
+      return client.search(sr, JsonNode.class);
+    } catch (IOException ex) {
+      throw new SearchApiException("Error during search processing", ex);
+    }
+  }
+
+  /**
+   * Close a previously opened PIT.
+   * @param pitId
+   * @return
+   */
+  public boolean closePIT(String pitId) throws SearchApiException {
+    try {
+      return ESClientHelper.closePointInTime(client, pitId);
+    } catch (IOException ex) {
+      throw new SearchApiException("Error during search processing", ex);
+    }
+  }
+
+  private static SearchRequest buildSearchRequestWithPIT(String pitId, Query query, List<FieldValue> searchAfter) {
+
+    SearchRequest.Builder builder = new SearchRequest.Builder();
+    ESClientHelper.setPitIdOnBuilder(builder, pitId);
+    builder.size(ES_PAGE_SIZE);
+    builder.sort(DEFAULT_SORT);
+    builder.query(query);
+
+    if (CollectionUtils.isNotEmpty(searchAfter)) {
+      builder.searchAfter(searchAfter);
+    }
+
+    return SearchRequest.of(b -> builder);
   }
 
 }
