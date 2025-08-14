@@ -131,6 +131,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
     try {
       return client.search(searchBuilder -> searchBuilder
           .index(indexNames)
+          .size(ES_PAGE_SIZE)
           .query(buildSearchIncludedDocumentQuery(documentType, documentId))
           .storedFields(SEARCH_FIELDS_TO_RETURN)
           .source(sourceBuilder -> sourceBuilder.filter(filter -> filter.includes(SEARCH_FIELDS_TO_RETURN))), JsonNode.class);
@@ -148,6 +149,12 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
     }
   }
 
+  /**
+   * Build a query to match a specific type and id in included documents.
+   * @param documentType
+   * @param documentId
+   * @return
+   */
   private static Query buildSearchIncludedDocumentQuery(String documentType, String documentId) {
     // Match phrase query
     MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id").query(documentId);
