@@ -184,7 +184,6 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
     }
   }
 
-
   public SearchResponse<JsonNode> searchAfter(String pitId, String documentType, String documentId, List<FieldValue> sortFieldValues) throws SearchApiException {
     SearchRequest sr = buildSearchRequestWithPIT(pitId, buildSearchIncludedDocumentQuery(documentType, documentId), sortFieldValues);
     try {

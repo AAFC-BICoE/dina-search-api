@@ -125,11 +125,11 @@ public class DocumentManager {
   public void processEmbeddedDocument(List<String> indices, String documentType, String documentId) throws SearchApiException {
 
     try {
-
       long docCount = indexer.count(indices, documentType, documentId);
 
       // no paging required
       if (docCount <= ElasticSearchDocumentIndexer.ES_PAGE_SIZE) {
+        log.debug("Found {} embedded document(s). No paging required.", docCount);
         processEmbeddedDocument(indexer.search(indices, documentType, documentId), documentType, documentId);
         return;
       }
@@ -142,6 +142,7 @@ public class DocumentManager {
         for (Hit<JsonNode> hit : response.hits().hits()) {
           documentsToIndex.add(jsonNodeToDocumentInfo(hit.source()));
         }
+        log.debug("Paging through embedded documents. {} embedded documents", documentsToIndex.size());
         reIndexDocuments(documentsToIndex);
         pageAvailable = false;
 
@@ -204,13 +205,13 @@ public class DocumentManager {
    */
   public boolean isTypeConfigured(String type) {
     if (!svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
-      log.debug("Unsupported endpoint type:" + type);
+      log.debug("Unsupported endpoint type {}", type);
       return false;
     }
 
     // Do we have an index defined for the type ?
     if (StringUtils.isBlank(svcEndpointProps.getIndexSettingDescriptorForType(type).indexName())) {
-      log.debug("Undefined index for: " + type);
+      log.debug("Undefined index for {}", type);
       return false;
     }
     return true;
