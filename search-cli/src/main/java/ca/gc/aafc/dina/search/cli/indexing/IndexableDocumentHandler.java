@@ -195,11 +195,10 @@ public class IndexableDocumentHandler {
                   ((ObjectNode) newDoc).set(JSONApiDocumentStructure.INCLUDED, included);
                 }
               }
-            } else {
-              log.debug("No reverse relationship found for type:{}, relationshipName:{}, id: {}", apiRd.type(),rr.relationshipName(), documentId);
             }
           } catch (SearchApiNotFoundException ex) {
-            // no-op,
+            // no-op
+            log.debug("No reverse relationship found for type:{}, relationshipName:{}, id: {}", apiRd.type(),rr.relationshipName(), documentId);
           } catch (SearchApiException ex) {
             if (reverseRelationshipErrorReported.compareAndSet(false, true)) {
               log.error("Exception processing reverse relationships. This won't be reported again.", ex);
