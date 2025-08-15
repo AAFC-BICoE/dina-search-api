@@ -172,6 +172,7 @@ public class IndexableDocumentHandler {
         ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
         if (apiRd != null && apiRd.isEnabled(true)) {
           try {
+            log.debug("Checking for reverse relationship type:{}, relationshipName:{}, id: {}", apiRd.type(),rr.relationshipName(), documentId);
             String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
 
             // this is expected to be an array
@@ -194,6 +195,8 @@ public class IndexableDocumentHandler {
                   ((ObjectNode) newDoc).set(JSONApiDocumentStructure.INCLUDED, included);
                 }
               }
+            } else {
+              log.debug("No reverse relationship found for type:{}, relationshipName:{}, id: {}", apiRd.type(),rr.relationshipName(), documentId);
             }
           } catch (SearchApiNotFoundException ex) {
             // no-op,
