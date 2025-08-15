@@ -126,10 +126,11 @@ public class DocumentManager {
 
     try {
       long docCount = indexer.count(indices, documentType, documentId);
+      log.debug("{} embedded document(s) found. documentType:{}, documentId:{}", docCount, documentType, documentId);
 
       // no paging required
       if (docCount <= ElasticSearchDocumentIndexer.ES_PAGE_SIZE) {
-        log.debug("Found {} embedded document(s). No paging required.", docCount);
+        log.debug("No paging required.");
         processEmbeddedDocument(indexer.search(indices, documentType, documentId), documentType, documentId);
         return;
       }
