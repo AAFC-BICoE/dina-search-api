@@ -10,10 +10,10 @@ import co.elastic.clients.elasticsearch._types.ShardFailure;
 import co.elastic.clients.elasticsearch._types.ShardStatistics;
 import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.SortOrder;
-import co.elastic.clients.elasticsearch._types.query_dsl.MatchPhraseQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
@@ -25,7 +25,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 @Log4j2
@@ -156,13 +155,12 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
    * @return
    */
   private static Query buildSearchIncludedDocumentQuery(String documentType, String documentId) {
-    // Match phrase query
-    MatchPhraseQuery.Builder documentIdMatchPhrase = QueryBuilders.matchPhrase().field("included.id").query(documentId);
-    MatchPhraseQuery.Builder documentTypeMatchPhrase = QueryBuilders.matchPhrase().field("included.type").query(documentType);
+    // Use term query since uuid and type are "keyword"
+    TermQuery documentIdQuery = QueryBuilders.term().field("included.id").value(documentId).build();
+    TermQuery documentTypeQuery = QueryBuilders.term().field("included.type").value(documentType).build();
 
-    List<Query> matchPhraseQueries = new ArrayList<>(2);
-    matchPhraseQueries.add(documentIdMatchPhrase.build()._toQuery());
-    matchPhraseQueries.add(documentTypeMatchPhrase.build()._toQuery());
+    List<Query> matchPhraseQueries = List.of(
+        documentIdQuery._toQuery(), documentTypeQuery._toQuery());
 
     // Nested query
     NestedQuery.Builder nestedIncluded = QueryBuilders.nested()
