@@ -125,19 +125,53 @@ public class DocumentManager {
   public void processEmbeddedDocument(List<String> indices, String documentType, String documentId) throws SearchApiException {
 
     try {
-      // TODO: handle paging
-      SearchResponse<JsonNode> embeddedDocuments = indexer.search(indices, documentType, documentId);
+      long docCount = indexer.count(indices, documentType, documentId);
+      log.debug("{} embedded document(s) found. documentType:{}, documentId:{}", docCount, documentType, documentId);
 
-      List<DocumentInfo> documentsToIndex = processSearchResults(embeddedDocuments);
-      if (!documentsToIndex.isEmpty()) {
-        log.debug("re-indexing document triggered by document type:{}, id:{} update",
-            documentType, documentId);
-        reIndexDocuments(documentsToIndex);
+      // no paging required
+      if (docCount <= ElasticSearchDocumentIndexer.ES_PAGE_SIZE) {
+        log.debug("No paging required.");
+        processEmbeddedDocument(indexer.search(indices, documentType, documentId), documentType, documentId);
+        return;
       }
+
+      // Page through results
+      SearchResponse<JsonNode> response = indexer.searchWithPIT(indices, documentType, documentId);
+      boolean pageAvailable = response.hits().hits().size() != 0;
+      while (pageAvailable) {
+        List<DocumentInfo> documentsToIndex = new ArrayList<>();
+        for (Hit<JsonNode> hit : response.hits().hits()) {
+          documentsToIndex.add(jsonNodeToDocumentInfo(hit.source()));
+        }
+        log.debug("Paging through embedded documents. {} embedded documents", documentsToIndex.size());
+        reIndexDocuments(documentsToIndex);
+        pageAvailable = false;
+
+        int numberOfHits = response.hits().hits().size();
+        // if we have a full page, try to get the next one
+        if (ElasticSearchDocumentIndexer.ES_PAGE_SIZE == numberOfHits) {
+          Hit<JsonNode> lastHit = response.hits().hits().get(numberOfHits - 1);
+          response =
+              indexer.searchAfter(response.pitId(), documentType, documentId, lastHit.sort());
+          pageAvailable = true;
+        }
+      }
+
+      String pitId = response.pitId();
+      indexer.closePIT(pitId);
 
     } catch (SearchApiException e) {
       log.error("Error during re-indexing from embedded document id {} of type {}: {}", documentId, documentType, e.getMessage());
       throw e;
+    }
+  }
+
+  private void processEmbeddedDocument(SearchResponse<JsonNode> embeddedDocuments, String documentType, String documentId) {
+    List<DocumentInfo> documentsToIndex = processSearchResults(embeddedDocuments);
+    if (!documentsToIndex.isEmpty()) {
+      log.debug("re-indexing document triggered by document type:{}, id:{} update",
+          documentType, documentId);
+      reIndexDocuments(documentsToIndex);
     }
   }
 
@@ -152,13 +186,17 @@ public class DocumentManager {
       List<Hit<JsonNode>> results = embeddedDocuments.hits().hits();
       if (!results.isEmpty()) {
         results.forEach(curHit -> {
-          JsonNode dataNode = curHit.source().get(JSONApiDocumentStructure.DATA);
-          documentsToIndex.add(new DocumentInfo(dataNode.get(JSONApiDocumentStructure.TYPE).asText(),
-              dataNode.get(JSONApiDocumentStructure.ID).asText()));
+          documentsToIndex.add(jsonNodeToDocumentInfo(curHit.source()));
         });
       }
     }
     return documentsToIndex;
+  }
+
+  private static DocumentInfo jsonNodeToDocumentInfo(JsonNode embeddedDocument) {
+    JsonNode dataNode = embeddedDocument.get(JSONApiDocumentStructure.DATA);
+    return new DocumentInfo(dataNode.get(JSONApiDocumentStructure.TYPE).asText(),
+        dataNode.get(JSONApiDocumentStructure.ID).asText());
   }
 
   /**
@@ -168,13 +206,13 @@ public class DocumentManager {
    */
   public boolean isTypeConfigured(String type) {
     if (!svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
-      log.debug("Unsupported endpoint type:" + type);
+      log.debug("Unsupported endpoint type {}", type);
       return false;
     }
 
     // Do we have an index defined for the type ?
     if (StringUtils.isBlank(svcEndpointProps.getIndexSettingDescriptorForType(type).indexName())) {
-      log.debug("Undefined index for: " + type);
+      log.debug("Undefined index for {}", type);
       return false;
     }
     return true;

@@ -172,6 +172,7 @@ public class IndexableDocumentHandler {
         ApiResourceDescriptor apiRd = svcEndpointProps.getApiResourceDescriptorForType(rr.type());
         if (apiRd != null && apiRd.isEnabled(true)) {
           try {
+            log.debug("Checking for reverse relationship type:{}, relationshipName:{}, id: {}", apiRd.type(),rr.relationshipName(), documentId);
             String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
 
             // this is expected to be an array
@@ -181,6 +182,8 @@ public class IndexableDocumentHandler {
               for (JsonNode dataItem : dataArray) {
                 // Check if included section exists within the current document
                 if (newDoc.has(JSONApiDocumentStructure.INCLUDED)) {
+                  log.debug("Included section exists already, adding the following data item: ");
+                  log.debug(dataItem.toString());
                   JsonNode included = newDoc.get(JSONApiDocumentStructure.INCLUDED);
                   if (included.isArray()) {
                     ((ArrayNode) included).add(dataItem);
@@ -189,6 +192,8 @@ public class IndexableDocumentHandler {
                   }
                 } else {
                   // Create the included section if it does not exist.
+                  log.debug("Create the included section, adding the following data item: ");
+                  log.debug(dataItem.toString());
                   ArrayNode included = OM.createArrayNode();
                   included.add(dataItem);
                   ((ObjectNode) newDoc).set(JSONApiDocumentStructure.INCLUDED, included);
@@ -196,7 +201,8 @@ public class IndexableDocumentHandler {
               }
             }
           } catch (SearchApiNotFoundException ex) {
-            // no-op,
+            // no-op
+            log.debug("No reverse relationship found for type:{}, relationshipName:{}, id: {}", apiRd.type(),rr.relationshipName(), documentId);
           } catch (SearchApiException ex) {
             if (reverseRelationshipErrorReported.compareAndSet(false, true)) {
               log.error("Exception processing reverse relationships. This won't be reported again.", ex);
