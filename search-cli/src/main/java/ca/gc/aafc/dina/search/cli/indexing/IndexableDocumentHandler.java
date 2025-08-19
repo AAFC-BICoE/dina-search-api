@@ -182,6 +182,8 @@ public class IndexableDocumentHandler {
               for (JsonNode dataItem : dataArray) {
                 // Check if included section exists within the current document
                 if (newDoc.has(JSONApiDocumentStructure.INCLUDED)) {
+                  log.debug("Included section exists already, adding the following data item: ");
+                  log.debug(dataItem.toString());
                   JsonNode included = newDoc.get(JSONApiDocumentStructure.INCLUDED);
                   if (included.isArray()) {
                     ((ArrayNode) included).add(dataItem);
@@ -190,6 +192,8 @@ public class IndexableDocumentHandler {
                   }
                 } else {
                   // Create the included section if it does not exist.
+                  log.debug("Create the included section, adding the following data item: ");
+                  log.debug(dataItem.toString());
                   ArrayNode included = OM.createArrayNode();
                   included.add(dataItem);
                   ((ObjectNode) newDoc).set(JSONApiDocumentStructure.INCLUDED, included);
