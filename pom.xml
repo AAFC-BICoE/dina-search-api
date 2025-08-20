@@ -49,7 +49,8 @@
 
     <!-- versions override-->
     <spring-framework.version>5.3.39</spring-framework.version>
-    <tomcat.version>9.0.104</tomcat.version>
+    <jackson-bom.version>2.15.4</jackson-bom.version>
+    <tomcat.version>9.0.106</tomcat.version>
 
   </properties>
 
