@@ -123,6 +123,8 @@ mappings:
       type: text
     - name: determination.typeStatus
       type: text
+    - name: dwcVernacularName
+      type: text
 
   collection:
     - name: name
