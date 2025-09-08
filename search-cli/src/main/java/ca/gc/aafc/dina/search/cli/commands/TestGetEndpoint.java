@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
+import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
@@ -34,8 +35,9 @@ public class TestGetEndpoint {
     }
 
     try {
+      IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
       msg = aClient.getDataFromUrl(svcEndpointProps.getApiResourceDescriptorForType(type),
-          svcEndpointProps.getIndexSettingDescriptorForType(type).relationships());
+          indexSettingDescriptor.relationships(), indexSettingDescriptor.optionalFields());
     } catch (SearchApiException sapiEx) {
       log.error("Error during operation execution", sapiEx);
     }

@@ -66,7 +66,8 @@ public class DocumentManager {
     // Step #1: get the document
     log.info("Retrieving document id:{}", documentId);
 
-    String documentToIndex = aClient.getDataById(apiResourceDescriptor, endpointDescriptor.relationships(), documentId);
+    String documentToIndex = aClient.getDataById(apiResourceDescriptor, endpointDescriptor.relationships(),
+        endpointDescriptor.optionalFields(), documentId);
 
     // Step #2: Assemble the document into a JSON map
     log.info("Assembling document id:{}", documentId);

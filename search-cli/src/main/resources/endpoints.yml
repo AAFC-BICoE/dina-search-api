@@ -43,12 +43,14 @@ indexSettings:
       - preparationMethod
       - assemblages
       - projects
-      - hierarchy
       - storageUnitUsage
       - parentMaterialSample
     relationshipsType:
       - person
       - collecting-event
+    optionalFields:
+      material-sample:
+        - hierarchy
     reverseRelationships:
       - type: run-summary
         relationshipName: materialSample
@@ -75,7 +77,9 @@ indexSettings:
     relationships:
       - storageUnitChildren
       - storageUnitType
-      - hierarchy
+    optionalFields:
+      storage-unit:
+        - hierarchy
 
   - indexName: dina_loan_transaction_index
     type: transaction

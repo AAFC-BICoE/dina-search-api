@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
+import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
@@ -43,8 +44,9 @@ public class GetDocument {
     }
 
     try {
+      IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
       msg = aClient.getDataById(svcEndpointProps.getApiResourceDescriptorForType(type),
-          svcEndpointProps.getIndexSettingDescriptorForType(type).relationships(), documentId);
+          indexSettingDescriptor.relationships(), indexSettingDescriptor.optionalFields(), documentId);
 
       if (assemble) {
         msg = IndexableDocumentHandler.OM.writeValueAsString(indexableDocumentHandler.assembleDocument(msg));

@@ -14,10 +14,13 @@ import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -43,8 +46,8 @@ public class OpenIDHttpClient {
     httpClient = builder.build();
   }
 
-  public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes) throws SearchApiException {
-    return getDataById(apiResourceDescriptor, includes, null);
+  public String getDataFromUrl(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes, Map<String, List<String>> optFields) throws SearchApiException {
+    return getDataById(apiResourceDescriptor, includes, optFields,null);
   }
 
   /**
@@ -59,15 +62,15 @@ public class OpenIDHttpClient {
    * @throws SearchApiException in case of communication errors.
    */
   public String getDataById(ApiResourceDescriptor apiResourceDescriptor,
-                               Set<String> includes, String objectId)
+                               Set<String> includes, Map<String, List<String>> optFields, String objectId)
       throws SearchApiException {
-    return handleCall(validateArgumentAndCreateRoute(apiResourceDescriptor, includes, objectId, null));
+    return handleCall(validateArgumentAndCreateRoute(apiResourceDescriptor, includes, optFields, objectId, null));
   }
 
   public String getDataByFilter(ApiResourceDescriptor apiResourceDescriptor,
-                                Set<String> includes, Pair<String, String> filter)
+                                Set<String> includes, Map<String, List<String>> optFields, Pair<String, String> filter)
       throws SearchApiException {
-    return handleCall(validateArgumentAndCreateRoute(apiResourceDescriptor, includes, null, filter));
+    return handleCall(validateArgumentAndCreateRoute(apiResourceDescriptor, includes, optFields, null, filter));
   }
 
   private String handleCall(HttpUrl route) throws SearchApiException {
@@ -100,7 +103,7 @@ public class OpenIDHttpClient {
    * @throws SearchApiException in case of a validation error.
    */
   private HttpUrl validateArgumentAndCreateRoute(ApiResourceDescriptor apiResourceDescriptor,
-                                                 Set<String> includes, String objectId, Pair<String, String> filter) throws SearchApiException {
+                                                 Set<String> includes, Map<String, List<String>> optFields, String objectId, Pair<String, String> filter) throws SearchApiException {
 
     String pathParam = Objects.toString(objectId, "");
     Builder urlBuilder;
@@ -117,6 +120,13 @@ public class OpenIDHttpClient {
      */
     if (CollectionUtils.isNotEmpty(includes)) {
       urlBuilder.addQueryParameter("include", String.join(",", includes));
+    }
+
+    // Add optional fields
+    if (MapUtils.isNotEmpty(optFields)) {
+      for (var entry : optFields.entrySet()) {
+        urlBuilder.addQueryParameter("optfields[" + entry.getKey() + "]", String.join(",", entry.getValue()));
+      }
     }
 
     if (filter != null) {

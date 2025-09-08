@@ -1,6 +1,7 @@
 package ca.gc.aafc.dina.search.cli.config;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -14,6 +15,7 @@ import java.util.Set;
 public record IndexSettingDescriptor(String indexName, String type,
                                      Set<String> relationships,
                                      Set<String> relationshipsType,
+                                     Map<String, List<String>> optionalFields,
                                      List<ReverseRelationship> reverseRelationships) {
   /**
    * null-safe contains for relationshipsType
