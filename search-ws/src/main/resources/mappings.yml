@@ -218,6 +218,8 @@ mappings:
       type: text
     - name: acCaption
       type: text
+    - name: filename
+      type: text
     - name: originalFilename
       type: text
     - name: fileExtension
