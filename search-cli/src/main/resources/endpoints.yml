@@ -51,6 +51,8 @@ indexSettings:
     optionalFields:
       material-sample:
         - hierarchy
+      storage-unit-usage:
+        - cellNumber
     reverseRelationships:
       - type: run-summary
         relationshipName: materialSample
