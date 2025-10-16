@@ -179,7 +179,7 @@ check_mapping_version(){
 
     local_mappings=$(jq -r '.mappings' < "$settings_file")
     # Extract local version from the settings file
-    local_version=$(echo "$local_mappings" | jq '._meta.version.number')
+    local_version=$(echo "$local_mappings" | jq -r '._meta.version.number')
 
     >&2 echo "Local version: $local_version"
     >&2 echo "Remote version: $remote_version"
