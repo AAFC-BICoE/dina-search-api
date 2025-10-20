@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit;
 
 import ca.gc.aafc.dina.search.cli.TestConstants;
 import ca.gc.aafc.dina.search.cli.config.HttpClientConfig;
+import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,10 +73,12 @@ public class OpenIDHttpClientRestTest {
     assertEquals("http://localhost:8082/api/v1/person",
         serviceEndpointProperties.getApiResourceDescriptorForType("person").url());
 
+    IndexSettingDescriptor personIndexSettingDescriptor = serviceEndpointProperties.getIndexSettingDescriptorForType("person");
     String dataFromPerson = 
             openIdClient.getDataFromUrl(
                 serviceEndpointProperties.getApiResourceDescriptorForType("person"),
-                serviceEndpointProperties.getIndexSettingDescriptorForType("person").relationships());
+                personIndexSettingDescriptor.relationships(),
+                personIndexSettingDescriptor.optionalFields());
 
     assertEquals(FAKE_RESPONSE_FAKE_RESPONSE, dataFromPerson);
   }

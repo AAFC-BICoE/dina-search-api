@@ -6,6 +6,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -24,13 +26,14 @@ public class CacheableApiAccess implements DinaApiAccess {
   }
 
   @Cacheable(cacheNames = CACHE_NAME)
-  public String getFromApi(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes, String objectId)
+  public String getFromApi(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes,
+                           Map<String, List<String>> optFields, String objectId)
       throws SearchApiException {
-    return client.getDataById(apiResourceDescriptor, includes, objectId);
+    return client.getDataById(apiResourceDescriptor, includes, optFields, objectId);
   }
 
   public String getFromApiByFilter(ApiResourceDescriptor apiResourceDescriptor,
-                            Set<String> includes, Pair<String, String> filter) throws SearchApiException {
-    return client.getDataByFilter(apiResourceDescriptor, includes, filter);
+                                   Set<String> includes, Map<String, List<String>> optFields, Pair<String, String> filter) throws SearchApiException {
+    return client.getDataByFilter(apiResourceDescriptor, includes, optFields, filter);
   }
 }

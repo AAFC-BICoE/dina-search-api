@@ -25,6 +25,8 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.junit.jupiter.Container;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -70,12 +72,14 @@ public class IndexableDocumentHandlerIT {
     IndexableDocumentHandler idh = new IndexableDocumentHandler(
         new DinaApiAccess() {
           @Override
-          public String getFromApi(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes, String objectId) throws SearchApiException {
+          public String getFromApi(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes,
+                                   Map<String, List<String>> optFields, String objectId) throws SearchApiException {
             return "";
           }
 
           @Override
-          public String getFromApiByFilter(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes, Pair<String, String> filter) throws SearchApiException {
+          public String getFromApiByFilter(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes,
+                                           Map<String, List<String>> optFields, Pair<String, String> filter) throws SearchApiException {
             return "";
           }
         },

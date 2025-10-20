@@ -14,6 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 
+import java.util.Map;
+
 @SpringBootTest(properties = { "spring.shell.interactive.enabled=false" })
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 public class OpenIDHttpClientTest {
@@ -31,7 +33,7 @@ public class OpenIDHttpClientTest {
     assertNotNull(openIdClient);
     Exception exception = Assertions.assertThrows(
       SearchApiException.class, () -> {
-        openIdClient.getDataFromUrl(null, null);
+        openIdClient.getDataFromUrl(null, null, null);
       });
     String expectedMessage = "Invalid endpoint descriptor, can not be null";
     assertEquals(expectedMessage, exception.getMessage());
@@ -48,7 +50,8 @@ public class OpenIDHttpClientTest {
         Assertions.assertThrows(
             SearchApiException.class, () -> {
               openIdClient.getDataFromUrl(serviceEndpointProperties.getApiResourceDescriptorForType("person"),
-                  serviceEndpointProperties.getIndexSettingDescriptorForType("person").relationships()
+                  serviceEndpointProperties.getIndexSettingDescriptorForType("person").relationships(),
+                  Map.of()
               );
             });
 

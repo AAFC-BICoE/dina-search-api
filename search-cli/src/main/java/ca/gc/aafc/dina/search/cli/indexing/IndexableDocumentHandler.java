@@ -21,6 +21,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -139,8 +140,9 @@ public class IndexableDocumentHandler {
 
         // Best effort processing for assembling of include section
         try {
+          IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
           String rawPayload = apiAccess.getFromApi(svcEndpointProps.getApiResourceDescriptorForType(type),
-              svcEndpointProps.getIndexSettingDescriptorForType(type).relationships(), curObjectId);
+              indexSettingDescriptor.relationships(), indexSettingDescriptor.optionalFields(), curObjectId);
           JsonNode document = OM.readTree(rawPayload);
           // Take the data.attributes section to be embedded
           Optional<JsonNode> dataObject = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
@@ -173,7 +175,7 @@ public class IndexableDocumentHandler {
         if (apiRd != null && apiRd.isEnabled(true)) {
           try {
             log.debug("Checking for reverse relationship type:{}, relationshipName:{}, id: {}", apiRd.type(),rr.relationshipName(), documentId);
-            String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Pair.of("filter[" + rr.relationshipName() + "]", documentId));
+            String rawPayload = apiAccess.getFromApiByFilter(apiRd, null, Map.of(), Pair.of("filter[" + rr.relationshipName() + "]", documentId));
 
             // this is expected to be an array
             JsonNode document = OM.readTree(rawPayload);

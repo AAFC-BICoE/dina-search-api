@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -119,7 +120,7 @@ public class DocumentManagerEmbeddedIT {
 
     // Here we register an endpoint for organization since this test assumes organization is an external relationship
     IndexSettingDescriptor organizationDescriptor = new IndexSettingDescriptor(TestConstants.AGENT_INDEX,
-        TestConstants.ORGANIZATION_TYPE, null, null, null);
+        TestConstants.ORGANIZATION_TYPE, null, null, null, null);
     serviceEndpointProperties.addEndpointDescriptor(organizationDescriptor);
 
     ApiResourceDescriptor apiResourceDescriptor = new ApiResourceDescriptor(TestConstants.ORGANIZATION_TYPE, "http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE, true);
@@ -241,11 +242,14 @@ public class DocumentManagerEmbeddedIT {
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
     assertEquals("", docFromElasticSearch.at("/included/0/attributes").asText());
 
+    IndexSettingDescriptor indexSettingDescriptor = serviceEndpointProperties.getIndexSettingDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE);
+
     // Validate that the API response is in the cache
     Cache cache = cacheManager.getCache(CacheableApiAccess.CACHE_NAME);
     Object objFromCache = cache.get(getCacheableApiAccessCacheKey(
         serviceEndpointProperties.getApiResourceDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
-        serviceEndpointProperties.getIndexSettingDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE).relationships(),
+        indexSettingDescriptor.relationships(),
+        indexSettingDescriptor.optionalFields(),
         EMBEDDED_DOCUMENT_INCLUDED_ID));
     assertNotNull(objFromCache);
   }
@@ -272,12 +276,13 @@ public class DocumentManagerEmbeddedIT {
    * @return
    */
   @SneakyThrows
-  public static String getCacheableApiAccessCacheKey(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes, String objectId) {
+  public static String getCacheableApiAccessCacheKey(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes,
+                                                     Map<String, List<String>> optFields, String objectId) {
     CacheConfiguration.MethodBasedKeyGenerator keyGen = new CacheConfiguration.MethodBasedKeyGenerator();
     // dummy instance only used to generate the key
     CacheableApiAccess cacheableApiAccess = new CacheableApiAccess(null);
-    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", ApiResourceDescriptor.class, Set.class, String.class),
-        apiResourceDescriptor, includes, objectId).toString();
+    return keyGen.generate(cacheableApiAccess, CacheableApiAccess.class.getMethod("getFromApi", ApiResourceDescriptor.class, Set.class, Map.class, String.class),
+        apiResourceDescriptor, includes, optFields, objectId).toString();
   }
 
 }
