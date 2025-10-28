@@ -86,8 +86,10 @@ indexSettings:
   - indexName: dina_loan_transaction_index
     type: transaction
     relationships:
-      - involvedAgents
       - materialSamples
+    optionalFields:
+      transaction:
+        - involvedAgents
 
   - indexName: dina_project_index
     type: project
