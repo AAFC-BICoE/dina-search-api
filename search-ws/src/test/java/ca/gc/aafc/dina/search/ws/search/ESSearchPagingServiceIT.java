@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -78,6 +80,13 @@ public class ESSearchPagingServiceIT extends ElasticSearchBackedTest {
     log.info("Cached request to page {} took: {}ms ({}x faster)",
         targetPage, cachedRequestDuration,
         (double) firstRequestDuration / cachedRequestDuration);
+
+    // Make sure that from is ignored
+    String filteredQueryWithFrom = "{\"from\": 50, \"query\":{\"match_all\": {}}, \"sort\": [{\"id\": \"asc\"}]}";
+
+    List<FieldValue> searchAfterWithFrom = esSearchPagingService.pagingToSearchAfter(filteredQueryWithFrom,
+        TEST_INDEX, targetPage, pageSize);
+    assertEquals(searchAfter.getFirst()._toJsonString(), searchAfterWithFrom.getFirst()._toJsonString(), "from should be ignored by pagingToSearchAfter");
   }
 
   @Test

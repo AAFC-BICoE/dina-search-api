@@ -106,6 +106,7 @@ public class ESSearchPagingService {
       SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
       searchBuilder.withJson(strReader)
           .size(pageSize)
+          .from(null) // Explicitly set from to null to remove it in case it was provided
           .index(indexName);
 
       if (CollectionUtils.isNotEmpty(currentSearchAfter)) {
