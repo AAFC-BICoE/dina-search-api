@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch._types.FieldValue;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Service;
 
@@ -49,14 +50,19 @@ public class QueryPageCachingService {
   /**
    * Store pageNumber/searchAfter in cache for specific query
    */
-  public void setSearchAfter(String queryHash, int pageNumber, List<FieldValue> searchAfter) {
-    if (searchAfter == null || searchAfter.isEmpty()) {
-      log.warn("Attempting to cache empty search_after values for page {}", pageNumber);
+  public void setSearchAfter(String queryHash, Pair<Integer, List<FieldValue>> searchAfter) {
+    if (searchAfter == null) {
+      log.warn("Attempting to cache null search_after");
       return;
     }
 
-    String cacheKey = getCacheKey(queryHash, pageNumber);
-    searchAfterCache.put(cacheKey, searchAfter);
+    if (searchAfter.getKey() == null || CollectionUtils.isEmpty(searchAfter.getValue())) {
+      log.warn("Attempting to cache empty search_after values for page {}", searchAfter.getKey());
+      return;
+    }
+
+    String cacheKey = getCacheKey(queryHash, searchAfter.getKey());
+    searchAfterCache.put(cacheKey, searchAfter.getValue());
   }
 
   /**

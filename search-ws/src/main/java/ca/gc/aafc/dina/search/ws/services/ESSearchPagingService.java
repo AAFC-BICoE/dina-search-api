@@ -108,7 +108,7 @@ public class ESSearchPagingService {
           .size(pageSize)
           .index(indexName);
 
-      if(CollectionUtils.isNotEmpty(currentSearchAfter)) {
+      if (CollectionUtils.isNotEmpty(currentSearchAfter)) {
         searchBuilder.searchAfter(currentSearchAfter);
       }
 
@@ -122,7 +122,7 @@ public class ESSearchPagingService {
       currentSearchAfter = lastHit.sort();
 
       // Cache this page
-      queryPageCachingService.setSearchAfter(queryHash, currentPage + 1, currentSearchAfter);
+      queryPageCachingService.setSearchAfter(queryHash, Pair.of(currentPage + 1, currentSearchAfter));
 
       log.debug("Iterated to page {}, cached cursor", currentPage + 1);
     }
