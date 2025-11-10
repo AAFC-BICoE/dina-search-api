@@ -107,6 +107,7 @@ public class ESSearchPagingService {
       searchBuilder.withJson(strReader)
           .size(pageSize)
           .from(null) // Explicitly set from to null to remove it in case it was provided
+          .source(s -> s.fetch(false)) // Disable _source retrieval - we only need sort values
           .index(indexName);
 
       if (CollectionUtils.isNotEmpty(currentSearchAfter)) {
