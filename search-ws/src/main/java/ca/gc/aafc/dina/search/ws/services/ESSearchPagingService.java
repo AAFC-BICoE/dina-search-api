@@ -10,6 +10,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -25,6 +26,7 @@ import java.util.List;
  * @see QueryPageCachingService
  */
 @Log4j2
+@Service
 public class ESSearchPagingService {
 
   private static final int MIN_PAGE_NUMBER = 1;
@@ -110,7 +112,7 @@ public class ESSearchPagingService {
         searchBuilder.searchAfter(currentSearchAfter);
       }
 
-      SearchResponse<?> response = client.search(searchBuilder.build(), String.class);
+      SearchResponse<?> response = client.search(searchBuilder.build(), Object.class);
       if (response.hits().hits().isEmpty()) {
         log.warn("No results found at page {}, stopping iteration", currentPage);
         return null;
