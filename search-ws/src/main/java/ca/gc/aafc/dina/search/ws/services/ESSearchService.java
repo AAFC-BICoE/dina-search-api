@@ -167,7 +167,7 @@ public class ESSearchService implements SearchService {
   @Override
   public String search(String indexName, String queryJson) throws SearchApiException {
 
-    try (Reader strReader = new StringReader(queryJson)){
+    try (Reader strReader = new StringReader(queryJson)) {
       SearchRequest sr = SearchRequest.of(b -> b
           .withJson(strReader).index(indexName));
 
