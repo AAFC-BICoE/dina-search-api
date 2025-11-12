@@ -1,8 +1,11 @@
 package ca.gc.aafc.dina.search.ws.search;
 
 import ca.gc.aafc.dina.search.ws.container.DinaElasticSearchContainer;
+import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.ESSearchPagingService;
+import ca.gc.aafc.dina.search.ws.services.ESSearchService;
 import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch.core.SearchResponse;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,11 +17,12 @@ import org.testcontainers.junit.jupiter.Container;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -33,6 +37,9 @@ public class ESSearchPagingServiceIT extends ElasticSearchBackedTest {
 
   @Inject
   private ESSearchPagingService esSearchPagingService;
+
+  @Inject
+  private ESSearchService esSearchService;
 
   @Container
   private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
@@ -91,13 +98,24 @@ public class ESSearchPagingServiceIT extends ElasticSearchBackedTest {
 
   @Test
   @DisplayName("Should handle sequential page navigation")
-  void testSequentialPageNavigation() throws IOException {
+  void testSequentialPageNavigation() throws IOException, SearchApiException {
     String queryJson = "{\"query\": {\"match_all\": {}}, \"sort\": [{\"id\": \"asc\"}]}";
+    List<String> allDocumentIds = new ArrayList<>();
+
     int pageSize = 20;
+    // Calculate expected number of pages
+    int expectedPages = (int) Math.ceil((double) TEST_DOCUMENT_COUNT / pageSize);
 
     List<FieldValue> previousSearchAfter = null;
 
-    for (int page = 2; page <= 5; page++) {
+    // add page 1
+    SearchResponse<?> response = esSearchService.executeSearch(TEST_INDEX, queryJson, pageSize, null);
+    // Collect document IDs for this page
+    for (var hit : response.hits().hits()) {
+      allDocumentIds.add(hit.id());
+    }
+
+    for (int page = 2; page <= expectedPages; page++) {
       List<FieldValue> searchAfter = esSearchPagingService.pagingToSearchAfter(
           queryJson, TEST_INDEX, page, pageSize);
 
@@ -109,9 +127,30 @@ public class ESSearchPagingServiceIT extends ElasticSearchBackedTest {
             "Page " + page + " should have different cursor than page " + (page - 1));
       }
 
+      response = esSearchService.executeSearch(TEST_INDEX, queryJson, pageSize, searchAfter);
+      // Collect document IDs for this page
+      for (var hit : response.hits().hits()) {
+        allDocumentIds.add(hit.id());
+      }
+
       previousSearchAfter = searchAfter;
       log.info("Page {} search_after retrieved: {}", page, searchAfter);
     }
+
+
+    assertEquals(TEST_DOCUMENT_COUNT, allDocumentIds.size());
+
+    // Verify documents are in correct order (sorted by id)
+    List<String> sortedIds = allDocumentIds.stream()
+        .sorted(Comparator.comparingInt(this::extractNumericId))
+        .collect(Collectors.toList());
+
+    assertEquals(sortedIds, allDocumentIds,
+        "Documents should be retrieved in sorted order by id");
+  }
+
+  private int extractNumericId(String documentId) {
+    return Integer.parseInt(documentId.replaceAll("\\D+", ""));
   }
 
   @Test

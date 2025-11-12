@@ -5,3 +5,9 @@ elasticsearch:
   port: 9200
 keycloak:
   enabled: false
+logging:
+  level:
+    org:
+      elasticsearch:
+        client:
+          RestClient: ERROR

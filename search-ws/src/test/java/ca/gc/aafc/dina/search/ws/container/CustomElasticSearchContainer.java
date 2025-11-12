@@ -21,6 +21,9 @@ public class CustomElasticSearchContainer extends GenericContainer<CustomElastic
 
     this.addExposedPorts(9200, 9300);
     withEnv("discovery.type", "single-node");
+    withEnv("xpack.security.enabled", "false");
+    // Suppress security warnings
+    withEnv("logger.org.elasticsearch.xpack.security", "error");
     setWaitStrategy((new HttpWaitStrategy()).forPort(9200)
             .forStatusCodeMatching((response) -> response == 200 || response == 401)
             .withStartupTimeout(Duration.ofMinutes(2L)));
