@@ -229,6 +229,7 @@ public class ESSearchService implements SearchService {
         searchBuilder.size(pageSize);
       }
       if (CollectionUtils.isNotEmpty(searchAfter)) {
+        searchBuilder.from(null); // Explicitly set from to null to remove it in case it was provided
         searchBuilder.searchAfter(searchAfter);
       }
 

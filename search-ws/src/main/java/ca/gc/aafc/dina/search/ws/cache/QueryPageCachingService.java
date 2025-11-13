@@ -92,16 +92,16 @@ public class QueryPageCachingService {
   /**
    * Invalidate all cache entries for a specific query
    */
-//  public void invalidateQueryCache(String queryHash) {
-//    log.info("Invalidating cache for query: {}", queryHash);
-//
-//    cursorCache.asMap().keySet().stream()
-//        .filter(key -> key.startsWith(queryHash + ":"))
-//        .forEach(key -> {
-//          cursorCache.invalidate(key);
-//          log.debug("Invalidated cache key: {}", key);
-//        });
-//  }
+  public void invalidateQueryCache(String queryHash) {
+    log.info("Invalidating cache for query: {}", queryHash);
+
+    searchAfterCache.asMap().keySet().stream()
+        .filter(key -> key.startsWith(queryHash + ":"))
+        .forEach(key -> {
+          searchAfterCache.invalidate(key);
+          log.debug("Invalidated cache key: {}", key);
+        });
+  }
 
   /**
    * Clear all cache
