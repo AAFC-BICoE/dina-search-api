@@ -227,6 +227,8 @@ mappings:
     - name: fileExtension
       type: text
       distinctTermAgg: true
+    - name: sourceSet
+      type: text
     - name: createdOn
       type: date
       dateSubtype: DATE_TIME
