@@ -51,8 +51,7 @@
     <spring-framework.version>5.3.39</spring-framework.version>
     <snakeyaml.version>1.33</snakeyaml.version>
     <jackson-bom.version>2.15.4</jackson-bom.version>
-    <tomcat.version>9.0.106</tomcat.version>
-
+    <tomcat.version>9.0.109</tomcat.version>
   </properties>
 
   <!-- Common sub module dependencies -->
