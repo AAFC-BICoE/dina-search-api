@@ -50,7 +50,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
 
   @BeforeEach
-  private void beforeEach() {
+  public void beforeEach() {
     ELASTICSEARCH_CONTAINER.start();
 
     // configuration of the sear-ws will expect 9200
@@ -61,7 +61,7 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   }
 
   @AfterEach
-  private void afterEach() {
+  public void afterEach() {
     ELASTICSEARCH_CONTAINER.stop();
   }
 

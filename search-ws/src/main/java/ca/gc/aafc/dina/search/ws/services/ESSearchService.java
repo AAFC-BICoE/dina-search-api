@@ -6,6 +6,7 @@ import ca.gc.aafc.dina.search.ws.config.MappingObjectAttributes;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
@@ -50,18 +51,25 @@ public class ESSearchService implements SearchService {
   private static final String ID_FIELD = "data.id";
   private static final String TYPE_FIELD = "data.type";
   private static final String GROUP_FIELD = "data.attributes.group.keyword"; //use the keyword version since we do a term filter
+  private static final int MAX_RESULT_WINDOW = 10_000;
+
+  private static final int DEFAULT_PAGE_SIZE = 20;
+  private static final int MAX_PAGE_SIZE = 5000;
 
   private final ElasticsearchClient client;
   private final JsonpMapper jsonpMapper;
 
+  private final ESSearchPagingService esSearchPagingService;
   private final LoadingCache<String, Optional<String>> aliasCache;
 
   @Autowired
   private MappingObjectAttributes mappingObjectAttributes;
   
-  public ESSearchService(@Autowired ElasticsearchClient client) {
+  public ESSearchService(@Autowired ElasticsearchClient client,
+                         ESSearchPagingService esSearchPagingService) {
     this.client = client;
     this.jsonpMapper = client._jsonpMapper();
+    this.esSearchPagingService = esSearchPagingService;
 
     aliasCache = Caffeine.newBuilder()
         .maximumSize(10)
@@ -140,20 +148,93 @@ public class ESSearchService implements SearchService {
     }
   }
 
+  /**
+   * Executes a search query and returns results as a JSON string.
+   *
+   * <p>Parses the query JSON, validates pagination parameters, and automatically switches to
+   * cursor-based pagination when the result window exceeds the maximum allowed offset. Returns
+   * the search response serialized as JSON.</p>
+   *
+   * @param indexName the target Elasticsearch index name; must not be null or empty
+   * @param queryJson the search query in JSON format; must not be null or empty.
+   *                  May contain {@code from} and {@code size} parameters for pagination
+   *
+   * @return the search response as a JSON string
+   *
+   * @throws SearchApiException if pagination parameters are invalid, search execution fails,
+   *                            or response serialization fails
+   */
   @Override
   public String search(String indexName, String queryJson) throws SearchApiException {
-    try {
-      Reader strReader = new StringReader(queryJson);
-      SearchRequest sr = SearchRequest.of(b -> b
-              .withJson(strReader).index(indexName));
 
-      SearchResponse<?> response = client.search(sr, JsonNode.class);
+    try (Reader strReader = new StringReader(queryJson)) {
+      SearchRequest sr = SearchRequest.of(b -> b
+          .withJson(strReader).index(indexName));
+
+      // Validate pagination parameters (if any)
+      Integer from = sr.from();
+      Integer pageSize = sr.size() != null ? sr.size() : DEFAULT_PAGE_SIZE;
+      if (pageSize <= 0 || pageSize > MAX_PAGE_SIZE) {
+        throw new SearchApiException("Invalid page size: " + pageSize +
+            ". Must be between 1 and " + MAX_PAGE_SIZE);
+      }
+
+      // Check if we are about to hit deep paging limitation
+      List<FieldValue> searchAfter = null;
+      if (from != null && from * pageSize >= MAX_RESULT_WINDOW) {
+
+        if (from % pageSize != 0) {
+          throw new SearchApiException("Invalid pagination: 'from' must be a multiple of 'size' for cursor-based pagination.");
+        }
+
+        int pageNumber = (from / pageSize) + 1; // Convert from to page number
+        log.debug("Using cursor pagination for from={}, converting to page={}", from, pageNumber);
+        searchAfter = esSearchPagingService.pagingToSearchAfter(queryJson, indexName, pageNumber, pageSize);
+      }
+
+      SearchResponse<?> response = executeSearch(indexName, queryJson, pageSize, searchAfter);
       StringWriter writer = new StringWriter();
       try (JsonGenerator generator = jsonpMapper.jsonProvider().createGenerator(writer)) {
         jsonpMapper.serialize(response, generator);
       }
       return writer.toString();
     } catch (IOException | ElasticsearchException | JsonpMappingException e) {
+      throw new SearchApiException("Error during search processing", e);
+    }
+  }
+
+  /**
+   * Executes an Elasticsearch search request with optional cursor-based pagination.
+   *
+   * <p>Constructs and executes a search query against the specified index. Supports cursor-based
+   * pagination via {@code searchAfter} for efficient navigation of large result sets.</p>
+   *
+   * @param indexName the target Elasticsearch index name; must not be null or empty
+   * @param queryJson the search query in JSON format; must not be null or empty
+   * @param pageSize maximum number of documents to return; if null, Elasticsearch default is used
+   * @param searchAfter the sort values from the previous page for cursor-based pagination;
+   *                    null for the first page
+   *
+   * @return the search response containing matching documents and metadata
+   *
+   * @throws SearchApiException if the search execution fails
+   */
+  public SearchResponse<JsonNode> executeSearch(String indexName, String queryJson, Integer pageSize, List<FieldValue> searchAfter) throws SearchApiException {
+    try (Reader strReader = new StringReader(queryJson)) {
+      SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
+      searchBuilder.withJson(strReader)
+          .index(indexName);
+
+      if (pageSize != null) {
+        searchBuilder.size(pageSize);
+      }
+      if (CollectionUtils.isNotEmpty(searchAfter)) {
+        searchBuilder.from(null); // Explicitly set from to null to remove it in case it was provided
+        searchBuilder.searchAfter(searchAfter);
+      }
+
+      return client.search(searchBuilder.build(), JsonNode.class);
+    } catch (IOException | ElasticsearchException e) {
       throw new SearchApiException("Error during search processing", e);
     }
   }
