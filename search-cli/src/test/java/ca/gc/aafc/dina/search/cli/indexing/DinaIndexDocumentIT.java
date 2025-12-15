@@ -1,26 +1,23 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.search.cli.TestConstants;
+import ca.gc.aafc.dina.search.cli.containers.ElasticSearchContainerInitializer;
+import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
+import ca.gc.aafc.dina.search.config.ElasticSearchConfig;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils;
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.junit.jupiter.Container;
-
-import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
-import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
-
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import org.springframework.test.context.ContextConfiguration;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -29,9 +26,9 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
 
-import ca.gc.aafc.dina.testsupport.elasticsearch.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+@ContextConfiguration(initializers = { ElasticSearchContainerInitializer.class })
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 public class DinaIndexDocumentIT {
@@ -49,24 +46,11 @@ public class DinaIndexDocumentIT {
   @Autowired
   private DocumentIndexer documentIndexer;
 
+  /**
+   * Created by {@link ElasticSearchConfig}
+   */
   @Autowired
   private ElasticsearchClient client;
-
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
-
-  @BeforeAll
-  static void beforeAll() {
-    ELASTICSEARCH_CONTAINER.start();
-
-    assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
-    assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
-  }
-
-  @AfterAll
-  static void afterAll() {
-    ELASTICSEARCH_CONTAINER.stop();
-  }
 
   /**
    * ES mapping detection will try to guess the type of mapping based on sample data.
@@ -78,6 +62,10 @@ public class DinaIndexDocumentIT {
    */
   @Test
   public void indexDocumentTestDataMappingDetection() throws IOException, URISyntaxException, SearchApiException {
+
+    boolean response = client.ping().value();
+    System.out.println("Elasticsearch connection acknowledged: " + response);
+
     // For testing, we will be using the agent index where we set "date_detection": false
     ElasticSearchTestUtils.createIndex(client, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
 

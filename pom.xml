@@ -29,7 +29,7 @@
 
     <jakarta.json.version>2.0.1</jakarta.json.version>
     <apache.commons.collections4.version>4.4</apache.commons.collections4.version>
-    <dina-base-api.version>0.150</dina-base-api.version>
+    <dina-base-api.version>0.157-SNAPSHOT</dina-base-api.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.4.0</maven-checkstyle-plugin.version>
@@ -44,7 +44,7 @@
     <lombok.version>1.18.30</lombok.version>
     <lombok-maven-plugin.version>1.18.20.0</lombok-maven-plugin.version>
 
-    <testcontainers.version>1.16.2</testcontainers.version>
+    <testcontainers.version>1.17.6</testcontainers.version>
     <json-path.version>2.7.0</json-path.version>
 
     <!-- versions override-->
@@ -69,6 +69,12 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-log4j2</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.elasticsearch.client</groupId>
+      <artifactId>elasticsearch-rest-client</artifactId>
+      <version>8.19.8</version>
     </dependency>
 
     <!--Util -->
