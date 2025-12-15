@@ -14,6 +14,9 @@ import java.util.Optional;
 
 public class ElasticSearchContainerInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
+  private static final String CLUSTER_NAME = "cluster_name";
+  private static final String ELASTIC_SEARCH = "elasticsearch";
+
   private static ElasticsearchContainer esContainer = null;
   private static final String ES_TEST_USERNAME = "elastic";
   private static final String ES_TEST_PASSWORD = "s3cretPassword";
@@ -25,6 +28,7 @@ public class ElasticSearchContainerInitializer implements ApplicationContextInit
       if(esContainer == null) {
         esContainer = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:8.19.8")
             .withPassword(ES_TEST_PASSWORD)
+            .withEnv(CLUSTER_NAME, ELASTIC_SEARCH)
             .waitingFor(Wait.forLogMessage(".*started.*", 1));
       }
 

@@ -44,7 +44,7 @@
     <lombok.version>1.18.30</lombok.version>
     <lombok-maven-plugin.version>1.18.20.0</lombok-maven-plugin.version>
 
-    <testcontainers.version>1.17.6</testcontainers.version>
+    <testcontainers.version>1.19.8</testcontainers.version>
     <json-path.version>2.7.0</json-path.version>
 
     <!-- versions override-->
