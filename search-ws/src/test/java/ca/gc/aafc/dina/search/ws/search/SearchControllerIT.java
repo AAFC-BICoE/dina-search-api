@@ -30,7 +30,7 @@ public class SearchControllerIT extends ElasticSearchBackedTest {
   private MockMvc mvc;
 
   @BeforeEach
-  private void beforeEach() {
+  void beforeEach() {
     ELASTICSEARCH_CONTAINER.start();
 
     // configuration of the sear-ws will expect 9200
@@ -39,7 +39,7 @@ public class SearchControllerIT extends ElasticSearchBackedTest {
   }
 
   @AfterEach
-  private void afterEach() {
+  void afterEach() {
     ELASTICSEARCH_CONTAINER.stop();
   }
 

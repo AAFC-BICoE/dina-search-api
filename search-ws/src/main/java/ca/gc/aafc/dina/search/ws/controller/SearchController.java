@@ -17,6 +17,7 @@ import ca.gc.aafc.dina.search.ws.services.SearchService;
 
 import lombok.extern.log4j.Log4j2;
 
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
 
@@ -72,7 +73,9 @@ public class SearchController {
     try {
       validateHtmlSafe(query);
       validateAlphanumericInputs(indexName);
-      return new ResponseEntity<>(searchService.search(indexName, query), HttpStatus.ACCEPTED);
+
+      String[] indices = StringUtils.split(indexName, ',');
+      return new ResponseEntity<>(searchService.search(Arrays.asList(indices), query), HttpStatus.ACCEPTED);
     } catch (SearchApiException e) {
       log.error("SearchApiException cause {}", e.getCause().getMessage());
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);

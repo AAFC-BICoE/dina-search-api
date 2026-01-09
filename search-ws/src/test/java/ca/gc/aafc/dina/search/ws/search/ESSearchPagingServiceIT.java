@@ -109,7 +109,7 @@ public class ESSearchPagingServiceIT extends ElasticSearchBackedTest {
     List<FieldValue> previousSearchAfter = null;
 
     // add page 1
-    SearchResponse<?> response = esSearchService.executeSearch(TEST_INDEX, queryJson, pageSize, null);
+    SearchResponse<?> response = esSearchService.executeSearch(List.of(TEST_INDEX), queryJson, pageSize, null);
     // Collect document IDs for this page
     for (var hit : response.hits().hits()) {
       allDocumentIds.add(hit.id());
@@ -127,7 +127,7 @@ public class ESSearchPagingServiceIT extends ElasticSearchBackedTest {
             "Page " + page + " should have different cursor than page " + (page - 1));
       }
 
-      response = esSearchService.executeSearch(TEST_INDEX, queryJson, pageSize, searchAfter);
+      response = esSearchService.executeSearch(List.of(TEST_INDEX), queryJson, pageSize, searchAfter);
       // Collect document IDs for this page
       for (var hit : response.hits().hits()) {
         allDocumentIds.add(hit.id());

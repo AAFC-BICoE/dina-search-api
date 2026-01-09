@@ -148,6 +148,11 @@ public class ESSearchService implements SearchService {
     }
   }
 
+  @Override
+  public String search(String index, String queryJson) throws SearchApiException {
+    return search(List.of(index), queryJson);
+  }
+
   /**
    * Executes a search query and returns results as a JSON string.
    *
@@ -155,7 +160,7 @@ public class ESSearchService implements SearchService {
    * cursor-based pagination when the result window exceeds the maximum allowed offset. Returns
    * the search response serialized as JSON.</p>
    *
-   * @param indexName the target Elasticsearch index name; must not be null or empty
+   * @param indices the target Elasticsearch index name; must not be null or empty
    * @param queryJson the search query in JSON format; must not be null or empty.
    *                  May contain {@code from} and {@code size} parameters for pagination
    *
@@ -165,11 +170,11 @@ public class ESSearchService implements SearchService {
    *                            or response serialization fails
    */
   @Override
-  public String search(String indexName, String queryJson) throws SearchApiException {
+  public String search(List<String> indices, String queryJson) throws SearchApiException {
 
     try (Reader strReader = new StringReader(queryJson)) {
       SearchRequest sr = SearchRequest.of(b -> b
-          .withJson(strReader).index(indexName));
+          .withJson(strReader).index(indices));
 
       // Validate pagination parameters (if any)
       Integer from = sr.from();
@@ -187,12 +192,16 @@ public class ESSearchService implements SearchService {
           throw new SearchApiException("Invalid pagination: 'from' must be a multiple of 'size' for cursor-based pagination.");
         }
 
+        if (indices.size() > 1) {
+          throw new SearchApiException("Invalid pagination: 'can't page on multiple index.");
+        }
+
         int pageNumber = (from / pageSize) + 1; // Convert from to page number
         log.debug("Using cursor pagination for from={}, converting to page={}", from, pageNumber);
-        searchAfter = esSearchPagingService.pagingToSearchAfter(queryJson, indexName, pageNumber, pageSize);
+        searchAfter = esSearchPagingService.pagingToSearchAfter(queryJson, indices.getFirst(), pageNumber, pageSize);
       }
 
-      SearchResponse<?> response = executeSearch(indexName, queryJson, pageSize, searchAfter);
+      SearchResponse<?> response = executeSearch(indices, queryJson, pageSize, searchAfter);
       StringWriter writer = new StringWriter();
       try (JsonGenerator generator = jsonpMapper.jsonProvider().createGenerator(writer)) {
         jsonpMapper.serialize(response, generator);
@@ -209,7 +218,7 @@ public class ESSearchService implements SearchService {
    * <p>Constructs and executes a search query against the specified index. Supports cursor-based
    * pagination via {@code searchAfter} for efficient navigation of large result sets.</p>
    *
-   * @param indexName the target Elasticsearch index name; must not be null or empty
+   * @param indexNames the target Elasticsearch index name; must not be null or empty
    * @param queryJson the search query in JSON format; must not be null or empty
    * @param pageSize maximum number of documents to return; if null, Elasticsearch default is used
    * @param searchAfter the sort values from the previous page for cursor-based pagination;
@@ -219,11 +228,11 @@ public class ESSearchService implements SearchService {
    *
    * @throws SearchApiException if the search execution fails
    */
-  public SearchResponse<JsonNode> executeSearch(String indexName, String queryJson, Integer pageSize, List<FieldValue> searchAfter) throws SearchApiException {
+  public SearchResponse<JsonNode> executeSearch(List<String> indexNames, String queryJson, Integer pageSize, List<FieldValue> searchAfter) throws SearchApiException {
     try (Reader strReader = new StringReader(queryJson)) {
       SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
       searchBuilder.withJson(strReader)
-          .index(indexName);
+          .index(indexNames);
 
       if (pageSize != null) {
         searchBuilder.size(pageSize);
