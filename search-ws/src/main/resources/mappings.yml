@@ -83,6 +83,8 @@ mappings:
       type: text
     - name: dwcRecordNumber
       type: text
+    - name: dwcFieldNumber
+      type: text
     - name: startEventDateTime
       type: date
       dateSubtype: LOCAL_DATE_TIME
