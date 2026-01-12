@@ -2,6 +2,7 @@ package ca.gc.aafc.dina.search.ws.controller;
 
 import ca.gc.aafc.dina.security.TextHtmlSanitizer;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.safety.Safelist;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,7 @@ import java.util.regex.Pattern;
 @RequestMapping(value = "/search-ws", produces = "application/json")
 public class SearchController {
 
-  private static final Pattern ALPHA_NUM_PATTERN = Pattern.compile("^[-.\\w]*$");
+  private static final Pattern ALPHA_NUM_PATTERN = Pattern.compile("^[-.,\\w]*$");
 
   private final SearchService searchService;
 
@@ -77,7 +78,7 @@ public class SearchController {
       String[] indices = StringUtils.split(indexName, ',');
       return new ResponseEntity<>(searchService.search(Arrays.asList(indices), query), HttpStatus.ACCEPTED);
     } catch (SearchApiException e) {
-      log.error("SearchApiException cause {}", e.getCause().getMessage());
+      log.error("SearchApiException cause {}", e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
   }
@@ -105,7 +106,7 @@ public class SearchController {
   }
 
   public static void validateHtmlSafe(String input) throws SearchApiException {
-    if (!TextHtmlSanitizer.isSafeText(input)) {
+    if (!TextHtmlSanitizer.isSafeText(input, Safelist.basic(), false)) {
       throw new SearchApiException("invalid input");
     }
   }

@@ -47,7 +47,7 @@ public class ESSearchPagingServiceIT extends ElasticSearchBackedTest {
   @BeforeEach
   public void beforeEach() throws IOException {
     ELASTICSEARCH_CONTAINER.start();
-    createTestIndex();
+    createTestIndex(TEST_INDEX);
     populateTestData();
   }
 
@@ -167,20 +167,6 @@ public class ESSearchPagingServiceIT extends ElasticSearchBackedTest {
     // If not, searchAfter might be null (fewer than 2 pages of results)
     log.info("Filtered query page 2 search_after: {}", searchAfter);
     assertNotNull(searchAfter, "Page 2 should return search_after");
-  }
-
-  private void createTestIndex() throws IOException {
-    client.indices().create(c -> c
-        .index(TEST_INDEX)
-        .mappings(m -> m
-            .properties("id", p -> p.keyword(k -> k))
-            .properties("title", p -> p.text(t -> t))
-            .properties("status", p -> p.keyword(k -> k))
-            .properties("timestamp", p -> p.date(d -> d))
-        )
-    );
-
-    log.info("Test index '{}' created", TEST_INDEX);
   }
 
   private void populateTestData() throws IOException {
