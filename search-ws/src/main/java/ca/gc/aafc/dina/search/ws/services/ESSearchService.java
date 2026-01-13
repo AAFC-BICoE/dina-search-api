@@ -179,9 +179,9 @@ public class ESSearchService implements SearchService {
       // Validate pagination parameters (if any)
       Integer from = sr.from();
       Integer pageSize = sr.size() != null ? sr.size() : DEFAULT_PAGE_SIZE;
-      if (pageSize <= 0 || pageSize > MAX_PAGE_SIZE) {
+      if (pageSize < 0 || pageSize > MAX_PAGE_SIZE) {
         throw new SearchApiException("Invalid page size: " + pageSize +
-            ". Must be between 1 and " + MAX_PAGE_SIZE);
+            ". Must be between 0 and " + MAX_PAGE_SIZE);
       }
 
       // Check if we are about to hit deep paging limitation

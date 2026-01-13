@@ -69,36 +69,55 @@ public class SearchControllerIT extends ElasticSearchBackedTest {
     createTestIndex("index_search_controller_it");
 
     String esQuery = """
-          {
-            "query": {
-            "multi_match": {
-              "query": "science",
-              "lenient": true
-            }
+    {
+      "size": 0,
+      "query": {
+        "multi_match": {
+          "query": "science",
+          "fields": [
+            "data.attributes.*"
+          ],
+          "lenient": true
+        }
+      },
+      "aggs": {
+        "index_counts": {
+          "terms": {
+            "field": "_index",
+            "size": 100
           },
           "aggs": {
-            "index_counts": {
-              "terms": {
-                "field": "_index",
-                    "size": 100
-              },
-              "aggs": {
-                "top_results": {
-                  "top_hits": {
-                    "size": 10,
-                    "highlight": {
-                      "order": "score",
-                      "pre_tags": ["<em>"],
-                      "post_tags": ["</em>"],
-                      "fields": {"data.attributes.*": {}},
-                      "require_field_match": false
-                    }
-                  }
+            "top_results": {
+              "top_hits": {
+                "size": 10,
+                "_source": {
+                  "includes": [
+                    "data.id",
+                    "data.type",
+                    "data.attributes.name",
+                    "data.attributes.displayName",
+                    "data.attributes.materialSampleName"
+                  ]
+                },
+                "highlight": {
+                  "order": "score",
+                  "pre_tags": [
+                    "<em>"
+                  ],
+                  "post_tags": [
+                    "</em>"
+                  ],
+                  "fields": {
+                    "data.attributes.*": {}
+                  },
+                  "require_field_match": false
                 }
               }
             }
           }
-        }""";
+        }
+      }
+    }""";
 
     String response = mvc.perform(post("/search-ws/search?indexName=" + TestConstants.MATERIAL_SAMPLE_INDEX
             + ",index_search_controller_it")
