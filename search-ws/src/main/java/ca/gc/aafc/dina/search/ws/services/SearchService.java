@@ -2,6 +2,8 @@ package ca.gc.aafc.dina.search.ws.services;
 
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 
+import java.util.List;
+
 public interface SearchService {
 
   /**
@@ -49,14 +51,16 @@ public interface SearchService {
    * Search will take the provided json text query and forward it to the configured
    * elasticsearch search API.
    *  
-   * @param indexName Index name to use for the search.
-   * @param query JSOn query to forward to the elasticsearch API.
+   * @param indices Index name to use for the search.
+   * @param query JSON query to forward to the elasticsearch API.
    * 
    * @return JSOn return from the elasticsearch query
    * @throws SearchApiException in case of connectivity issues and/or malformed queries.
    * 
    */
-  String search(String indexName, String query) throws SearchApiException;
+  String search(List<String> indices, String query) throws SearchApiException;
+
+  String search(String indexNames, String query) throws SearchApiException;
 
   /**
    * count takes the provided json text query and forward it to the configured API to get a document count.
