@@ -9,6 +9,7 @@ import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.HttpEntity;
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Based class for ElasticSearch backed tests
  */
+@Log4j2
 public abstract class ElasticSearchBackedTest {
 
   protected static final ObjectMapper OM = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -145,6 +147,25 @@ public abstract class ElasticSearchBackedTest {
       nCount++;
     }
     return foundDocument;
+  }
+
+  /**
+   * Create a minimal index for testing purpose
+   * @param indexName
+   * @throws IOException
+   */
+  protected void createTestIndex(String indexName) throws IOException {
+    client.indices().create(c -> c
+        .index(indexName)
+        .mappings(m -> m
+            .properties("id", p -> p.keyword(k -> k))
+            .properties("title", p -> p.text(t -> t))
+            .properties("status", p -> p.keyword(k -> k))
+            .properties("timestamp", p -> p.date(d -> d))
+        )
+    );
+
+    log.info("Test index '{}' created", indexName);
   }
 
 }
