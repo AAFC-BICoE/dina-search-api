@@ -1,9 +1,9 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import ca.gc.aafc.dina.search.ws.container.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.ESSearchPagingService;
 import ca.gc.aafc.dina.search.ws.services.ESSearchService;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializer;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import lombok.extern.log4j.Log4j2;
@@ -12,8 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.ContextConfiguration;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -30,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @Log4j2
 @SpringBootTest
+@ContextConfiguration(initializers = { ElasticSearchContainerInitializer.class })
 public class ESSearchPagingServiceIT extends ElasticSearchBackedTest {
 
   private static final String TEST_INDEX = "test-documents";
@@ -41,19 +41,15 @@ public class ESSearchPagingServiceIT extends ElasticSearchBackedTest {
   @Inject
   private ESSearchService esSearchService;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
-
   @BeforeEach
   public void beforeEach() throws IOException {
-    ELASTICSEARCH_CONTAINER.start();
     createTestIndex(TEST_INDEX);
     populateTestData();
   }
 
   @AfterEach
-  public void afterEach() {
-    ELASTICSEARCH_CONTAINER.stop();
+  public void afterEach() throws IOException {
+    dropIndex(TEST_INDEX);
   }
 
   @Test

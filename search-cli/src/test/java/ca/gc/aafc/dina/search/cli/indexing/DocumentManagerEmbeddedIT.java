@@ -5,7 +5,6 @@ import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.CacheConfiguration;
 import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
-import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.CacheableApiAccess;
 import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
@@ -17,8 +16,6 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,8 +31,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.ContextConfiguration;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -49,6 +45,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 import ca.gc.aafc.dina.testsupport.elasticsearch.*;
 
+@ContextConfiguration(initializers = { ElasticSearchContainerInitializer.class })
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 @ExtendWith(MockServerExtension.class) 
@@ -57,9 +54,6 @@ public class DocumentManagerEmbeddedIT {
 
   private static final String EMBEDDED_ORG_NAME = "Integration";
   private static final String EMBEDDED_ORG_NAME_AFTER_UPDATE = "Integration Updated";
-
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
 
   private ClientAndServer client;
 
@@ -93,19 +87,6 @@ public class DocumentManagerEmbeddedIT {
   // Organization document
   private static final Path EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH = Path.of("src/test/resources/get_updated_organization_embedded_response.json");
 
-  @BeforeAll
-  static void beforeAll() {
-    ELASTICSEARCH_CONTAINER.start();
-
-    assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
-    assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
-  }
-
-  @AfterAll
-  static void afterAll() {
-    ELASTICSEARCH_CONTAINER.stop();
-  }
-
   @BeforeEach
   public void beforeEachLifecycleMethod(ClientAndServer clientAndServer) {
     this.client = clientAndServer;
@@ -138,7 +119,8 @@ public class DocumentManagerEmbeddedIT {
         EMBEDDED_DOCUMENT_INCLUDED_ID, List.of(), EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH);
 
     // For testing, we will be using the agent index.
-    ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
+    ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE,
+        ElasticSearchTestUtils.ActionOnExists.IGNORE);
 
     // Agent index can be skipped since it already has been added above.
     Set<String> indices = serviceEndpointProperties
@@ -258,7 +240,9 @@ public class DocumentManagerEmbeddedIT {
     indices.forEach(indexName -> {
       // Create the indices in elastic search.
       try {
-        elasticSearchClient.indices().create(c -> c.index(indexName.trim()));
+        if(!elasticSearchClient.indices().exists( b -> b.index(indexName.trim())).value()) {
+          elasticSearchClient.indices().create(c -> c.index(indexName.trim()));
+        }
       } catch (ElasticsearchException e) {
         fail(e);
         e.printStackTrace();

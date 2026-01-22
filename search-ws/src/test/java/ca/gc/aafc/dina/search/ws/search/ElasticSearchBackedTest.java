@@ -1,29 +1,20 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
+import co.elastic.clients.elasticsearch.indices.ExistsRequest;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,17 +30,6 @@ public abstract class ElasticSearchBackedTest {
 
   @Autowired
   protected ElasticsearchClient client;
-
-  @Autowired
-  protected RestTemplateBuilder builder;
-
-  public static HttpHeaders buildJsonHeaders() {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
-  }
 
   @SuppressWarnings("unchecked")
   public static Map<String, Object> retrieveJSONObject(String documentName) {
@@ -69,17 +49,6 @@ public abstract class ElasticSearchBackedTest {
     return null;
   }
 
-  protected void sendMapping(String mappingJsonFile, String esHttpHostAddress, String indexName) throws IOException, URISyntaxException {
-    String esSettings = TestResourceHelper
-            .readContentAsString(mappingJsonFile);
-
-    URI uri = new URI("http://" + esHttpHostAddress + "/" + indexName);
-
-    HttpEntity<?> entity = new HttpEntity<>(esSettings, buildJsonHeaders());
-    RestTemplate restTemplate = builder.build();
-    restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class);
-  }
-
   static String buildMatchQueryString(String field, String value) {
     return String.format("""
         {"query": {
@@ -94,6 +63,13 @@ public abstract class ElasticSearchBackedTest {
             "prefix" : { "%s" : "%s" }
           }
         }""", field, prefix);
+  }
+
+  protected void deleteIndexIfExists(String indexName) throws IOException {
+    ExistsRequest e = ExistsRequest.of(b -> b.index(indexName));
+    if(client.indices().exists(e).value()) {
+      client.indices().delete( d -> d.index(indexName));
+    }
   }
 
   /**
@@ -142,7 +118,7 @@ public abstract class ElasticSearchBackedTest {
     int foundDocument = -1;
     int nCount = 0;
     while (foundDocument != foundCondition && nCount < 10) {
-      Thread.sleep(1000);
+      Thread.sleep(500);
       foundDocument = search(searchValue, searchField, indexName);
       nCount++;
     }
@@ -166,6 +142,10 @@ public abstract class ElasticSearchBackedTest {
     );
 
     log.info("Test index '{}' created", indexName);
+  }
+
+  protected void dropIndex(String indexName) throws IOException {
+    client.indices().delete( dir -> dir.index(indexName));
   }
 
 }

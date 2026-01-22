@@ -4,18 +4,16 @@ import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationType;
 import ca.gc.aafc.dina.search.cli.TestConstants;
 import ca.gc.aafc.dina.search.cli.commands.messaging.DocumentProcessor;
-import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils;
 import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
 import ca.gc.aafc.dina.search.cli.utils.MockServerTestUtils;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializer;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,14 +25,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.ContextConfiguration;
 
 import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ContextConfiguration(initializers = { ElasticSearchContainerInitializer.class })
 @SpringBootTest(properties = {
     "spring.shell.interactive.enabled=false",
     "dina.messaging.isProducer=true",
@@ -57,20 +55,6 @@ public class DocumentProcessorIT {
   @Autowired
   private DocumentProcessor documentProcessor;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
-
-  @BeforeAll
-  static void beforeAll() {
-    // Start elastic search container.
-    ELASTICSEARCH_CONTAINER.start();
-  }
-
-  @AfterAll
-  static void afterAll() {
-    ELASTICSEARCH_CONTAINER.stop();
-  }
-
   @BeforeEach
   public void beforeEachLifecycleMethod(ClientAndServer clientAndServer) {
     this.client = clientAndServer;
@@ -87,9 +71,9 @@ public class DocumentProcessorIT {
         List.of(Pair.of("include", "organizations")), TestConstants.PERSON_RESPONSE_PATH);
 
     // Create the indices
-    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
-    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.OBJECT_STORE_INDEX, TestConstants.OBJECT_STORE_INDEX_MAPPING_FILE);
-    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.MATERIAL_SAMPLE_INDEX, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE);
+    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE, ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.ActionOnExists.IGNORE);
+    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.OBJECT_STORE_INDEX, TestConstants.OBJECT_STORE_INDEX_MAPPING_FILE, ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.ActionOnExists.IGNORE);
+    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.MATERIAL_SAMPLE_INDEX, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE, ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.ActionOnExists.IGNORE);
 
     // index a metadata to trigger dynamic mapping
     ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.indexDocument(elasticSearchClient, TestConstants.OBJECT_STORE_INDEX, "2",
