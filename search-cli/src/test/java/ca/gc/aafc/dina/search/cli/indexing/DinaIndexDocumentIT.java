@@ -1,10 +1,10 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
 import ca.gc.aafc.dina.search.cli.TestConstants;
-import ca.gc.aafc.dina.search.cli.containers.ElasticSearchContainerInitializer;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import ca.gc.aafc.dina.search.config.ElasticSearchConfig;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializer;
 import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -61,13 +61,14 @@ public class DinaIndexDocumentIT {
    * @throws SearchApiException
    */
   @Test
-  public void indexDocumentTestDataMappingDetection() throws IOException, URISyntaxException, SearchApiException {
+  public void indexDocumentTestDataMappingDetection() throws IOException, SearchApiException {
 
     boolean response = client.ping().value();
     System.out.println("Elasticsearch connection acknowledged: " + response);
 
     // For testing, we will be using the agent index where we set "date_detection": false
-    ElasticSearchTestUtils.createIndex(client, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
+    ElasticSearchTestUtils.createIndex(client, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE,
+        ElasticSearchTestUtils.ActionOnExists.DROP);
 
     String docToIndex = Files.readString(GET_PERSON_RESPONSE_PATH);
     assertNotNull(docToIndex);

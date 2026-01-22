@@ -1,18 +1,15 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import ca.gc.aafc.dina.search.ws.container.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.ESSearchService;
 import ca.gc.aafc.dina.search.ws.services.IndexMappingResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializer;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
-import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.ContextConfiguration;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -22,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test focussing on the mapping response of search-ws.
  */
 @SpringBootTest
-@DirtiesContext
+@ContextConfiguration(initializers = { ElasticSearchContainerInitializer.class })
 public class SearchMappingIT extends ElasticSearchBackedTest {
 
   // used to search and wait for a document
@@ -31,34 +28,16 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
   @Autowired
   private SearchService searchService;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
-
-  @BeforeEach
-  private void beforeEach() {
-    ELASTICSEARCH_CONTAINER.start();
-
-    // configuration of the sear-ws will expect 9200
-    assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
-    assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
-
-    assertNotNull(searchService);
-  }
-
-  @AfterEach
-  private void afterEach() {
-    ELASTICSEARCH_CONTAINER.stop();
-  }
-
   @Test
   public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
 
     ((ESSearchService)searchService).invalidateCache();
 
+    deleteIndexIfExists(TestConstants.MATERIAL_SAMPLE_INDEX);
+
     String indexName = TestConstants.MATERIAL_SAMPLE_INDEX + "_123456";
     // Submit ES mapping
-    sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), indexName);
+    ElasticSearchTestUtils.createIndex(client, indexName, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE, ElasticSearchTestUtils.ActionOnExists.DROP);
 
     addAlias(indexName, TestConstants.MATERIAL_SAMPLE_INDEX);
 

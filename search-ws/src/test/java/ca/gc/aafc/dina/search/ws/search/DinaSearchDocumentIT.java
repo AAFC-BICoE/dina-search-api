@@ -1,20 +1,18 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import ca.gc.aafc.dina.search.ws.container.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.ws.services.AutocompleteResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializer;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.ContextConfiguration;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,9 +21,9 @@ import java.util.UUID;
 
 import static ca.gc.aafc.dina.search.ws.search.TestConstants.MATERIAL_SAMPLE_INDEX;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
+@ContextConfiguration(initializers = { ElasticSearchContainerInitializer.class })
 public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   
   private static final String DINA_AGENT_INDEX = "dina_agent_index";
@@ -46,32 +44,14 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   @Autowired
   private SearchService searchService;
 
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
-
-  @BeforeEach
-  public void beforeEach() {
-    ELASTICSEARCH_CONTAINER.start();
-
-    // configuration of the sear-ws will expect 9200
-    assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
-    assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
-
-    assertNotNull(searchService);
-  }
-
-  @AfterEach
-  public void afterEach() {
-    ELASTICSEARCH_CONTAINER.stop();
-  }
 
   @DisplayName("Search nested objects")
   @Test
   public void testSearchNestedObjects() throws Exception { 
 
     try {
-      sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
-              ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
+      ElasticSearchTestUtils.createIndex(client, TestConstants.MATERIAL_SAMPLE_INDEX, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+          ElasticSearchTestUtils.ActionOnExists.DROP);
 
       // Let's add a document into the elasticsearch cluster
       indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_NESTED_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
@@ -135,7 +115,11 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
   @DisplayName("Integration Test search autocomplete document")
   @Test
-  public void testSearchAutoCompleteDocument() throws Exception { 
+  public void testSearchAutoCompleteDocument() throws Exception {
+
+    ElasticSearchTestUtils.createIndex(client, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE,
+        ElasticSearchTestUtils.ActionOnExists.DROP);
+
     // Let's add a document into the elasticsearch cluster 
     indexDocumentForIT(DINA_AGENT_INDEX, DOCUMENT_ID, DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
 
@@ -146,8 +130,8 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
     assertNotNull(searchResponse.getHits());
     assertEquals(1, searchResponse.getHits().size());
-    assertEquals(DOCUMENT_ID, searchResponse.getHits().get(0).getDocumentId());
-    assertEquals(PERSON_1_ID, ((ObjectNode)searchResponse.getHits().get(0).getSource()).get("data").get("id").textValue());
+    assertEquals(DOCUMENT_ID, searchResponse.getHits().getFirst().getDocumentId());
+    assertEquals(PERSON_1_ID, ((ObjectNode)searchResponse.getHits().getFirst().getSource()).get("data").get("id").textValue());
 
     // Make sure we can serialize the response
     assertTrue(OM.writeValueAsString(searchResponse).contains("displayName"));
@@ -155,6 +139,10 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
   @Test
   public void testCount() throws IOException, InterruptedException, SearchApiException {
+
+    ElasticSearchTestUtils.createIndex(client, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE,
+        ElasticSearchTestUtils.ActionOnExists.DROP);
+
     // Let's add a document into the elasticsearch cluster
     indexDocumentForIT(DINA_AGENT_INDEX, DOCUMENT_ID, DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
 
@@ -165,6 +153,10 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
   @Test
   public void testError() throws IOException, InterruptedException {
+
+    ElasticSearchTestUtils.createIndex(client, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE,
+        ElasticSearchTestUtils.ActionOnExists.DROP);
+
     // Let's add a document into the elasticsearch cluster
     indexDocumentForIT(DINA_AGENT_INDEX, DOCUMENT_ID, DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
 
@@ -174,7 +166,11 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
   @DisplayName("Integration Test search autocomplete document autocomplete field")
   @Test
-  public void testSearchAutoCompleteMaterialSampleDocument() throws Exception { 
+  public void testSearchAutoCompleteMaterialSampleDocument() throws Exception {
+
+    ElasticSearchTestUtils.createIndex(client, TestConstants.MATERIAL_SAMPLE_INDEX, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+        ElasticSearchTestUtils.ActionOnExists.DROP);
+
     // Let's add a document into the elasticsearch cluster 
     indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
 
@@ -192,7 +188,11 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
   @DisplayName("Integration Test search autocomplete document restricted and group match")
   @Test
-  public void testSearchAutoCompleteMaterialSampleRestrictedMatch() throws Exception { 
+  public void testSearchAutoCompleteMaterialSampleRestrictedMatch() throws Exception {
+
+    ElasticSearchTestUtils.createIndex(client, TestConstants.MATERIAL_SAMPLE_INDEX, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+        ElasticSearchTestUtils.ActionOnExists.DROP);
+
     // Let's add a document into the elasticsearch cluster 
     indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
 
@@ -221,7 +221,11 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
   @DisplayName("Integration Test search autocomplete document restricted no match")
   @Test
-  public void testSearchAutoCompleteMaterialSampleRestrictedNoMatch() throws Exception { 
+  public void testSearchAutoCompleteMaterialSampleRestrictedNoMatch() throws Exception {
+
+    ElasticSearchTestUtils.createIndex(client, TestConstants.MATERIAL_SAMPLE_INDEX, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+        ElasticSearchTestUtils.ActionOnExists.DROP);
+
     // Let's add a document into the elasticsearch cluster 
     indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT_ID, MATERIAL_SAMPLE_SEARCH_FIELD, retrieveJSONObject("material-sample-search-test.json"));
 
@@ -238,7 +242,11 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
  
   @DisplayName("Integration Test search autocomplete text document")
   @Test
-  public void testSearchAutoCompleteTextDocument() throws Exception { 
+  public void testSearchAutoCompleteTextDocument() throws Exception {
+
+    ElasticSearchTestUtils.createIndex(client, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE,
+        ElasticSearchTestUtils.ActionOnExists.DROP);
+
     // Add document into index.
     indexDocumentForIT(DINA_AGENT_INDEX, DOCUMENT_ID, DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
 
@@ -256,7 +264,10 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
 
   @DisplayName("Integration Test search Get All text document")
   @Test
-  public void testSearchGetAllTextDocument() throws Exception { 
+  public void testSearchGetAllTextDocument() throws Exception {
+    ElasticSearchTestUtils.createIndex(client, DINA_AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE,
+        ElasticSearchTestUtils.ActionOnExists.DROP);
+
     // Let's add documents into the elasticsearch cluster
     indexDocumentForIT(DINA_AGENT_INDEX, "test-document-1", DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-1.json"));
     indexDocumentForIT(DINA_AGENT_INDEX, "test-document-2", DINA_AGENT_SEARCH_FIELD, retrieveJSONObject("person-2.json"));
@@ -280,8 +291,8 @@ public class DinaSearchDocumentIT extends ElasticSearchBackedTest {
   public void testPartialMatch() {
     // Indexed test value: materialSampleName = ABC-94837563
     try {
-      sendMapping(TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
-          ELASTICSEARCH_CONTAINER.getHttpHostAddress(), TestConstants.MATERIAL_SAMPLE_INDEX);
+      ElasticSearchTestUtils.createIndex(client, TestConstants.MATERIAL_SAMPLE_INDEX, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
+          ElasticSearchTestUtils.ActionOnExists.DROP);
 
       indexDocumentForIT(TestConstants.MATERIAL_SAMPLE_INDEX, UUID.randomUUID().toString(), "name",
           retrieveJSONObject("material_sample_dynamic_fields_document.json"));
