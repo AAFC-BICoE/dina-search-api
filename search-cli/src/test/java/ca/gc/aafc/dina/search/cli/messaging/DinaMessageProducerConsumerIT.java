@@ -79,18 +79,27 @@ class DinaMessageProducerConsumerIT {
   @SneakyThrows
   @Test
   void addDocument() {
-    DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "material-sample",
-        "testDocumentId-add", DocumentOperationType.ADD);
-
+    DocumentOperationNotification docNotification =
+        DocumentOperationNotification.builder()
+            .documentType("material-sample")
+            .documentId("testDocumentId-add")
+            .operationType(DocumentOperationType.ADD)
+            .dryRun(true)
+            .build();
     validateMessageTransferAndProcessingByConsumer(docNotification);
   }
 
   @SneakyThrows
   @Test
   void onMessageThatThrowsException_messageSentInDLQ() {
-    DocumentOperationNotification expected = new DocumentOperationNotification(false,
-      // dryRun = false will fail to connect and throw the needed exception
-      "material-sample", LatchBasedMessageProcessor.INVALID_DOC_ID, DocumentOperationType.ADD);
+    DocumentOperationNotification expected =
+        DocumentOperationNotification.builder()
+            .documentType("material-sample")
+            .documentId(LatchBasedMessageProcessor.INVALID_DOC_ID)
+            .operationType(DocumentOperationType.ADD)
+            .dryRun(false) // dryRun = false will fail to connect and throw the needed exception
+            .build();
+
     latchBasedMessageProcessor.registerLatchKey(LatchBasedMessageProcessor.INVALID_DOC_ID);
     messageProducer.send(expected);
     latchBasedMessageProcessor.waitForMessage(LatchBasedMessageProcessor.INVALID_DOC_ID);
@@ -112,8 +121,13 @@ class DinaMessageProducerConsumerIT {
   @SneakyThrows
   @Test
   void updateDocument() {
-    DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "material-sample",
-        "testDocumentId-update", DocumentOperationType.UPDATE);
+    DocumentOperationNotification docNotification =
+        DocumentOperationNotification.builder()
+            .documentType("material-sample")
+            .documentId("testDocumentId-update")
+            .operationType(DocumentOperationType.UPDATE)
+            .dryRun(true)
+            .build();
 
     validateMessageTransferAndProcessingByConsumer(docNotification);
   }
@@ -121,8 +135,13 @@ class DinaMessageProducerConsumerIT {
   @SneakyThrows
   @Test
   void deleteDocument() {
-    DocumentOperationNotification docNotification = new DocumentOperationNotification(true, "material-sample",
-        "testDocumentId-delete", DocumentOperationType.DELETE);
+    DocumentOperationNotification docNotification =
+        DocumentOperationNotification.builder()
+            .documentType("material-sample")
+            .documentId("testDocumentId-delete")
+            .operationType(DocumentOperationType.DELETE)
+            .dryRun(true)
+            .build();
 
     validateMessageTransferAndProcessingByConsumer(docNotification);
   }
