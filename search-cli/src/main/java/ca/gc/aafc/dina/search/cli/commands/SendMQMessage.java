@@ -29,13 +29,12 @@ public class SendMQMessage {
 
     DocumentOperationType docOperationType = DocumentOperationType.valueOf(operation.toUpperCase());
 
-    DocumentOperationNotification docNotification =
-      new DocumentOperationNotification(dryRun, 
-            type, 
-            documentId, 
-            docOperationType);
-
+    DocumentOperationNotification docNotification = DocumentOperationNotification.builder()
+        .dryRun(dryRun)
+        .documentType(type)
+        .documentId(documentId)
+        .operationType(docOperationType)
+        .build();
     messageProducer.send(docNotification);
-
   }
 }
