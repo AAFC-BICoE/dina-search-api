@@ -87,6 +87,9 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
 
     // test behavior of non-existing index
     assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
+
+    // cleanup
+    deleteAlias(indexName, TestConstants.MATERIAL_SAMPLE_INDEX);
   }
 
   private IndexMappingResponse.Attribute findAttributeByName(IndexMappingResponse response, String name) {

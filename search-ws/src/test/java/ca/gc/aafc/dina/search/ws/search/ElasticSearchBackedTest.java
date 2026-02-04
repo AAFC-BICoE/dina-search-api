@@ -97,6 +97,10 @@ public abstract class ElasticSearchBackedTest {
     client.indices().putAlias( builder -> builder.index(indexName).name(alias));
   }
 
+  protected void deleteAlias(String indexName, String alias) throws ElasticsearchException, IOException {
+    client.indices().deleteAlias( builder -> builder.index(indexName).name(alias));
+  }
+
   protected int search(String searchValue, String searchField, String indexName) throws ElasticsearchException, IOException {
     // Count the total number of search results.
     CountResponse countResponse = client.count(builder -> builder
