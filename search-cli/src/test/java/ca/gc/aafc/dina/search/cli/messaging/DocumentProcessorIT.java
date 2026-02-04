@@ -80,8 +80,13 @@ public class DocumentProcessorIT {
         TestResourceHelper.readContentAsString("get_metadata_document_response.json"));
 
     // Send message to index the person with an organization relationship.
-    DocumentOperationNotification personNotification = new DocumentOperationNotification(false, TestConstants.PERSON_DOCUMENT_TYPE,
-        TestConstants.PERSON_DOCUMENT_ID, DocumentOperationType.ADD);
+    DocumentOperationNotification personNotification = DocumentOperationNotification.builder()
+        .documentType(TestConstants.PERSON_DOCUMENT_TYPE)
+        .documentId(TestConstants.PERSON_DOCUMENT_ID)
+        .operationType(DocumentOperationType.ADD)
+        .dryRun(false)
+        .build();
+
     documentProcessor.processMessage(personNotification);
 
     // Wait until that person record has been indexed:
@@ -96,8 +101,12 @@ public class DocumentProcessorIT {
         List.of(Pair.of("include", "organizations")), TestConstants.PERSON_ORG_RESPONSE_PATH);
 
     // Send message to index the organization, which should trigger the person to re-update.
-    DocumentOperationNotification organizationNotification = new DocumentOperationNotification(false, ORGANIZATION_DOCUMENT_TYPE,
-        ORGANIZATION_DOCUMENT_ID, DocumentOperationType.ADD);
+    DocumentOperationNotification organizationNotification = DocumentOperationNotification.builder()
+        .documentType(ORGANIZATION_DOCUMENT_TYPE)
+        .documentId(ORGANIZATION_DOCUMENT_ID)
+        .operationType(DocumentOperationType.ADD)
+        .dryRun(false)
+        .build();
     documentProcessor.processMessage(organizationNotification);
 
     Thread.sleep(1000);
