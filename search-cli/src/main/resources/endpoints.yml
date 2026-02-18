@@ -77,11 +77,11 @@ indexSettings:
   - indexName: dina_storage_index
     type: storage-unit
     relationships:
-      - storageUnitChildren
       - storageUnitType
     optionalFields:
       storage-unit:
         - hierarchy
+        - storageUnitChildren
 
   - indexName: dina_loan_transaction_index
     type: transaction
