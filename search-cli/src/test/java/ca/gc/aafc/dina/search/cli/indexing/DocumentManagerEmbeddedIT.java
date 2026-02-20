@@ -87,7 +87,7 @@ public class DocumentManagerEmbeddedIT {
   // Document to index into elastic search
   private static final Path EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH = Path.of("src/test/resources/person_embedded_assemble_response.json");
 
-  // Template of response to be receive after process embedded
+  // Template of response to be received after process embedded
   private static final Path EMBEDDED_PERSON_RESPONSE_PATH = Path.of("src/test/resources/get_person_embedded_response.json");
 
   // Organization document

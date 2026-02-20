@@ -84,6 +84,12 @@ public class IndexableDocumentHandler {
     newData.set(JSONApiDocumentStructure.DATA, JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API data section missing")));
 
+    // relationship is optional
+    JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.RELATIONSHIP_PTR).ifPresent( rel -> {
+      // TODO replace null below by the current includedArray or a new one
+      processExternalRelationships(rel, null);
+    });
+
     // included section is optional
     JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(included -> {
       processIncluded(included);
@@ -100,6 +106,18 @@ public class IndexableDocumentHandler {
     newData.set(JSONApiDocumentStructure.META, metaNode);
 
     return newData;
+  }
+
+  private void processExternalRelationships(JsonNode relationshipsArray, JsonNode includedArray) {
+    if (relationshipsArray == null || !relationshipsArray.isArray()) {
+      return;
+    }
+
+    for (JsonNode curObject : relationshipsArray) {
+      // 1. Check if the document is already in the includedArray (by id)
+      // 2. Yes, iterate to the next one
+      // 3. No, Retrieve nested document like in processIncluded and add the document to includedArray
+    }
   }
 
   /**
@@ -130,12 +148,10 @@ public class IndexableDocumentHandler {
       }
 
       // Getting the type and perform a level #1 retrieval of attributes
-      //
       String type = curObject.get(JSONApiDocumentStructure.TYPE).asText();
       if (svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
 
         // Get the Id and retrieved the attributes from the related object.
-        //
         String curObjectId = curObject.get(JSONApiDocumentStructure.ID).asText();
 
         // Best effort processing for assembling of include section
