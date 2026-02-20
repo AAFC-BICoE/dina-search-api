@@ -27,12 +27,6 @@
       }
     }
   },
-  "included": [
-    {
-      "id": "f9e10a21-d8b6-4d9b-8c99-953bdc940862",
-      "type": "organization"
-    }
-  ],
   "meta": {
     "totalResourceCount": 1,
     "external": [
