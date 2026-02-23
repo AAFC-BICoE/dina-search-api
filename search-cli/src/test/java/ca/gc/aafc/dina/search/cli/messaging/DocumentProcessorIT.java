@@ -87,6 +87,11 @@ public class DocumentProcessorIT {
         TestConstants.PERSON_DOCUMENT_TYPE, TestConstants.PERSON_DOCUMENT_ID,
         List.of(Pair.of("include", "organizations")), TestConstants.PERSON_RESPONSE_PATH);
 
+    // Mock the organization endpoint - processIncluded needs this to enrich the organization with attributes
+    MockServerTestUtils.addMockGetResponse(client,
+        ORGANIZATION_DOCUMENT_TYPE, ORGANIZATION_DOCUMENT_ID,
+        List.of(), Path.of("src/test/resources/get_organization_response.json"));
+
     // Create the indices
     ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
     ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.OBJECT_STORE_INDEX, TestConstants.OBJECT_STORE_INDEX_MAPPING_FILE);
