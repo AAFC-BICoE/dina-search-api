@@ -46,11 +46,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @MockServerSettings(ports = { 1080, 8081, 8082, TestConstants.KEYCLOAK_MOCK_PORT })
 public class DocumentProcessorIT {
 
-  // Organization related constants:
+  // Organization related constants - organization is not indexed, only triggers re-indexing of related documents
   private static final String ORGANIZATION_DOCUMENT_ID = "3c7018ce-cf47-418a-9a15-bf5867a6c320";
   private static final String ORGANIZATION_DOCUMENT_TYPE = "organization";
-  private static final Path ORGANIZATION_DOCUMENT_RESPONSE_PATH = Path.of("src/test/resources/get_organization_response.json");
-  
+
   private ClientAndServer client;
 
   @Autowired
@@ -87,11 +86,6 @@ public class DocumentProcessorIT {
     Expectation[] expectations = MockServerTestUtils.addMockGetResponse(client,
         TestConstants.PERSON_DOCUMENT_TYPE, TestConstants.PERSON_DOCUMENT_ID,
         List.of(Pair.of("include", "organizations")), TestConstants.PERSON_RESPONSE_PATH);
-
-    // Mock the organization endpoint for when processExternalRelationships fetches it
-    MockServerTestUtils.addMockGetResponse(client,
-        ORGANIZATION_DOCUMENT_TYPE, ORGANIZATION_DOCUMENT_ID,
-        List.of(), ORGANIZATION_DOCUMENT_RESPONSE_PATH);
 
     // Create the indices
     ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
