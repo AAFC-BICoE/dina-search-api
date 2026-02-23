@@ -84,17 +84,22 @@ public class IndexableDocumentHandler {
     newData.set(JSONApiDocumentStructure.DATA, JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API data section missing")));
 
-    // relationship is optional
+    // Get or create the included array
+    ArrayNode includedArray = (ArrayNode) JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR)
+        .orElseGet(() -> OM.createArrayNode());
+
+    // relationship is optional - process external relationships and add them to included
     JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.RELATIONSHIP_PTR).ifPresent( rel -> {
-      // TODO replace null below by the current includedArray or a new one
-      processExternalRelationships(rel, null);
+      processExternalRelationships(rel, includedArray);
     });
 
-    // included section is optional
-    JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(included -> {
-      processIncluded(included);
-      newData.set(JSONApiDocumentStructure.INCLUDED, included);
-    });
+    // Process included section to enrich any items missing attributes
+    processIncluded(includedArray);
+    
+    // Only add included section if it has items
+    if (includedArray.size() > 0) {
+      newData.set(JSONApiDocumentStructure.INCLUDED, includedArray);
+    }
 
     // Parse it as json:api document to make it easier
     JsonApiCompoundDocument jsonApiCompoundDocument = OM.readValue(rawPayload, JsonApiCompoundDocument.class);
@@ -108,16 +113,74 @@ public class IndexableDocumentHandler {
     return newData;
   }
 
-  private void processExternalRelationships(JsonNode relationshipsArray, JsonNode includedArray) {
-    if (relationshipsArray == null || !relationshipsArray.isArray()) {
+  /**
+   * Fetches a document from the API for a given type and ID.
+   * 
+   * @param type the document type
+   * @param id the document ID
+   * @return the parsed JSON document, or empty if the fetch fails
+   */
+  private Optional<JsonNode> fetchDocument(String type, String id) {
+    try {
+      IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
+      String rawPayload = apiAccess.getFromApi(
+          svcEndpointProps.getApiResourceDescriptorForType(type),
+          indexSettingDescriptor.relationships(),
+          indexSettingDescriptor.optionalFields(),
+          id);
+      return Optional.of(OM.readTree(rawPayload));
+    } catch (SearchApiException | JsonProcessingException ex) {
+      log.error("Error fetching document type={}, id={}, message={}", type, id, ex.getMessage());
+      return Optional.empty();
+    }
+  }
+
+  private void processExternalRelationships(JsonNode relationshipsNode, JsonNode includedArray) {
+    if (relationshipsNode == null || !relationshipsNode.isObject()) {
       return;
     }
 
-    for (JsonNode curObject : relationshipsArray) {
-      // 1. Check if the document is already in the includedArray (by id)
-      // 2. Yes, iterate to the next one
-      // 3. No, Retrieve nested document like in processIncluded and add the document to includedArray
-    }
+    // Iterate over each relationship
+    relationshipsNode.fields().forEachRemaining(relationshipEntry -> {
+      JsonNode relationshipData = relationshipEntry.getValue().get(JSONApiDocumentStructure.DATA);
+      
+      if (relationshipData == null) {
+        return;
+      }
+      
+      // Handle both single object and array formats
+      JsonNode dataArray = relationshipData.isArray() ? relationshipData : OM.createArrayNode().add(relationshipData);
+      
+      for (JsonNode curObject : dataArray) {
+        if (curObject.get(JSONApiDocumentStructure.ID) == null || curObject.get(JSONApiDocumentStructure.TYPE) == null) {
+          continue;
+        }
+        
+        String relationshipId = curObject.get(JSONApiDocumentStructure.ID).asText();
+        String relationshipType = curObject.get(JSONApiDocumentStructure.TYPE).asText();
+        
+        // Check if the document is already in the includedArray (by id and type)
+        boolean found = false;
+        for (JsonNode includedObject : includedArray) {
+          if (includedObject.get(JSONApiDocumentStructure.ID) != null
+              && includedObject.get(JSONApiDocumentStructure.TYPE) != null
+              && includedObject.get(JSONApiDocumentStructure.ID).asText().equals(relationshipId)
+              && includedObject.get(JSONApiDocumentStructure.TYPE).asText().equals(relationshipType)) {
+            found = true;
+            break;
+          }
+        }
+        
+        if (found || !svcEndpointProps.isTypeSupportedForEndpointDescriptor(relationshipType)) {
+          continue;
+        }
+        
+        // Retrieve nested document and add to includedArray
+        fetchDocument(relationshipType, relationshipId)
+            .flatMap(document -> JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR))
+            .ifPresent(data -> ((ArrayNode) includedArray).add(data));
+      }
+    });
   }
 
   /**
@@ -155,22 +218,14 @@ public class IndexableDocumentHandler {
         String curObjectId = curObject.get(JSONApiDocumentStructure.ID).asText();
 
         // Best effort processing for assembling of include section
-        try {
-          IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
-          String rawPayload = apiAccess.getFromApi(svcEndpointProps.getApiResourceDescriptorForType(type),
-              indexSettingDescriptor.relationships(), indexSettingDescriptor.optionalFields(), curObjectId);
-          JsonNode document = OM.readTree(rawPayload);
-          // Take the data.attributes section to be embedded
-          Optional<JsonNode> dataObject = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
+        Optional<JsonNode> attributesNode = fetchDocument(type, curObjectId)
+            .flatMap(document -> JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR));
 
-          if (dataObject.isPresent()) {
-            ((ObjectNode) curObject).set(JSONApiDocumentStructure.ATTRIBUTES, dataObject.get());
-          } else {
-            // Remove attribute section from the embedded object
-            ((ObjectNode) curObject).remove(JSONApiDocumentStructure.ATTRIBUTES);
-          }
-        } catch (SearchApiException | JsonProcessingException ex) {
-          log.error("Error during processing of included section object type{}, id={}, message={}", type, curObjectId, ex.getMessage());
+        if (attributesNode.isPresent()) {
+          ((ObjectNode) curObject).set(JSONApiDocumentStructure.ATTRIBUTES, attributesNode.get());
+        } else {
+          // Remove attribute section from the embedded object
+          ((ObjectNode) curObject).remove(JSONApiDocumentStructure.ATTRIBUTES);
         }
       }
     }
