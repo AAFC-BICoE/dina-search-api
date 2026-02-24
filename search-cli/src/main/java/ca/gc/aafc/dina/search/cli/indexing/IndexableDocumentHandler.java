@@ -162,10 +162,8 @@ public class IndexableDocumentHandler {
         // Check if the document is already in the includedArray (by id and type)
         boolean found = false;
         for (JsonNode includedObject : includedArray) {
-          if (includedObject.get(JSONApiDocumentStructure.ID) != null
-              && includedObject.get(JSONApiDocumentStructure.TYPE) != null
-              && includedObject.get(JSONApiDocumentStructure.ID).asText().equals(relationshipId)
-              && includedObject.get(JSONApiDocumentStructure.TYPE).asText().equals(relationshipType)) {
+          if (JsonHelper.safeTextEquals(includedObject, JSONApiDocumentStructure.ID, relationshipId)
+            && JsonHelper.safeTextEquals(includedObject, JSONApiDocumentStructure.TYPE, relationshipType)) {
             found = true;
             break;
           }
