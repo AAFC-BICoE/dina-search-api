@@ -21,5 +21,9 @@
       "createdBy": "test user",
       "createdOn": "1985-04-12T23:20:50.52Z"
     }
+  },
+  "meta": {
+    "totalResourceCount": 1,
+    "moduleVersion": "0.20"
   }
 }
