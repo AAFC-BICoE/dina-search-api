@@ -162,15 +162,9 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
     List<Query> matchPhraseQueries = List.of(
         documentIdQuery._toQuery(), documentTypeQuery._toQuery());
 
-    // Nested query with ignoreUnmapped=true to handle indices without the included field mapped as nested.
-    // This can occur when:
-    // 1. An index is newly created and has not yet received any documents with an included section
-    // 2. Dynamic mapping has not yet been triggered to map the included field as nested
-    // 3. Querying across multiple indices where some may not have this field
-    // Without ignoreUnmapped=true, the query would fail with "all shards failed" when any index lacks the mapping.
+    // Nested query
     NestedQuery.Builder nestedIncluded = QueryBuilders.nested()
         .path("included")
-        .ignoreUnmapped(true)
         .query(QueryBuilders.bool()
             .must(matchPhraseQueries).build()._toQuery());
     return nestedIncluded.build()._toQuery();
