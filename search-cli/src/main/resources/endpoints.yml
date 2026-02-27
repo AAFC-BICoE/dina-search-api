@@ -48,6 +48,7 @@ indexSettings:
     relationshipsType:
       - person
       - collecting-event
+      - metadata
     optionalFields:
       material-sample:
         - hierarchy

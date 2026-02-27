@@ -25,7 +25,9 @@ public class CacheableApiAccess implements DinaApiAccess {
     client = aClient;
   }
 
-  @Cacheable(cacheNames = CACHE_NAME)
+  // Removed @Cacheable to always fetch fresh data and avoid stale entries.
+  // Will be likely be re-enabled with value injection in the future
+  // Previously: @Cacheable(cacheNames = CACHE_NAME)
   public String getFromApi(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes,
                            Map<String, List<String>> optFields, String objectId)
       throws SearchApiException {
