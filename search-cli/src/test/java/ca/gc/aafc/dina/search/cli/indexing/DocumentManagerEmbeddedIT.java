@@ -212,14 +212,15 @@ public class DocumentManagerEmbeddedIT {
     assertEquals(EMBEDDED_ORG_NAME_AFTER_UPDATE,
         docFromElasticSearch.at("/included/0/attributes/names/0/name").asText());
 
-    // Validate that the successful API response is in the cache
+    // Note: Caching is disabled to ensure fresh data, so cache will be empty
     IndexSettingDescriptor indexSettingDescriptor = serviceEndpointProperties.getIndexSettingDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE);
     Object objFromCache = cache.get(getCacheableApiAccessCacheKey(
         serviceEndpointProperties.getApiResourceDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
         indexSettingDescriptor.relationships(),
         indexSettingDescriptor.optionalFields(),
         EMBEDDED_DOCUMENT_INCLUDED_ID));
-    assertNotNull(objFromCache);
+    // Caching is disabled, so this will be null
+    assertNull(objFromCache);
 
     // Simulate organization deletion
     // Clear the successful organization mock and replace with 404

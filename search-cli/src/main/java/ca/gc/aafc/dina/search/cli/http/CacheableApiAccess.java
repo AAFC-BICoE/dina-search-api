@@ -3,7 +3,6 @@ package ca.gc.aafc.dina.search.cli.http;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
