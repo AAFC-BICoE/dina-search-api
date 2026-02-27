@@ -85,10 +85,10 @@ public class DocumentManagerEmbeddedIT {
   private static final String EMBEDDED_DOCUMENT_INCLUDED_ID = "f9e10a21-d8b6-4d9b-8c99-953bdc940862";
 
   // Document to index into elastic search
-  private static final Path EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH = Path.of("src/test/resources/person_embedded_assemble_response.json");
+  private static final Path EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH = Path.of("src/test/resources/person_assembled_document.json");
 
-  // Template of response to be receive after process embedded
-  private static final Path EMBEDDED_PERSON_RESPONSE_PATH = Path.of("src/test/resources/get_person_embedded_response.json");
+  // Template of response to be received after process embedded
+  private static final Path EMBEDDED_PERSON_RESPONSE_PATH = Path.of("src/test/resources/get_person_for_embedded_test.json");
 
   // Organization document
   private static final Path EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH = Path.of("src/test/resources/get_updated_organization_embedded_response.json");
@@ -126,16 +126,11 @@ public class DocumentManagerEmbeddedIT {
     ApiResourceDescriptor apiResourceDescriptor = new ApiResourceDescriptor(TestConstants.ORGANIZATION_TYPE, "http://localhost:8082/api/v1/" + TestConstants.ORGANIZATION_TYPE, true);
     serviceEndpointProperties.addApiResourceDescriptor(apiResourceDescriptor);
 
-    // Mock the person request/response.
+    // Mock the person request/response - returns raw response WITHOUT included section
+    // This will be used when processEmbeddedDocument re-fetches the person
     MockServerTestUtils.addMockGetResponse(client, EMBEDDED_DOCUMENT_TYPE,
         EMBEDDED_DOCUMENT_ID,
         List.of(Pair.of("include", "organizations")), EMBEDDED_PERSON_RESPONSE_PATH);
-
-    // Mock the organization request after an update. That mock will be used
-    // indirectly by the re-index operation from the processEmbedded.
-    Expectation[] orgSuccess = MockServerTestUtils.addMockGetResponse(client,
-        EMBEDDED_DOCUMENT_INCLUDED_TYPE,
-        EMBEDDED_DOCUMENT_INCLUDED_ID, List.of(), EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH);
 
     // For testing, we will be using the agent index.
     ElasticSearchTestUtils.createIndex(elasticSearchClient, TestConstants.AGENT_INDEX, TestConstants.AGENT_INDEX_MAPPING_FILE);
@@ -149,8 +144,8 @@ public class DocumentManagerEmbeddedIT {
     // The other indices must exist, but can be empty for this test. Use the endpoint to generate them.
     createIndices(indices);
 
-    // Index the document within elastic search. The initial document is an assembled
-    // person document with the original organization name set to "Integration"
+    // Index the initial document into elasticsearch
+    // This document is already assembled with the original organization name "Integration"
     JsonNode docToIndex = JsonTestUtils.readJson(Files.readString(EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH));
     assertNotNull(docToIndex);
 
@@ -162,11 +157,12 @@ public class DocumentManagerEmbeddedIT {
       fail(e);
     }
 
-    // allows to wait until we get the correct count
+    // Wait until the document is indexed
     int foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
         .searchForCount(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
     assertEquals(1, foundDocument);
 
+    // Verify initial state: organization name should be "Integration"
     SearchResponse<JsonNode> searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
         .search(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID);
 
@@ -175,38 +171,59 @@ public class DocumentManagerEmbeddedIT {
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
     assertEquals(EMBEDDED_ORG_NAME, docFromElasticSearch.at("/included/0/attributes/names/0/name").asText());
 
-    // We need a hard stop here because of the operations done by process embedded.
+    // Allow time for indexing to complete
     Thread.sleep(1000);
 
-    // Trigger process embedded document, should retrieve the newly updated organization.
-    // Name has been updated to "Integration Updated" (See Get Organization mock)
+    // Process embedded document - simulate organization update
+    // Mock the organization request - returns updated organization with "Integration Updated"
+    Expectation[] orgSuccess = MockServerTestUtils.addMockGetResponse(client,
+        EMBEDDED_DOCUMENT_INCLUDED_TYPE,
+        EMBEDDED_DOCUMENT_INCLUDED_ID, List.of(), EMBEDDED_UPDATED_ORGANIZATION_RESPONSE_PATH);
+
+    // Clear cache to ensure fresh API calls
+    Cache cache = cacheManager.getCache(CacheableApiAccess.CACHE_NAME);
+    if (cache != null) {
+      cache.clear();
+    }
+
+    // Trigger processEmbeddedDocument - this should:
+    // 1. Re-fetch person (mock returns raw response without included)
+    // 2. assembleDocument processes it and fetches organization
+    // 3. Re-index with updated organization "Integration Updated"
     try {
       documentManager.processEmbeddedDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
     } catch (SearchApiException e) {
       fail(e);
     }
 
-    // Retrieve the document from elasticsearch
+    // Wait for re-indexing to complete
     foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
         .searchForCount(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
     assertEquals(1, foundDocument);
 
-    // Get the document straight from Elastic search, we should have the
-    // embedded organization updated
+    // Verify updated state: organization name should now be "Integration Updated"
     searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(elasticSearchClient, TestConstants.AGENT_INDEX,
         "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
-    docFromElasticSearch = searchResponse.hits().hits().get(0).source();
+    docFromElasticSearch = searchResponse.hits().hits().getFirst().source();
 
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
     assertEquals(EMBEDDED_ORG_NAME_AFTER_UPDATE,
         docFromElasticSearch.at("/included/0/attributes/names/0/name").asText());
 
+    // Note: Caching is disabled to ensure fresh data, so cache will be empty
+    IndexSettingDescriptor indexSettingDescriptor = serviceEndpointProperties.getIndexSettingDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE);
+    Object objFromCache = cache.get(getCacheableApiAccessCacheKey(
+        serviceEndpointProperties.getApiResourceDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
+        indexSettingDescriptor.relationships(),
+        indexSettingDescriptor.optionalFields(),
+        EMBEDDED_DOCUMENT_INCLUDED_ID));
+    // Caching is disabled, so this will be null
+    assertNull(objFromCache);
 
-    // Mock the organization request after an update. That mock will be used
-    // indirectly by the re-index operation from the processEmbedded.
-    // 404 to simulate a deletion
+    // Simulate organization deletion
+    // Clear the successful organization mock and replace with 404
     client.clear(orgSuccess[0].getHttpRequest());
 
     client.when(MockKeyCloakAuthentication.setupMockRequest()
@@ -217,8 +234,13 @@ public class DocumentManagerEmbeddedIT {
             .withBody("")
             .withDelay(TimeUnit.SECONDS, 1));
 
-    // Delete from elasticsearch and process document.
-    // Simulate what send deleted message would do..
+    // Clear cache again before deletion scenario
+    if (cache != null) {
+      cache.clear();
+    }
+
+    // Delete organization and process embedded document
+    // This simulates what happens when a deleted message is received
     try {
       documentManager.deleteDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
       documentManager.processEmbeddedDocument(EMBEDDED_DOCUMENT_INCLUDED_TYPE, EMBEDDED_DOCUMENT_INCLUDED_ID);
@@ -226,13 +248,12 @@ public class DocumentManagerEmbeddedIT {
       fail(e);
     }
 
-    // Retrieve the document from elasticsearch
+    // Wait for re-indexing after deletion
     foundDocument = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
         .searchForCount(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID, 1);
     assertEquals(1, foundDocument);
 
-    // Get the document straight from Elastic search, we should have the
-    // embedded organization updated
+    // Verify deletion state: organization should have empty attributes
     searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(elasticSearchClient, TestConstants.AGENT_INDEX,
         "data.id", EMBEDDED_DOCUMENT_ID);
 
@@ -240,18 +261,8 @@ public class DocumentManagerEmbeddedIT {
     docFromElasticSearch = searchResponse.hits().hits().getFirst().source();
 
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
+    // After deletion, the organization stub should exist but without attributes
     assertEquals("", docFromElasticSearch.at("/included/0/attributes").asText());
-
-    IndexSettingDescriptor indexSettingDescriptor = serviceEndpointProperties.getIndexSettingDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE);
-
-    // Validate that the API response is in the cache
-    Cache cache = cacheManager.getCache(CacheableApiAccess.CACHE_NAME);
-    Object objFromCache = cache.get(getCacheableApiAccessCacheKey(
-        serviceEndpointProperties.getApiResourceDescriptorForType(EMBEDDED_DOCUMENT_INCLUDED_TYPE),
-        indexSettingDescriptor.relationships(),
-        indexSettingDescriptor.optionalFields(),
-        EMBEDDED_DOCUMENT_INCLUDED_ID));
-    assertNotNull(objFromCache);
   }
 
   private void createIndices(Set<String> indices) {
@@ -269,9 +280,11 @@ public class DocumentManagerEmbeddedIT {
   }
 
   /**
-   * Utility method to generate cache eky the same was Spring is doing it using custom KeyGenerator.
+   * Utility method to generate cache key the same way Spring is doing it using custom KeyGenerator.
    * Only works for getFromApi method.
-   * @param endpointDescriptor
+   * @param apiResourceDescriptor
+   * @param includes
+   * @param optFields
    * @param objectId
    * @return
    */

@@ -84,11 +84,22 @@ public class IndexableDocumentHandler {
     newData.set(JSONApiDocumentStructure.DATA, JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API data section missing")));
 
-    // included section is optional
-    JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(included -> {
-      processIncluded(included);
-      newData.set(JSONApiDocumentStructure.INCLUDED, included);
+    // Get or create the included array
+    ArrayNode includedArray = (ArrayNode) JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR)
+        .orElseGet(() -> OM.createArrayNode());
+
+    // relationship is optional - process external relationships and add them to included
+    JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.RELATIONSHIP_PTR).ifPresent( rel -> {
+      processExternalRelationships(rel, includedArray);
     });
+
+    // Process included section to apply Node transformations if needed (ex: coordinate extraction for geospatial fields)
+    applyIncludedNodeTransformation(includedArray);
+    
+    // Only add included section if it has items
+    if (includedArray.size() > 0) {
+      newData.set(JSONApiDocumentStructure.INCLUDED, includedArray);
+    }
 
     // Parse it as json:api document to make it easier
     JsonApiCompoundDocument jsonApiCompoundDocument = OM.readValue(rawPayload, JsonApiCompoundDocument.class);
@@ -103,14 +114,92 @@ public class IndexableDocumentHandler {
   }
 
   /**
-   * Processing of the included section of a DINA compliant json api object.
+   * Fetches a document from the API for a given type and ID.
+   * 
+   * @param type the document type
+   * @param id the document ID
+   * @return the parsed JSON document, or empty if the fetch fails
+   */
+  private Optional<JsonNode> fetchDocument(String type, String id) {
+    try {
+      IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
+      String rawPayload = apiAccess.getFromApi(
+          svcEndpointProps.getApiResourceDescriptorForType(type),
+          indexSettingDescriptor.relationships(),
+          indexSettingDescriptor.optionalFields(),
+          id);
+      return Optional.of(OM.readTree(rawPayload));
+    } catch (SearchApiException | JsonProcessingException ex) {
+      log.error("Error fetching document type={}, id={}, message={}", type, id, ex.getMessage());
+      return Optional.empty();
+    }
+  }
+  
+  /**
+   * Processing of the external relationships (objects in other APIs) of a DINA compliant json api object.
    * 
    * In this current implementation we are resolving entries that are missing
    * their attributes property.
    * 
    * @param includedArray Array containing included json spec objects
+   * @param relationshipsNode Node containing the relationships section of the original document.
+   * This is used to resolve external relationships and add them to the included section.
    */
-  private void processIncluded(JsonNode includedArray) {
+  private void processExternalRelationships(JsonNode relationshipsNode, JsonNode includedArray) {
+    if (relationshipsNode == null || !relationshipsNode.isObject()) {
+      return;
+    }
+
+    // Iterate over each relationship
+    relationshipsNode.fields().forEachRemaining(relationshipEntry -> {
+      JsonNode relationshipData = relationshipEntry.getValue().get(JSONApiDocumentStructure.DATA);
+      
+      if (relationshipData == null) {
+        return;
+      }
+      
+      // Handle both single object and array formats
+      JsonNode dataArray = relationshipData.isArray() ? relationshipData : OM.createArrayNode().add(relationshipData);
+      
+      for (JsonNode curObject : dataArray) {
+        if (curObject.get(JSONApiDocumentStructure.ID) == null || curObject.get(JSONApiDocumentStructure.TYPE) == null) {
+          continue;
+        }
+        
+        String relationshipId = curObject.get(JSONApiDocumentStructure.ID).asText();
+        String relationshipType = curObject.get(JSONApiDocumentStructure.TYPE).asText();
+        
+        // Check if the document is already in the includedArray (by id and type)
+        boolean found = false;
+        for (JsonNode includedObject : includedArray) {
+          if (JsonHelper.safeTextEquals(includedObject, JSONApiDocumentStructure.ID, relationshipId)
+            && JsonHelper.safeTextEquals(includedObject, JSONApiDocumentStructure.TYPE, relationshipType)) {
+            found = true;
+            break;
+          }
+        }
+        
+        if (found || !svcEndpointProps.isTypeSupportedForEndpointDescriptor(relationshipType)) {
+          continue;
+        }
+        
+        // Retrieve nested document and add to includedArray
+        fetchDocument(relationshipType, relationshipId)
+            .flatMap(document -> JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR))
+            .ifPresent(data -> ((ArrayNode) includedArray).add(data));
+      }
+    });
+  }
+
+  /**
+   * Apply transformations to nodes within the included section of a DINA compliant json api object.
+   * 
+   * Currently applies coordinate extraction transformations to specific attributes
+   * as defined in INCLUDED_NODE_TRANSFORMATION.
+   * 
+   * @param includedArray Array containing included json spec objects
+   */
+  private void applyIncludedNodeTransformation (JsonNode includedArray) {
 
     if (includedArray == null || !includedArray.isArray()) {
       return;
@@ -123,41 +212,8 @@ public class IndexableDocumentHandler {
           JsonNodeTransformer.transformNode(curObject.get(jst.nodeName()), jst.attribute(), jst.transformer());
         }
       }
-
-      if (curObject.get(JSONApiDocumentStructure.ATTRIBUTES) != null || !curObject.isObject()) {
-        // Already have the attributes or the node is not an object ... skip the current entry
-        continue;
-      }
-
-      // Getting the type and perform a level #1 retrieval of attributes
-      //
-      String type = curObject.get(JSONApiDocumentStructure.TYPE).asText();
-      if (svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
-
-        // Get the Id and retrieved the attributes from the related object.
-        //
-        String curObjectId = curObject.get(JSONApiDocumentStructure.ID).asText();
-
-        // Best effort processing for assembling of include section
-        try {
-          IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
-          String rawPayload = apiAccess.getFromApi(svcEndpointProps.getApiResourceDescriptorForType(type),
-              indexSettingDescriptor.relationships(), indexSettingDescriptor.optionalFields(), curObjectId);
-          JsonNode document = OM.readTree(rawPayload);
-          // Take the data.attributes section to be embedded
-          Optional<JsonNode> dataObject = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
-
-          if (dataObject.isPresent()) {
-            ((ObjectNode) curObject).set(JSONApiDocumentStructure.ATTRIBUTES, dataObject.get());
-          } else {
-            // Remove attribute section from the embedded object
-            ((ObjectNode) curObject).remove(JSONApiDocumentStructure.ATTRIBUTES);
-          }
-        } catch (SearchApiException | JsonProcessingException ex) {
-          log.error("Error during processing of included section object type{}, id={}, message={}", type, curObjectId, ex.getMessage());
-        }
-      }
     }
+
   }
 
   /**
