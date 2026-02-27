@@ -3,7 +3,6 @@ package ca.gc.aafc.dina.search.cli.http;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -25,7 +24,9 @@ public class CacheableApiAccess implements DinaApiAccess {
     client = aClient;
   }
 
-  @Cacheable(cacheNames = CACHE_NAME)
+  // Removed @Cacheable to always fetch fresh data and avoid stale entries.
+  // Will be likely be re-enabled with value injection in the future
+  // Previously: @Cacheable(cacheNames = CACHE_NAME)
   public String getFromApi(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes,
                            Map<String, List<String>> optFields, String objectId)
       throws SearchApiException {
