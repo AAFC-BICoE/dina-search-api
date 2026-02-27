@@ -85,7 +85,7 @@ public class DocumentManagerEmbeddedIT {
   private static final String EMBEDDED_DOCUMENT_INCLUDED_ID = "f9e10a21-d8b6-4d9b-8c99-953bdc940862";
 
   // Document to index into elastic search
-  private static final Path EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH = Path.of("src/test/resources/person_embedded_assemble_response.json");
+  private static final Path EMBEDDED_PERSON_INITIAL_DOCUMENT_PATH = Path.of("src/test/resources/person_assembled_document.json");
 
   // Template of response to be received after process embedded
   private static final Path EMBEDDED_PERSON_RESPONSE_PATH = Path.of("src/test/resources/get_person_for_embedded_test.json");
@@ -206,7 +206,7 @@ public class DocumentManagerEmbeddedIT {
         "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
-    docFromElasticSearch = searchResponse.hits().hits().get(0).source();
+    docFromElasticSearch = searchResponse.hits().hits().getFirst().source();
 
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
     assertEquals(EMBEDDED_ORG_NAME_AFTER_UPDATE,
