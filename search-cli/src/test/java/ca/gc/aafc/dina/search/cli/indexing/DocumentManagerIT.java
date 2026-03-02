@@ -29,6 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 @ExtendWith(MockServerExtension.class) 
-@MockServerSettings(ports = {1080, 8081, 8082, TestConstants.KEYCLOAK_MOCK_PORT})
+@MockServerSettings(ports = {1080, 8081, 8082, 8085, TestConstants.KEYCLOAK_MOCK_PORT})
 public class DocumentManagerIT {
 
   private ClientAndServer client;
@@ -64,6 +65,12 @@ public class DocumentManagerIT {
 
   private static final Path PERSON_RESPONSE_PATH = Path.of("src/test/resources/get_person_response.json");
   private static final Path ORGANIZATION_RESPONSE_PATH = Path.of("src/test/resources/get_organization_response.json");
+  private static final Path MATERIAL_SAMPLE_NO_INCLUDED_PATH = Path.of("src/test/resources/material_sample_document_no_included.json");
+  private static final Path COLLECTING_EVENT_RESPONSE_PATH = Path.of("src/test/resources/get_collecting_event_response.json");
+  
+  private static final String MATERIAL_SAMPLE_ID = "01930c2a-f299-7464-ad27-ce3828421e6e";
+  private static final String COLLECTING_EVENT_ID = "6993c972-cd69-4d58-8c0f-163f9bf7a9bc";
+  private static final String PERSON_COLLECTOR_ID = "bdae3b3a-b5a6-4b36-89dc-52634f9e044f";
 
   @BeforeAll
   static void beforeAll() {
@@ -106,6 +113,7 @@ public class DocumentManagerIT {
         null, 
         null, 
         null, 
+        null,
         null
     );
     serviceEndpointProperties.addEndpointDescriptor(epd);
@@ -188,6 +196,106 @@ public class DocumentManagerIT {
         jsonMessage.at("/included/0/attributes/names/0/name").asText());
     assertEquals("EN", 
         jsonMessage.at("/included/0/attributes/names/0/languageCode").asText());
+  }
+
+  @DisplayName("Integration Test - augmented relationships with included stripping")
+  @SneakyThrows
+  @Test
+  public void processMessage_withAugmentedRelationship_stripsIncludedSections() {
+
+    MockKeyCloakAuthentication.mockKeycloak(client);
+
+    // Register collecting-event endpoint as an external relationship for this test
+    IndexSettingDescriptor collectingEventEpd = new IndexSettingDescriptor(
+        TestConstants.MATERIAL_SAMPLE_INDEX, 
+        "collecting-event", 
+        Set.of("collectors"), 
+        null, 
+        null, 
+        null,
+        null
+    );
+    serviceEndpointProperties.addEndpointDescriptor(collectingEventEpd);
+
+    ApiResourceDescriptor collectingEventApiDescriptor = new ApiResourceDescriptor(
+        "collecting-event", 
+        "http://localhost:8085/api/v1/collecting-event", 
+        true
+    );
+    serviceEndpointProperties.addApiResourceDescriptor(collectingEventApiDescriptor);
+
+    // Mock the material-sample request - returns material-sample WITHOUT included section
+    client.when(MockKeyCloakAuthentication.setupMockRequest()
+        .withMethod("GET")
+        .withPath("/api/v1/material-sample/" + MATERIAL_SAMPLE_ID)
+        .withQueryStringParameter("include", "collectingEvent,organism,attachment,collection,preparedBy,preparationType,preparationMethod,assemblages,projects,storageUnitUsage,parentMaterialSample"))
+        .respond(HttpResponse.response()
+            .withStatusCode(200)
+            .withBody(Files.readString(MATERIAL_SAMPLE_NO_INCLUDED_PATH))
+            .withDelay(TimeUnit.SECONDS, 1));
+
+    // Mock the collecting-event request (augmented relationship)
+    // Returns WITH person in included section (simulates ?include=collectors)
+    client.when(MockKeyCloakAuthentication.setupMockRequest()
+        .withMethod("GET")
+        .withPath("/api/v1/collecting-event/" + COLLECTING_EVENT_ID)
+        .withQueryStringParameter("include", "collectors"))
+        .respond(HttpResponse.response()
+            .withStatusCode(200)
+            .withBody(Files.readString(COLLECTING_EVENT_RESPONSE_PATH))
+            .withDelay(TimeUnit.SECONDS, 1));
+
+    // Index the material-sample document with augmented relationship
+    JsonNode jsonMessage = documentManager.indexDocument("material-sample", MATERIAL_SAMPLE_ID);
+
+    // Cleanup - remove test configuration to not interfere with other tests
+    serviceEndpointProperties.removeEndpointDescriptor(collectingEventEpd);
+    serviceEndpointProperties.removeApiResourceDescriptor(collectingEventApiDescriptor);
+
+    System.out.println(jsonMessage.toPrettyString());
+
+    // Verify the assembled document structure
+    assertEquals(MATERIAL_SAMPLE_ID, jsonMessage.at("/data/id").asText());
+    assertEquals("material-sample", jsonMessage.at("/data/type").asText());
+    
+    // Verify included section was created and populated with 2 items:
+    // 1. collecting-event (augmented relationship)
+    // 2. person (nested relationship from collecting-event.collectors)
+    assertFalse(jsonMessage.at("/included").isMissingNode(), 
+        "Included section should be created by assembleDocument");
+    assertTrue(jsonMessage.at("/included").isArray(), 
+        "Included should be an array");
+    assertEquals(2, jsonMessage.at("/included").size(), 
+        "Should have 2 items: collecting-event and person");
+
+    // Find collecting-event and person in included array
+    JsonNode collectingEvent = null;
+    JsonNode person = null;
+    for (JsonNode item : jsonMessage.at("/included")) {
+      if ("collecting-event".equals(item.get("type").asText()) && 
+          COLLECTING_EVENT_ID.equals(item.get("id").asText())) {
+        collectingEvent = item;
+      }
+      if ("person".equals(item.get("type").asText()) && 
+          PERSON_COLLECTOR_ID.equals(item.get("id").asText())) {
+        person = item;
+      }
+    }
+    // Verify collecting-event is present and has no included section (stripped)
+    assertFalse(collectingEvent == null, "Collecting-event should be in included section");
+    assertFalse(collectingEvent.get("attributes").isMissingNode(), 
+        "Collecting-event should have attributes");
+    assertEquals("Ottawa", collectingEvent.at("/attributes/dwcVerbatimLocality").asText());
+    assertTrue(collectingEvent.at("/included").isMissingNode(), 
+        "Collecting-event should not have included section (stripped)");
+
+    // Verify person is present and has no included section (stripped from API response)
+    assertFalse(person == null, "Person (collector) should be in included section");
+    assertFalse(person.get("attributes").isMissingNode(), 
+        "Person should have attributes");
+    assertEquals("test user", person.at("/attributes/displayName").asText());
+    assertTrue(person.at("/included").isMissingNode(), 
+        "Person should not have included section (stripped from original response)");
   }
 
 }

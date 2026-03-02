@@ -1,0 +1,102 @@
+{
+  "data": {
+    "id": "6993c972-cd69-4d58-8c0f-163f9bf7a9bc",
+    "type": "collecting-event",
+    "attributes": {
+      "version": 3,
+      "group": "aafc",
+      "createdBy": "cnc-cm",
+      "createdOn": "2022-03-02T17:37:05.066112Z",
+      "geoReferenceAssertions": [
+        {
+          "dwcDecimalLatitude": null,
+          "dwcDecimalLongitude": null,
+          "dwcCoordinateUncertaintyInMeters": null,
+          "createdOn": "2022-03-02T17:41:53.968226Z",
+          "dwcGeoreferencedDate": null,
+          "georeferencedBy": null,
+          "literalGeoreferencedBy": null,
+          "dwcGeoreferenceProtocol": null,
+          "dwcGeoreferenceSources": null,
+          "dwcGeoreferenceRemarks": null,
+          "dwcGeodeticDatum": null,
+          "isPrimary": true,
+          "dwcGeoreferenceVerificationStatus": null
+        }
+      ],
+      "dwcVerbatimCoordinates": null,
+      "dwcRecordedBy": "Christian",
+      "startEventDateTime": null,
+      "endEventDateTime": null,
+      "verbatimEventDateTime": null,
+      "dwcVerbatimLocality": "Ottawa",
+      "host": null,
+      "managedAttributes": {},
+      "dwcVerbatimLatitude": null,
+      "dwcVerbatimLongitude": null,
+      "eventGeom": {
+        "type": "Point",
+        "crs": {
+          "type": "name",
+          "properties": {
+            "name": "EPSG:4326"
+          }
+        },
+        "coordinates": [
+          25.0,
+          12.0
+        ]
+      }
+    },
+    "relationships": {
+      "collectors": {
+        "data": [
+          {
+            "type": "person",
+            "id": "bdae3b3a-b5a6-4b36-89dc-52634f9e044f"
+          }
+        ]
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "bdae3b3a-b5a6-4b36-89dc-52634f9e044f",
+      "type": "person",
+      "attributes": {
+        "displayName": "test user",
+        "email": "test@canada.ca",
+        "createdBy": "test user",
+        "createdOn": "1985-04-12T23:20:50.52Z",
+        "givenNames": "Jane",
+        "familyNames": "Doe",
+        "webpage": "https://github.com/DINA-Web",
+        "remarks": "this is a mock remark",
+        "aliases": [
+          "Jane Roe",
+          "Janie Doe"
+        ]
+      },
+      "relationships": {
+        "organizations": {
+          "data": [
+            {
+              "type": "organization",
+              "id": "3c7018ce-cf47-418a-9a15-bf5867a6c320"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "meta": {
+    "totalResourceCount": 1,
+    "external": [
+      {
+        "type": "collecting-event",
+        "href": "collection/api/v1/collecting-event"
+      }
+    ],
+    "moduleVersion": "0.14"
+  }
+}

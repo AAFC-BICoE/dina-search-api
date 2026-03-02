@@ -4,6 +4,7 @@ import ca.gc.aafc.dina.json.JsonHelper;
 import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
 import ca.gc.aafc.dina.jsonapi.JsonApiCompoundDocument;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
+import ca.gc.aafc.dina.search.cli.config.AugmentedRelationship;
 import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ReverseRelationship;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
@@ -88,9 +90,13 @@ public class IndexableDocumentHandler {
     ArrayNode includedArray = (ArrayNode) JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR)
         .orElseGet(() -> OM.createArrayNode());
 
+    // Parse document type for augmented relationships lookup
+    JsonApiCompoundDocument jsonApiCompoundDocument = OM.readValue(rawPayload, JsonApiCompoundDocument.class);
+    String documentType = jsonApiCompoundDocument.getType();
+
     // relationship is optional - process external relationships and add them to included
     JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.RELATIONSHIP_PTR).ifPresent( rel -> {
-      processExternalRelationships(rel, includedArray);
+      processExternalRelationships(documentType, rel, includedArray);
     });
 
     // Process included section to apply Node transformations if needed (ex: coordinate extraction for geospatial fields)
@@ -102,8 +108,7 @@ public class IndexableDocumentHandler {
     }
 
     // Parse it as json:api document to make it easier
-    JsonApiCompoundDocument jsonApiCompoundDocument = OM.readValue(rawPayload, JsonApiCompoundDocument.class);
-    processReverseRelationships(jsonApiCompoundDocument.getType(), jsonApiCompoundDocument.getIdAsStr(), newData);
+    processReverseRelationships(documentType, jsonApiCompoundDocument.getIdAsStr(), newData);
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
@@ -118,14 +123,17 @@ public class IndexableDocumentHandler {
    * 
    * @param type the document type
    * @param id the document ID
+   * @param includeOverride optional override for relationships to include (null = use type's default)
    * @return the parsed JSON document, or empty if the fetch fails
    */
-  private Optional<JsonNode> fetchDocument(String type, String id) {
+  private Optional<JsonNode> fetchDocument(String type, String id, Set<String> includeOverride) {
     try {
       IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
+      // Use override if provided, otherwise use the type's configured relationships
+      Set<String> includes = includeOverride != null ? includeOverride : indexSettingDescriptor.relationships();
       String rawPayload = apiAccess.getFromApi(
           svcEndpointProps.getApiResourceDescriptorForType(type),
-          indexSettingDescriptor.relationships(),
+          includes,
           indexSettingDescriptor.optionalFields(),
           id);
       return Optional.of(OM.readTree(rawPayload));
@@ -138,25 +146,34 @@ public class IndexableDocumentHandler {
   /**
    * Processing of the external relationships (objects in other APIs) of a DINA compliant json api object.
    * 
-   * In this current implementation we are resolving entries that are missing
-   * their attributes property.
+   * Fetches relationship documents and adds them to the included section. For augmented relationships,
+   * uses the JSON:API include parameter to fetch nested relationships in a single request, then extracts
+   * and flattens them. The included section is stripped from all fetched documents to prevent mapping explosion.
    * 
+   * @param parentType The type of the parent document being assembled
+   * @param relationshipsNode Node containing the relationships section
    * @param includedArray Array containing included json spec objects
-   * @param relationshipsNode Node containing the relationships section of the original document.
-   * This is used to resolve external relationships and add them to the included section.
    */
-  private void processExternalRelationships(JsonNode relationshipsNode, JsonNode includedArray) {
+  private void processExternalRelationships(String parentType, JsonNode relationshipsNode, JsonNode includedArray) {
     if (relationshipsNode == null || !relationshipsNode.isObject()) {
       return;
     }
 
+    // Get the parent's index settings to check for augmented relationships
+    IndexSettingDescriptor parentIndexSettings = svcEndpointProps.getIndexSettingDescriptorForType(parentType);
+
     // Iterate over each relationship
     relationshipsNode.fields().forEachRemaining(relationshipEntry -> {
+      String relationshipName = relationshipEntry.getKey();
       JsonNode relationshipData = relationshipEntry.getValue().get(JSONApiDocumentStructure.DATA);
       
       if (relationshipData == null) {
         return;
       }
+      
+      // Check if this relationship is configured as augmented
+      boolean isAugmented = parentIndexSettings != null 
+          && parentIndexSettings.isAugmentedRelationship(relationshipName);
       
       // Handle both single object and array formats
       JsonNode dataArray = relationshipData.isArray() ? relationshipData : OM.createArrayNode().add(relationshipData);
@@ -183,16 +200,96 @@ public class IndexableDocumentHandler {
           continue;
         }
         
-        // Retrieve nested document and add to includedArray
-        fetchDocument(relationshipType, relationshipId)
-            .flatMap(document -> JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR))
-            .ifPresent(data -> ((ArrayNode) includedArray).add(data));
+        // For augmented relationships, fetch with nested relationships included
+        Set<String> includeOverride = null;
+        if (isAugmented) {
+          Optional<AugmentedRelationship> augmentedRelOpt = parentIndexSettings.getAugmentedRelationship(relationshipName);
+          if (augmentedRelOpt.isPresent()) {
+            // Convert List to Set for the include parameter
+            includeOverride = Set.copyOf(augmentedRelOpt.get().nestedRelationships());
+            log.info("Fetching augmented relationship: {} with nested includes: {}", relationshipName, includeOverride);
+          }
+        }
+        
+        // Fetch the relationship document (with nested relationships if augmented)
+        Optional<JsonNode> fullDocumentOpt = fetchDocument(relationshipType, relationshipId, includeOverride);
+        if (fullDocumentOpt.isEmpty()) {
+          log.warn("Failed to fetch document: type={}, id={}", relationshipType, relationshipId);
+          continue;
+        }
+        
+        JsonNode fullDocument = fullDocumentOpt.get();
+        
+        // Extract the data section, strip included, and add to parent's includedArray
+        Optional<JsonNode> dataOpt = JsonHelper.atJsonPtr(fullDocument, JSONApiDocumentStructure.DATA_PTR);
+        if (dataOpt.isEmpty()) {
+          continue;
+        }
+        
+        JsonNode data = dataOpt.get();
+        JsonNode strippedData = stripIncludedSection(data);
+        ((ArrayNode) includedArray).add(strippedData);
+        log.info("Added document to included: type={}, id={}{}", relationshipType, relationshipId,
+            isAugmented ? " (augmented)" : "");
+        
+        // For augmented relationships, extract nested documents from the included section
+        if (isAugmented) {
+          JsonHelper.atJsonPtr(fullDocument, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(nestedIncluded -> {
+            if (nestedIncluded.isArray()) {
+              for (JsonNode nestedDoc : nestedIncluded) {
+                // Check if already in parent's included array
+                String nestedId = nestedDoc.has(JSONApiDocumentStructure.ID) 
+                    ? nestedDoc.get(JSONApiDocumentStructure.ID).asText() : null;
+                String nestedType = nestedDoc.has(JSONApiDocumentStructure.TYPE)
+                    ? nestedDoc.get(JSONApiDocumentStructure.TYPE).asText() : null;
+                
+                if (nestedId == null || nestedType == null) {
+                  continue;
+                }
+                
+                boolean alreadyIncluded = false;
+                for (JsonNode existing : includedArray) {
+                  if (JsonHelper.safeTextEquals(existing, JSONApiDocumentStructure.ID, nestedId)
+                      && JsonHelper.safeTextEquals(existing, JSONApiDocumentStructure.TYPE, nestedType)) {
+                    alreadyIncluded = true;
+                    break;
+                  }
+                }
+                
+                if (!alreadyIncluded) {
+                  // Strip included section from nested document before adding
+                  JsonNode strippedNested = stripIncludedSection(nestedDoc);
+                  ((ArrayNode) includedArray).add(strippedNested);
+                  log.info("Added nested document to included: type={}, id={}", nestedType, nestedId);
+                }
+              }
+            }
+          });
+        }
       }
     });
   }
 
   /**
+   * Strip the included section from a JSON node to prevent mapping explosion.
+   * Creates a copy of the node without the included field.
+   * 
+   * @param node the node to strip
+   * @return a copy of the node without the included section
+   */
+  private JsonNode stripIncludedSection(JsonNode node) {
+    if (!node.isObject()) {
+      return node;
+    }
+    
+    ObjectNode copy = ((ObjectNode) node).deepCopy();
+    copy.remove(JSONApiDocumentStructure.INCLUDED);
+    return copy;
+  }
+
+  /**
    * Apply transformations to nodes within the included section of a DINA compliant json api object.
+
    * 
    * Currently applies coordinate extraction transformations to specific attributes
    * as defined in INCLUDED_NODE_TRANSFORMATION.

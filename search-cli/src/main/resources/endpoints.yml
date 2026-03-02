@@ -57,6 +57,10 @@ indexSettings:
     reverseRelationships:
       - type: run-summary
         relationshipName: materialSample
+    augmentedRelationships:
+      - relationshipName: collectingEvent
+        nestedRelationships:
+          - collectors
 
   - indexName: dina_object_store_index
     type: metadata
