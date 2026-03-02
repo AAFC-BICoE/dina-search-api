@@ -19,6 +19,7 @@ import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.model.HttpResponse;
+import org.mockserver.matchers.Times;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -29,7 +30,6 @@ import org.testcontainers.junit.jupiter.Container;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -67,6 +67,7 @@ public class DocumentManagerIT {
   private static final Path ORGANIZATION_RESPONSE_PATH = Path.of("src/test/resources/get_organization_response.json");
   private static final Path MATERIAL_SAMPLE_NO_INCLUDED_PATH = Path.of("src/test/resources/material_sample_document_no_included.json");
   private static final Path COLLECTING_EVENT_RESPONSE_PATH = Path.of("src/test/resources/get_collecting_event_response.json");
+  private static final Path COLLECTING_EVENT_NO_RELATIONSHIPS_PATH = Path.of("src/test/resources/get_collecting_event_no_relationships_response.json");
   
   private static final String MATERIAL_SAMPLE_ID = "01930c2a-f299-7464-ad27-ce3828421e6e";
   private static final String COLLECTING_EVENT_ID = "6993c972-cd69-4d58-8c0f-163f9bf7a9bc";
@@ -198,18 +199,18 @@ public class DocumentManagerIT {
         jsonMessage.at("/included/0/attributes/names/0/languageCode").asText());
   }
 
-  @DisplayName("Integration Test - augmented relationships with included stripping")
+  @DisplayName("Integration Test - augmented relationships enrich documents with nested type/id references")
   @SneakyThrows
   @Test
-  public void processMessage_withAugmentedRelationship_stripsIncludedSections() {
+  public void processMessage_withAugmentedRelationship_enrichesRelationships() {
 
     MockKeyCloakAuthentication.mockKeycloak(client);
 
-    // Register collecting-event endpoint as an external relationship for this test
+    // registration for proper isolation and to override default URLs with MockServer URLs.
     IndexSettingDescriptor collectingEventEpd = new IndexSettingDescriptor(
         TestConstants.MATERIAL_SAMPLE_INDEX, 
         "collecting-event", 
-        Set.of("collectors"), 
+        null, 
         null, 
         null, 
         null,
@@ -234,8 +235,17 @@ public class DocumentManagerIT {
             .withBody(Files.readString(MATERIAL_SAMPLE_NO_INCLUDED_PATH))
             .withDelay(TimeUnit.SECONDS, 1));
 
-    // Mock the collecting-event request (augmented relationship)
-    // Returns WITH person in included section (simulates ?include=collectors)
+    // Mock the initial collecting-event fetch (without include parameter)
+    client.when(MockKeyCloakAuthentication.setupMockRequest()
+        .withMethod("GET")
+        .withPath("/api/v1/collecting-event/" + COLLECTING_EVENT_ID), Times.exactly(1))
+        .respond(HttpResponse.response()
+            .withStatusCode(200)
+            .withBody(Files.readString(COLLECTING_EVENT_NO_RELATIONSHIPS_PATH))
+            .withDelay(TimeUnit.SECONDS, 1));
+
+    // Mock the augmented fetch with ?include=collectors
+    // This will match the second request with include parameter
     client.when(MockKeyCloakAuthentication.setupMockRequest()
         .withMethod("GET")
         .withPath("/api/v1/collecting-event/" + COLLECTING_EVENT_ID)
@@ -246,56 +256,62 @@ public class DocumentManagerIT {
             .withDelay(TimeUnit.SECONDS, 1));
 
     // Index the material-sample document with augmented relationship
+    // Expected flow:
+    // 1. Fetch material-sample (returns with collectingEvent relationship reference)
+    // 2. Fetch collecting-event (first mock - NO relationships section)
+    // 3. Augmented processing detects collectingEvent needs enrichment
+    // 4. Re-fetch collecting-event with ?include=collectors (second mock - WITH relationships section)
+    // 5. Replace original collecting-event in included with enriched version
     JsonNode jsonMessage = documentManager.indexDocument("material-sample", MATERIAL_SAMPLE_ID);
 
-    // Cleanup - remove test configuration to not interfere with other tests
+    // Cleanup
     serviceEndpointProperties.removeEndpointDescriptor(collectingEventEpd);
     serviceEndpointProperties.removeApiResourceDescriptor(collectingEventApiDescriptor);
 
     System.out.println(jsonMessage.toPrettyString());
-
     // Verify the assembled document structure
     assertEquals(MATERIAL_SAMPLE_ID, jsonMessage.at("/data/id").asText());
     assertEquals("material-sample", jsonMessage.at("/data/type").asText());
     
-    // Verify included section was created and populated with 2 items:
-    // 1. collecting-event (augmented relationship)
-    // 2. person (nested relationship from collecting-event.collectors)
+    // Verify included section was created with 1 item: collecting-event (augmented with collectors references)
     assertFalse(jsonMessage.at("/included").isMissingNode(), 
         "Included section should be created by assembleDocument");
     assertTrue(jsonMessage.at("/included").isArray(), 
         "Included should be an array");
-    assertEquals(2, jsonMessage.at("/included").size(), 
-        "Should have 2 items: collecting-event and person");
+    assertEquals(1, jsonMessage.at("/included").size(), 
+        "Should have 1 item: collecting-event with augmented relationships");
 
-    // Find collecting-event and person in included array
+    // Find collecting-event in included array
     JsonNode collectingEvent = null;
-    JsonNode person = null;
     for (JsonNode item : jsonMessage.at("/included")) {
       if ("collecting-event".equals(item.get("type").asText()) && 
           COLLECTING_EVENT_ID.equals(item.get("id").asText())) {
         collectingEvent = item;
       }
-      if ("person".equals(item.get("type").asText()) && 
-          PERSON_COLLECTOR_ID.equals(item.get("id").asText())) {
-        person = item;
-      }
     }
-    // Verify collecting-event is present and has no included section (stripped)
+    
+    // Verify collecting-event is present and enriched with collectors relationship
     assertFalse(collectingEvent == null, "Collecting-event should be in included section");
     assertFalse(collectingEvent.get("attributes").isMissingNode(), 
         "Collecting-event should have attributes");
     assertEquals("Ottawa", collectingEvent.at("/attributes/dwcVerbatimLocality").asText());
-    assertTrue(collectingEvent.at("/included").isMissingNode(), 
-        "Collecting-event should not have included section (stripped)");
-
-    // Verify person is present and has no included section (stripped from API response)
-    assertFalse(person == null, "Person (collector) should be in included section");
-    assertFalse(person.get("attributes").isMissingNode(), 
-        "Person should have attributes");
-    assertEquals("test user", person.at("/attributes/displayName").asText());
-    assertTrue(person.at("/included").isMissingNode(), 
-        "Person should not have included section (stripped from original response)");
+    
+    // Verify collecting-event has relationships section with collectors type/id references
+    assertFalse(collectingEvent.at("/relationships").isMissingNode(),
+        "Collecting-event should have relationships section");
+    assertFalse(collectingEvent.at("/relationships/collectors").isMissingNode(),
+        "Collecting-event should have collectors relationship");
+    assertFalse(collectingEvent.at("/relationships/collectors/data").isMissingNode(),
+        "Collectors relationship should have data section");
+    
+    // Verify collectors data contains type and id references (not full documents)
+    JsonNode collectorsData = collectingEvent.at("/relationships/collectors/data");
+    assertTrue(collectorsData.isArray(), "Collectors data should be an array");
+    assertEquals(1, collectorsData.size(), "Should have 1 collector reference");
+    assertEquals("person", collectorsData.get(0).get("type").asText(), 
+        "Collector reference should have type");
+    assertEquals(PERSON_COLLECTOR_ID, collectorsData.get(0).get("id").asText(),
+        "Collector reference should have correct id");
   }
 
 }

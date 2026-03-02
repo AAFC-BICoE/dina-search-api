@@ -96,7 +96,7 @@ public class IndexableDocumentHandler {
 
     // relationship is optional - process external relationships and add them to included
     JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.RELATIONSHIP_PTR).ifPresent( rel -> {
-      processExternalRelationships(documentType, rel, includedArray);
+      processExternalRelationships(rel, includedArray);
     });
 
     // Process included section to apply Node transformations if needed (ex: coordinate extraction for geospatial fields)
@@ -109,6 +109,9 @@ public class IndexableDocumentHandler {
 
     // Parse it as json:api document to make it easier
     processReverseRelationships(documentType, jsonApiCompoundDocument.getIdAsStr(), newData);
+
+    // Process augmented relationships - enrich already-included documents with nested relationship references
+    processAugmentedRelationships(documentType, newData);
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
@@ -123,14 +126,13 @@ public class IndexableDocumentHandler {
    * 
    * @param type the document type
    * @param id the document ID
-   * @param includeOverride optional override for relationships to include (null = use type's default)
+   * @param includeOverride optional override for relationships to include (empty = use type's default)
    * @return the parsed JSON document, or empty if the fetch fails
    */
-  private Optional<JsonNode> fetchDocument(String type, String id, Set<String> includeOverride) {
+  private Optional<JsonNode> fetchDocument(String type, String id, Optional<Set<String>> includeOverride) {
     try {
       IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
-      // Use override if provided, otherwise use the type's configured relationships
-      Set<String> includes = includeOverride != null ? includeOverride : indexSettingDescriptor.relationships();
+      Set<String> includes = includeOverride.orElse(indexSettingDescriptor.relationships());
       String rawPayload = apiAccess.getFromApi(
           svcEndpointProps.getApiResourceDescriptorForType(type),
           includes,
@@ -146,34 +148,23 @@ public class IndexableDocumentHandler {
   /**
    * Processing of the external relationships (objects in other APIs) of a DINA compliant json api object.
    * 
-   * Fetches relationship documents and adds them to the included section. For augmented relationships,
-   * uses the JSON:API include parameter to fetch nested relationships in a single request, then extracts
-   * and flattens them. The included section is stripped from all fetched documents to prevent mapping explosion.
+   * Fetches relationship documents and adds them to the included section.
    * 
-   * @param parentType The type of the parent document being assembled
    * @param relationshipsNode Node containing the relationships section
    * @param includedArray Array containing included json spec objects
    */
-  private void processExternalRelationships(String parentType, JsonNode relationshipsNode, JsonNode includedArray) {
+  private void processExternalRelationships(JsonNode relationshipsNode, JsonNode includedArray) {
     if (relationshipsNode == null || !relationshipsNode.isObject()) {
       return;
     }
 
-    // Get the parent's index settings to check for augmented relationships
-    IndexSettingDescriptor parentIndexSettings = svcEndpointProps.getIndexSettingDescriptorForType(parentType);
-
     // Iterate over each relationship
     relationshipsNode.fields().forEachRemaining(relationshipEntry -> {
-      String relationshipName = relationshipEntry.getKey();
       JsonNode relationshipData = relationshipEntry.getValue().get(JSONApiDocumentStructure.DATA);
       
       if (relationshipData == null) {
         return;
       }
-      
-      // Check if this relationship is configured as augmented
-      boolean isAugmented = parentIndexSettings != null 
-          && parentIndexSettings.isAugmentedRelationship(relationshipName);
       
       // Handle both single object and array formats
       JsonNode dataArray = relationshipData.isArray() ? relationshipData : OM.createArrayNode().add(relationshipData);
@@ -200,19 +191,8 @@ public class IndexableDocumentHandler {
           continue;
         }
         
-        // For augmented relationships, fetch with nested relationships included
-        Set<String> includeOverride = null;
-        if (isAugmented) {
-          Optional<AugmentedRelationship> augmentedRelOpt = parentIndexSettings.getAugmentedRelationship(relationshipName);
-          if (augmentedRelOpt.isPresent()) {
-            // Convert List to Set for the include parameter
-            includeOverride = Set.copyOf(augmentedRelOpt.get().nestedRelationships());
-            log.info("Fetching augmented relationship: {} with nested includes: {}", relationshipName, includeOverride);
-          }
-        }
-        
-        // Fetch the relationship document (with nested relationships if augmented)
-        Optional<JsonNode> fullDocumentOpt = fetchDocument(relationshipType, relationshipId, includeOverride);
+        // Fetch the relationship document
+        Optional<JsonNode> fullDocumentOpt = fetchDocument(relationshipType, relationshipId, Optional.empty());
         if (fullDocumentOpt.isEmpty()) {
           log.warn("Failed to fetch document: type={}, id={}", relationshipType, relationshipId);
           continue;
@@ -220,71 +200,105 @@ public class IndexableDocumentHandler {
         
         JsonNode fullDocument = fullDocumentOpt.get();
         
-        // Extract the data section, strip included, and add to parent's includedArray
+        // Extract the data section and add to parent's includedArray
         Optional<JsonNode> dataOpt = JsonHelper.atJsonPtr(fullDocument, JSONApiDocumentStructure.DATA_PTR);
-        if (dataOpt.isEmpty()) {
-          continue;
-        }
-        
-        JsonNode data = dataOpt.get();
-        JsonNode strippedData = stripIncludedSection(data);
-        ((ArrayNode) includedArray).add(strippedData);
-        log.info("Added document to included: type={}, id={}{}", relationshipType, relationshipId,
-            isAugmented ? " (augmented)" : "");
-        
-        // For augmented relationships, extract nested documents from the included section
-        if (isAugmented) {
-          JsonHelper.atJsonPtr(fullDocument, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(nestedIncluded -> {
-            if (nestedIncluded.isArray()) {
-              for (JsonNode nestedDoc : nestedIncluded) {
-                // Check if already in parent's included array
-                String nestedId = nestedDoc.has(JSONApiDocumentStructure.ID) 
-                    ? nestedDoc.get(JSONApiDocumentStructure.ID).asText() : null;
-                String nestedType = nestedDoc.has(JSONApiDocumentStructure.TYPE)
-                    ? nestedDoc.get(JSONApiDocumentStructure.TYPE).asText() : null;
-                
-                if (nestedId == null || nestedType == null) {
-                  continue;
-                }
-                
-                boolean alreadyIncluded = false;
-                for (JsonNode existing : includedArray) {
-                  if (JsonHelper.safeTextEquals(existing, JSONApiDocumentStructure.ID, nestedId)
-                      && JsonHelper.safeTextEquals(existing, JSONApiDocumentStructure.TYPE, nestedType)) {
-                    alreadyIncluded = true;
-                    break;
-                  }
-                }
-                
-                if (!alreadyIncluded) {
-                  // Strip included section from nested document before adding
-                  JsonNode strippedNested = stripIncludedSection(nestedDoc);
-                  ((ArrayNode) includedArray).add(strippedNested);
-                  log.info("Added nested document to included: type={}, id={}", nestedType, nestedId);
-                }
-              }
-            }
-          });
+        if (dataOpt.isPresent()) {
+          ((ArrayNode) includedArray).add(dataOpt.get());
+          log.info("Added document to included: type={}, id={}", relationshipType, relationshipId);
         }
       }
     });
   }
-
+  
   /**
-   * Strip the included section from a JSON node to prevent mapping explosion.
-   * Creates a copy of the node without the included field.
+   * Process augmented relationships by re-fetching documents already in the included section
+   * with additional nested relationship references. Replaces the existing entry with the enriched version
+   * that contains relationship type/id references in the relationships section.
    * 
-   * @param node the node to strip
-   * @return a copy of the node without the included section
+   * @param documentType The type of the parent document
+   * @param assembledDoc The assembled document with included section
    */
-  private JsonNode stripIncludedSection(JsonNode node) {
-    if (!node.isObject()) {
-      return node;
+  private void processAugmentedRelationships(String documentType, JsonNode assembledDoc) {
+    IndexSettingDescriptor indexSettings = svcEndpointProps.getIndexSettingDescriptorForType(documentType);
+    if (indexSettings == null || CollectionUtils.isEmpty(indexSettings.augmentedRelationships())) {
+      return;
     }
     
-    ObjectNode copy = ((ObjectNode) node).deepCopy();
-    copy.remove(JSONApiDocumentStructure.INCLUDED);
-    return copy;
+    JsonNode includedNode = assembledDoc.get(JSONApiDocumentStructure.INCLUDED);
+    if (includedNode == null || !includedNode.isArray()) {
+      return;
+    }
+    
+    ArrayNode includedArray = (ArrayNode) includedNode;
+    
+    // Iterate through each document in the included array
+    for (int i = 0; i < includedArray.size(); i++) {
+      JsonNode includedDoc = includedArray.get(i);
+      String includedType = includedDoc.has(JSONApiDocumentStructure.TYPE) 
+          ? includedDoc.get(JSONApiDocumentStructure.TYPE).asText() : null;
+      String includedId = includedDoc.has(JSONApiDocumentStructure.ID)
+          ? includedDoc.get(JSONApiDocumentStructure.ID).asText() : null;
+      
+      if (includedType == null || includedId == null) {
+        continue;
+      }
+      
+      // Check if there's an augmented relationship config for this document type
+      Optional<AugmentedRelationship> augmentedRelOpt = findAugmentedRelationshipForType(
+          indexSettings.augmentedRelationships(), includedType);
+      
+      if (augmentedRelOpt.isEmpty()) {
+        continue;
+      }
+      
+      // Re-fetch this document with nested includes
+      AugmentedRelationship augmentedRel = augmentedRelOpt.get();
+      Set<String> includes = Set.copyOf(augmentedRel.nestedRelationships());
+      log.info("Augmenting document: type={}, id={} with nested includes: {}", includedType, includedId, includes);
+      
+      Optional<JsonNode> enrichedDocOpt = fetchDocument(includedType, includedId, Optional.of(includes));
+      if (enrichedDocOpt.isEmpty()) {
+        log.warn("Failed to fetch augmented document: type={}, id={}", includedType, includedId);
+        continue;
+      }
+      
+      // Extract the enriched data section (which now has relationships populated)
+      Optional<JsonNode> enrichedDataOpt = JsonHelper.atJsonPtr(enrichedDocOpt.get(), JSONApiDocumentStructure.DATA_PTR);
+      if (enrichedDataOpt.isEmpty()) {
+        continue;
+      }
+      
+      // Replace the existing entry with the enriched one
+      JsonNode enrichedData = enrichedDataOpt.get();
+      includedArray.set(i, enrichedData);
+      log.info("Replaced document in included with augmented version: type={}, id={}", includedType, includedId);
+    }
+  }
+  
+  /**
+   * Find an augmented relationship configuration for a given document type.
+   * Matches by converting camelCase relationship names to kebab-case type names.
+   * 
+   * @param augmentedRelationships the list of augmented relationship configurations
+   * @param documentType the document type to match (e.g., "collecting-event")
+   * @return the matching augmented relationship config, or empty if not found
+   */
+  private Optional<AugmentedRelationship> findAugmentedRelationshipForType(
+      List<AugmentedRelationship> augmentedRelationships, String documentType) {
+    
+    for (AugmentedRelationship augmentedRel : augmentedRelationships) {
+      // Convert camelCase relationship name to kebab-case
+      // e.g., "collectingEvent" -> "collecting-event"
+      String normalizedRelName = augmentedRel.relationshipName()
+          .replaceAll("([a-z])([A-Z])", "$1-$2")
+          .toLowerCase();
+      
+      if (documentType.equals(normalizedRelName)) {
+        return Optional.of(augmentedRel);
+      }
+    }
+    
+    return Optional.empty();
   }
 
   /**

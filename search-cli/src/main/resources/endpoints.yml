@@ -16,6 +16,8 @@
 apiResources:
   - type: material-sample
     url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/material-sample
+  - type: collecting-event
+    url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/collecting-event
   - type: project
     url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/project
   - type: storage-unit

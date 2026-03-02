@@ -59,36 +59,6 @@
       }
     }
   },
-  "included": [
-    {
-      "id": "bdae3b3a-b5a6-4b36-89dc-52634f9e044f",
-      "type": "person",
-      "attributes": {
-        "displayName": "test user",
-        "email": "test@canada.ca",
-        "createdBy": "test user",
-        "createdOn": "1985-04-12T23:20:50.52Z",
-        "givenNames": "Jane",
-        "familyNames": "Doe",
-        "webpage": "https://github.com/DINA-Web",
-        "remarks": "this is a mock remark",
-        "aliases": [
-          "Jane Roe",
-          "Janie Doe"
-        ]
-      },
-      "relationships": {
-        "organizations": {
-          "data": [
-            {
-              "type": "organization",
-              "id": "3c7018ce-cf47-418a-9a15-bf5867a6c320"
-            }
-          ]
-        }
-      }
-    }
-  ],
   "meta": {
     "totalResourceCount": 1,
     "external": [
