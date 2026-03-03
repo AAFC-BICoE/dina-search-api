@@ -126,19 +126,42 @@ public class IndexableDocumentHandler {
    * 
    * @param type the document type
    * @param id the document ID
-   * @param includeOverride optional override for relationships to include (empty = use type's default)
+   * @param includeOverride optional override for relationships to include:
+   *        - Optional.empty(): use IndexSettingDescriptor defaults (for root document indexing)
+   *        - Optional.of(includes): use ApiResourceDescriptor with specified includes (for augmentation/external relationships)
    * @return the parsed JSON document, or empty if the fetch fails
    */
   private Optional<JsonNode> fetchDocument(String type, String id, Optional<Set<String>> includeOverride) {
     try {
-      IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
-      Set<String> includes = includeOverride.orElse(indexSettingDescriptor.relationships());
-      String rawPayload = apiAccess.getFromApi(
-          svcEndpointProps.getApiResourceDescriptorForType(type),
-          includes,
-          indexSettingDescriptor.optionalFields(),
-          id);
+      // Get API resource descriptor (required for all fetches)
+      ApiResourceDescriptor apiResource = svcEndpointProps.getApiResourceDescriptorForType(type);
+      if (apiResource == null) {
+        log.warn("No ApiResourceDescriptor found for type={}, cannot fetch document id={}", type, id);
+        return Optional.empty();
+      }
+      
+      // Determine includes and optionalFields based on mode
+      Set<String> includes;
+      Map<String, List<String>> optionalFields;
+      
+      if (includeOverride.isPresent()) {
+        // Custom includes mode: use provided includes (may be empty set)
+        includes = includeOverride.get();
+        optionalFields = null;
+      } else {
+        // Normal mode: use IndexSettingDescriptor defaults
+        IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
+        if (indexSettingDescriptor == null) {
+          log.warn("No IndexSettingDescriptor found for type={}, cannot fetch document id={}", type, id);
+          return Optional.empty();
+        }
+        includes = indexSettingDescriptor.relationships();
+        optionalFields = indexSettingDescriptor.optionalFields();
+      }
+      
+      String rawPayload = apiAccess.getFromApi(apiResource, includes, optionalFields, id);
       return Optional.of(OM.readTree(rawPayload));
+      
     } catch (SearchApiException | JsonProcessingException ex) {
       log.error("Error fetching document type={}, id={}, message={}", type, id, ex.getMessage());
       return Optional.empty();
@@ -187,12 +210,17 @@ public class IndexableDocumentHandler {
           }
         }
         
-        if (found || !svcEndpointProps.isTypeSupportedForEndpointDescriptor(relationshipType)) {
+        if (found) {
+          continue;
+        }
+        
+        // Check if we can fetch this type
+        if (svcEndpointProps.getApiResourceDescriptorForType(relationshipType) == null) {
           continue;
         }
         
         // Fetch the relationship document
-        Optional<JsonNode> fullDocumentOpt = fetchDocument(relationshipType, relationshipId, Optional.empty());
+        Optional<JsonNode> fullDocumentOpt = fetchDocument(relationshipType, relationshipId, Optional.of(Set.of()));
         if (fullDocumentOpt.isEmpty()) {
           log.warn("Failed to fetch document: type={}, id={}", relationshipType, relationshipId);
           continue;
@@ -262,16 +290,19 @@ public class IndexableDocumentHandler {
         continue;
       }
       
+      JsonNode enrichedDoc = enrichedDocOpt.get();
+      
       // Extract the enriched data section (which now has relationships populated)
-      Optional<JsonNode> enrichedDataOpt = JsonHelper.atJsonPtr(enrichedDocOpt.get(), JSONApiDocumentStructure.DATA_PTR);
+      Optional<JsonNode> enrichedDataOpt = JsonHelper.atJsonPtr(enrichedDoc, JSONApiDocumentStructure.DATA_PTR);
       if (enrichedDataOpt.isEmpty()) {
+        log.warn("No data section in enriched document for type={}, id={}", includedType, includedId);
         continue;
       }
+
+      JsonNode enrichedData = enrichedDataOpt.get();
       
       // Replace the existing entry with the enriched one
-      JsonNode enrichedData = enrichedDataOpt.get();
       includedArray.set(i, enrichedData);
-      log.info("Replaced document in included with augmented version: type={}, id={}", includedType, includedId);
     }
   }
   

@@ -206,17 +206,6 @@ public class DocumentManagerIT {
 
     MockKeyCloakAuthentication.mockKeycloak(client);
 
-    // registration for proper isolation and to override default URLs with MockServer URLs.
-    IndexSettingDescriptor collectingEventEpd = new IndexSettingDescriptor(
-        TestConstants.MATERIAL_SAMPLE_INDEX, 
-        "collecting-event", 
-        null, 
-        null, 
-        null, 
-        null,
-        null
-    );
-    serviceEndpointProperties.addEndpointDescriptor(collectingEventEpd);
 
     ApiResourceDescriptor collectingEventApiDescriptor = new ApiResourceDescriptor(
         "collecting-event", 
@@ -265,7 +254,6 @@ public class DocumentManagerIT {
     JsonNode jsonMessage = documentManager.indexDocument("material-sample", MATERIAL_SAMPLE_ID);
 
     // Cleanup
-    serviceEndpointProperties.removeEndpointDescriptor(collectingEventEpd);
     serviceEndpointProperties.removeApiResourceDescriptor(collectingEventApiDescriptor);
 
     System.out.println(jsonMessage.toPrettyString());
