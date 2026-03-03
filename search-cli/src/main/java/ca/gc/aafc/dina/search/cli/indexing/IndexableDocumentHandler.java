@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.stream.StreamSupport;
 
 /**
  * This class handles merging DINA API document with external document references embedded in the
@@ -257,79 +258,104 @@ public class IndexableDocumentHandler {
       return;
     }
     
+    JsonNode relationshipsNode = assembledDoc.at("/data/relationships");
+    if (relationshipsNode.isMissingNode() || !relationshipsNode.isObject()) {
+      return;
+    }
+    
     ArrayNode includedArray = (ArrayNode) includedNode;
     
-    // Iterate through each document in the included array
-    for (int i = 0; i < includedArray.size(); i++) {
-      JsonNode includedDoc = includedArray.get(i);
-      String includedType = includedDoc.has(JSONApiDocumentStructure.TYPE) 
-          ? includedDoc.get(JSONApiDocumentStructure.TYPE).asText() : null;
-      String includedId = includedDoc.has(JSONApiDocumentStructure.ID)
-          ? includedDoc.get(JSONApiDocumentStructure.ID).asText() : null;
-      
-      if (includedType == null || includedId == null) {
+    // For each configured augmented relationship, find and enrich the corresponding documents
+    for (AugmentedRelationship augmentedRel : indexSettings.augmentedRelationships()) {
+      JsonNode relationship = relationshipsNode.get(augmentedRel.relationshipName());
+      if (relationship == null) {
         continue;
       }
       
-      // Check if there's an augmented relationship config for this document type
-      Optional<AugmentedRelationship> augmentedRelOpt = findAugmentedRelationshipForType(
-          indexSettings.augmentedRelationships(), includedType);
-      
-      if (augmentedRelOpt.isEmpty()) {
-        continue;
+      List<JsonNode> relationshipRefs = extractRelationshipReferences(relationship);
+      for (JsonNode ref : relationshipRefs) {
+        augmentDocumentInIncluded(includedArray, ref, augmentedRel.nestedRelationships());
       }
-      
-      // Re-fetch this document with nested includes
-      AugmentedRelationship augmentedRel = augmentedRelOpt.get();
-      Set<String> includes = Set.copyOf(augmentedRel.nestedRelationships());
-      log.info("Augmenting document: type={}, id={} with nested includes: {}", includedType, includedId, includes);
-      
-      Optional<JsonNode> enrichedDocOpt = fetchDocument(includedType, includedId, Optional.of(includes));
-      if (enrichedDocOpt.isEmpty()) {
-        log.warn("Failed to fetch augmented document: type={}, id={}", includedType, includedId);
-        continue;
-      }
-      
-      JsonNode enrichedDoc = enrichedDocOpt.get();
-      
-      // Extract the enriched data section (which now has relationships populated)
-      Optional<JsonNode> enrichedDataOpt = JsonHelper.atJsonPtr(enrichedDoc, JSONApiDocumentStructure.DATA_PTR);
-      if (enrichedDataOpt.isEmpty()) {
-        log.warn("No data section in enriched document for type={}, id={}", includedType, includedId);
-        continue;
-      }
-
-      JsonNode enrichedData = enrichedDataOpt.get();
-      
-      // Replace the existing entry with the enriched one
-      includedArray.set(i, enrichedData);
     }
   }
   
   /**
-   * Find an augmented relationship configuration for a given document type.
-   * Matches by converting camelCase relationship names to kebab-case type names.
+   * Extract type/id references from a relationship node.
+   * Handles both single object and array formats.
    * 
-   * @param augmentedRelationships the list of augmented relationship configurations
-   * @param documentType the document type to match (e.g., "collecting-event")
-   * @return the matching augmented relationship config, or empty if not found
+   * @param relationshipNode the relationship node containing data
+   * @return list of reference objects (with type and id fields)
    */
-  private Optional<AugmentedRelationship> findAugmentedRelationshipForType(
-      List<AugmentedRelationship> augmentedRelationships, String documentType) {
-    
-    for (AugmentedRelationship augmentedRel : augmentedRelationships) {
-      // Convert camelCase relationship name to kebab-case
-      // e.g., "collectingEvent" -> "collecting-event"
-      String normalizedRelName = augmentedRel.relationshipName()
-          .replaceAll("([a-z])([A-Z])", "$1-$2")
-          .toLowerCase();
-      
-      if (documentType.equals(normalizedRelName)) {
-        return Optional.of(augmentedRel);
-      }
+  private List<JsonNode> extractRelationshipReferences(JsonNode relationshipNode) {
+    JsonNode data = relationshipNode.get(JSONApiDocumentStructure.DATA);
+    if (data == null || data.isNull()) {
+      return List.of();
     }
     
-    return Optional.empty();
+    if (data.isArray()) {
+      return StreamSupport.stream(data.spliterator(), false)
+          .filter(node -> node.has(JSONApiDocumentStructure.TYPE) && node.has(JSONApiDocumentStructure.ID))
+          .toList();
+    } else if (data.has(JSONApiDocumentStructure.TYPE) && data.has(JSONApiDocumentStructure.ID)) {
+      return List.of(data);
+    }
+    
+    return List.of();
+  }
+  
+  /**
+   * Find and augment a document in the included array with nested relationship references.
+   * 
+   * @param includedArray the included array to search and modify
+   * @param reference the reference object containing type and id
+   * @param nestedRelationships the nested relationships to include when fetching
+   */
+  private void augmentDocumentInIncluded(ArrayNode includedArray, JsonNode reference, List<String> nestedRelationships) {
+    String type = reference.get(JSONApiDocumentStructure.TYPE).asText();
+    String id = reference.get(JSONApiDocumentStructure.ID).asText();
+    
+    // Find the document in included array
+    int index = findDocumentIndex(includedArray, type, id);
+    if (index == -1) {
+      return; // Not in included array
+    }
+    
+    // Re-fetch with nested includes
+    Set<String> includes = Set.copyOf(nestedRelationships);
+    log.info("Augmenting document: type={}, id={} with nested includes: {}", type, id, includes);
+    
+    Optional<JsonNode> enrichedDocOpt = fetchDocument(type, id, Optional.of(includes));
+    if (enrichedDocOpt.isEmpty()) {
+      log.warn("Failed to fetch augmented document: type={}, id={}", type, id);
+      return;
+    }
+    
+    // Extract and replace with enriched data
+    Optional<JsonNode> enrichedDataOpt = JsonHelper.atJsonPtr(enrichedDocOpt.get(), JSONApiDocumentStructure.DATA_PTR);
+    if (enrichedDataOpt.isPresent()) {
+      includedArray.set(index, enrichedDataOpt.get());
+    } else {
+      log.warn("No data section in enriched document for type={}, id={}", type, id);
+    }
+  }
+  
+  /**
+   * Find the index of a document in the included array by type and id.
+   * 
+   * @param includedArray the included array to search
+   * @param type the document type
+   * @param id the document id
+   * @return the index if found, -1 otherwise
+   */
+  private int findDocumentIndex(ArrayNode includedArray, String type, String id) {
+    for (int i = 0; i < includedArray.size(); i++) {
+      JsonNode doc = includedArray.get(i);
+      if (JsonHelper.safeTextEquals(doc, JSONApiDocumentStructure.TYPE, type)
+          && JsonHelper.safeTextEquals(doc, JSONApiDocumentStructure.ID, id)) {
+        return i;
+      }
+    }
+    return -1;
   }
 
   /**
