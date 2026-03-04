@@ -110,6 +110,7 @@ public class DocumentProcessorIT {
       null, 
       null, 
       null, 
+      null,
       null
     );
 
