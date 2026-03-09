@@ -100,3 +100,7 @@ indexSettings:
 
   - indexName: dina_project_index
     type: project
+    relationships:
+      - parentProject
+    relationshipsType:
+      - project
