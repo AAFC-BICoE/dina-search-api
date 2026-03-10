@@ -102,6 +102,11 @@ indexSettings:
 
   - indexName: dina_project_index
     type: project
+    relationships:
+      - parentProject
+    relationshipsType:
+      - project
+  
   - indexName: dina_collecting_event_index
     type: collecting-event
     relationships:
