@@ -31,6 +31,8 @@ apiResources:
   - type: run-summary
     url: ${SEQDB_API_URL:http://localhost:8084/api}/run-summary
     enabled: ${SEQDB_API_ENABLED:true}
+  - type: site
+    url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/site
 
 indexSettings:
   - indexName: dina_material_sample_index
@@ -104,3 +106,8 @@ indexSettings:
       - parentProject
     relationshipsType:
       - project
+  
+  - indexName: dina_collecting_event_index
+    type: collecting-event
+    relationships:
+      - site
