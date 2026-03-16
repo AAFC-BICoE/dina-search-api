@@ -60,7 +60,7 @@ GET /search?indexName=dina_collecting_event_index
     ]
   }
 }
-
+```
 
 ## Explanation
 
