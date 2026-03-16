@@ -251,6 +251,8 @@ mappings:
       dateSubtype: DATE_TIME
     - name: publiclyReleasable
       type: boolean
+    - name: isExternalResource
+      type: boolean
     - name: acTags
       type: text
     - name: managedAttributes
