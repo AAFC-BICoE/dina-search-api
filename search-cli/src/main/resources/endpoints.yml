@@ -111,3 +111,5 @@ indexSettings:
     type: collecting-event
     relationships:
       - site
+    relationshipsType:
+      - site

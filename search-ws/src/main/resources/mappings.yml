@@ -287,6 +287,14 @@ mappings:
       type: date
       dateSubtype: DATE_TIME
 
-    
-
-
+  site:
+    - name: name
+      type: text
+    - name: code
+      type: text
+    - name: siteGeom
+      type: object
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date
