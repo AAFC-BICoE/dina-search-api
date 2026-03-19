@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document demonstrates how to perform a **geo-shape search** on **collecting events** using the `siteGeom` field. Users can draw a polygon in the UI, and the query will filter collecting events whose site geometry intersects the drawn shape.  
+This document demonstrates how to perform a **geo-shape search** on **sites** using the `siteGeom` field on the collecting-event index.  
 
 ---
 
