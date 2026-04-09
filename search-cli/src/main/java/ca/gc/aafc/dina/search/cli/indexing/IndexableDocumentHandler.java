@@ -99,12 +99,9 @@ public class IndexableDocumentHandler {
     JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.RELATIONSHIP_PTR).ifPresent( rel -> {
       processExternalRelationships(rel, includedArray);
     });
-
-    // Process included section to apply Node transformations if needed (ex: coordinate extraction for geospatial fields)
-    applyIncludedNodeTransformation(includedArray);
     
     // Only add included section if it has items
-    if (includedArray.size() > 0) {
+    if (!includedArray.isEmpty()) {
       newData.set(JSONApiDocumentStructure.INCLUDED, includedArray);
     }
 
@@ -113,6 +110,9 @@ public class IndexableDocumentHandler {
 
     // Process augmented relationships - enrich already-included documents with nested relationship references
     processAugmentedRelationships(documentType, newData);
+
+    // Process included section to apply Node transformations if needed (ex: coordinate extraction for geospatial fields)
+    applyIncludedNodeTransformation(includedArray);
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
