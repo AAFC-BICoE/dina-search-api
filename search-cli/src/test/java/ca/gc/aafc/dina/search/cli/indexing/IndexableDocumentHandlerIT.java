@@ -10,8 +10,10 @@ import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.jayway.jsonpath.JsonPath;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
@@ -27,6 +29,7 @@ import org.testcontainers.junit.jupiter.Container;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -68,12 +71,40 @@ public class IndexableDocumentHandlerIT {
     ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient,
         TestConstants.MATERIAL_SAMPLE_INDEX, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE);
 
-    // Create a specific instance to ignore api calls since we don't have external relationships to resolve
-    IndexableDocumentHandler idh = new IndexableDocumentHandler(
+    String rawPayload = TestResourceHelper.readContentAsString("material_sample_document.json");
+    IndexableDocumentHandler idh = buildIndexableDocumentHandlerForTest(rawPayload);
+
+    // assemble the document which includes a geo point
+    ObjectNode result = idh.assembleDocument(rawPayload);
+
+    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.indexDocument(elasticSearchClient, TestConstants.MATERIAL_SAMPLE_INDEX, DOC_ID,
+        JsonTestUtils.OBJECT_MAPPER.writeValueAsString(result));
+
+    SearchResponse<JsonNode> searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(elasticSearchClient, TestConstants.MATERIAL_SAMPLE_INDEX,
+        "data.id", DOC_ID);
+
+    assertEquals(1, searchResponse.hits().hits().size());
+  }
+
+  private IndexableDocumentHandler buildIndexableDocumentHandlerForTest(String rawPayload) throws JsonProcessingException {
+    // Extract the collecting-event from the document so we can mimic a call to collecting-event endpoint
+    // to return it
+    List<Map<String, Object>> collEventResult = JsonPath.read(rawPayload,
+        "$.included[?(@.type == 'collecting-event')]");
+    Map<String, Object> collectingEvent = collEventResult.getFirst();
+    Map<String, Object> collectingEventData = Map.of("data", collectingEvent);
+    String collectingEventJson = IndexableDocumentHandler.OM.writerWithDefaultPrettyPrinter()
+        .writeValueAsString(collectingEventData);
+
+    // Create a specific instance to return specific data for the current test
+    return new IndexableDocumentHandler(
         new DinaApiAccess() {
           @Override
           public String getFromApi(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes,
                                    Map<String, List<String>> optFields, String objectId) throws SearchApiException {
+            if(Objects.equals(collectingEvent.get("id"), objectId)) {
+              return collectingEventJson;
+            }
             return "";
           }
 
@@ -85,17 +116,5 @@ public class IndexableDocumentHandlerIT {
         },
         svcEndpointProps
     );
-
-    // assemble the document which includes a geo point
-    ObjectNode result = idh.assembleDocument(TestResourceHelper.readContentAsString("material_sample_document.json"));
-
-
-    ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.indexDocument(elasticSearchClient, TestConstants.MATERIAL_SAMPLE_INDEX, DOC_ID,
-        JsonTestUtils.OBJECT_MAPPER.writeValueAsString(result));
-
-    SearchResponse<JsonNode> searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(elasticSearchClient, TestConstants.MATERIAL_SAMPLE_INDEX,
-        "data.id", DOC_ID);
-
-    assertEquals(1, searchResponse.hits().hits().size());
   }
 }
