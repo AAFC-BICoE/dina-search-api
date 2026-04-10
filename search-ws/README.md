@@ -7,7 +7,7 @@ The search-ws application provides a thin layer of abstraction on top of a DINA 
 
 ## Required
 
-* Java 17
+* Java 21
 * Maven 3.8 (tested)
 * Docker 19+ (for running integration tests)
 

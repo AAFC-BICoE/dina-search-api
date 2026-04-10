@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
+import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
 import ca.gc.aafc.dina.search.cli.TestConstants;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
@@ -92,7 +93,7 @@ public class IndexableDocumentHandlerIT {
     List<Map<String, Object>> collEventResult = JsonPath.read(rawPayload,
         "$.included[?(@.type == 'collecting-event')]");
     Map<String, Object> collectingEvent = collEventResult.getFirst();
-    Map<String, Object> collectingEventData = Map.of("data", collectingEvent);
+    Map<String, Object> collectingEventData = Map.of(JSONApiDocumentStructure.DATA, collectingEvent);
     String collectingEventJson = IndexableDocumentHandler.OM.writerWithDefaultPrettyPrinter()
         .writeValueAsString(collectingEventData);
 
@@ -102,7 +103,7 @@ public class IndexableDocumentHandlerIT {
           @Override
           public String getFromApi(ApiResourceDescriptor apiResourceDescriptor, Set<String> includes,
                                    Map<String, List<String>> optFields, String objectId) throws SearchApiException {
-            if(Objects.equals(collectingEvent.get("id"), objectId)) {
+            if(Objects.equals(collectingEvent.get(JSONApiDocumentStructure.ID), objectId)) {
               return collectingEventJson;
             }
             return "";

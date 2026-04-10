@@ -8,7 +8,7 @@ In this current release the search cli offers document retrieval from the object
 
 ## Required
 
-* Java 17
+* Java 21
 * Maven 3.8 (tested)
 * Docker 19+ (for running integration tests)
 
@@ -19,8 +19,6 @@ To be fully functional search-cli depends on the following services to be up and
 * Keycloak
 * Objectstore API
 * Agent API
-
-
 
 For testing purpose a [Docker Compose](https://docs.docker.com/compose/) example file is available in the `local` folder.
 

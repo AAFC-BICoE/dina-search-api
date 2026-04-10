@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.aafc-bicoe</groupId>
   <artifactId>search-api-parent</artifactId>
-  <version>0.51</version>
+  <version>0.52</version>
 
   <packaging>pom</packaging>
 
@@ -32,13 +32,13 @@
     <dina-base-api.version>0.160</dina-base-api.version>
 
     <!-- Build plugin properties -->
-    <maven-checkstyle-plugin.version>3.4.0</maven-checkstyle-plugin.version>
-    <checkstyle.version>10.17.0</checkstyle.version>
+    <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
+    <checkstyle.version>10.26.1</checkstyle.version>
 
     <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
 
-    <spotbugs-maven-plugin.version>4.8.5.0</spotbugs-maven-plugin.version>
-    <spotbugs.version>4.8.5</spotbugs.version>
+    <spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
+    <spotbugs.version>4.9.3</spotbugs.version>
 
     <dependency.check.version>12.1.6</dependency.check.version>
     <lombok.version>1.18.30</lombok.version>
