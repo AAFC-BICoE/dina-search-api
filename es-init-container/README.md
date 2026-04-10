@@ -14,7 +14,7 @@ DINA_INDEX_DECLARATIONS: AGENT MATERIAL_SAMPLE
 * `DINA_{INDEX_DECLARATION_ITEM}_INDEX_NAME`: Defines the index name for this declaration.
 * `DINA_{INDEX_DECLARATION_ITEM}_INDEX_SETTINGS_FILE`: Defines the index settings file to be used for this index.
 * `DINA_{INDEX_DECLARATION_ITEM}_OPTIONAL_INDEX_SETTINGS_FILE`: Defines the index settings file to be used for this index. (optional)
-* `DINA_{INDEX_DECLARATION_ITEM}_REINDEX_SCRIPT`: Defines painless script to use for the reindex command to transform values from source to destination. (optional)
+* `DINA_{INDEX_DECLARATION_ITEM}_REINDEX_SCRIPT`: String that defines the painless script to use for the reindex command to transform values from source to destination. (optional)
 
 For example, the result for `MATERIAL_SAMPLE` would be:
 
@@ -22,6 +22,29 @@ For example, the result for `MATERIAL_SAMPLE` would be:
 - `DINA_MATERIAL_SAMPLE_INDEX_SETTINGS_FILE`
 - `DINA_MATERIAL_SAMPLE_OPTIONAL_INDEX_SETTINGS_FILE`
 - `DINA_MATERIAL_SAMPLE_REINDEX_SCRIPT`
+
+## Reindex Painless Script Examples
+
+Scripts must be provided as a single line string. The following examples demonstrate how to transform data during reindex operations.
+
+### Example for converting GeoJSON object to geo_point
+
+When migrating `eventGeom` from an `object` type storing GeoJSON to a `geo_point` type, the coordinates need to be
+extracted and reformatted. GeoJSON stores coordinates as `[longitude, latitude]`, while Elasticsearch's `geo_point`
+expects `{ lat, lon }`.
+
+```yaml
+DINA_COLLECTING_EVENT_REINDEX_SCRIPT: "def geom = ctx._source?.data?.attributes?.eventGeom; if (geom != null && geom.containsKey('coordinates')) { def coords = geom['coordinates']; ctx._source.data.attributes.eventGeom = [ 'lat': coords[1], 'lon': coords[0] ]; }"
+```
+
+### Example for converting a managed attribute from float to text
+
+When a managed attribute type needs to be changed (e.g. `sample_version` from `float` to `text`), the value must be
+explicitly converted to a string during reindex.
+
+```yaml
+DINA_MATERIAL_SAMPLE_REINDEX_SCRIPT: 'if (ctx._source.data.attributes.managedAttributes.sample_version != null) { ctx._source.data.attributes.managedAttributes.sample_version = ctx._source.data.attributes.managedAttributes.sample_version.toString(); }'
+```
 
 ## Indices migration
 
