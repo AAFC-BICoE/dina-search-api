@@ -46,8 +46,7 @@ public class IndexableDocumentHandler {
 
   public static final ObjectMapper OM = new ObjectMapper();
 
-  private static final List<JsonNodeTransformation>
-      INCLUDED_NODE_TRANSFORMATION =
+  private static final List<JsonNodeTransformation> NODE_TRANSFORMATIONS =
       List.of(
           new JsonNodeTransformation(JSONApiDocumentStructure.ATTRIBUTES, "eventGeom",
               JsonNodeTransformer::extractCoordinates));
@@ -83,13 +82,16 @@ public class IndexableDocumentHandler {
 
     JsonNode document = OM.readTree(rawPayload);
     ObjectNode newData = OM.createObjectNode();
-    
-    newData.set(JSONApiDocumentStructure.DATA, JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
-        .orElseThrow(() -> new SearchApiException("JSON:API data section missing")));
+
+    JsonNode dataSection = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
+        .orElseThrow(() -> new SearchApiException("JSON:API data section missing"));
+    applyNodeTransformations(dataSection);
+
+    newData.set(JSONApiDocumentStructure.DATA, dataSection);
 
     // Get or create the included array
     ArrayNode includedArray = (ArrayNode) JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR)
-        .orElseGet(() -> OM.createArrayNode());
+        .orElseGet(OM::createArrayNode);
 
     // Parse document type for augmented relationships lookup
     JsonApiCompoundDocument jsonApiCompoundDocument = OM.readValue(rawPayload, JsonApiCompoundDocument.class);
@@ -112,7 +114,7 @@ public class IndexableDocumentHandler {
     processAugmentedRelationships(documentType, newData);
 
     // Process included section to apply Node transformations if needed (ex: coordinate extraction for geospatial fields)
-    applyIncludedNodeTransformation(includedArray);
+    applyNodeTransformations(includedArray);
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
@@ -359,29 +361,39 @@ public class IndexableDocumentHandler {
   }
 
   /**
-   * Apply transformations to nodes within the included section of a DINA compliant json api object.
-
-   * 
-   * Currently applies coordinate extraction transformations to specific attributes
-   * as defined in INCLUDED_NODE_TRANSFORMATION.
-   * 
-   * @param includedArray Array containing included json spec objects
+   * Apply transformations to nodes within a JSON structure.
+   * Handles both array (included section) and single node cases.
+   *
+   * @param nodeToTransform JsonNode to transform - can be an array or single node
    */
-  private void applyIncludedNodeTransformation (JsonNode includedArray) {
+  private void applyNodeTransformations(JsonNode nodeToTransform) {
 
-    if (includedArray == null || !includedArray.isArray()) {
+    if (nodeToTransform == null) {
       return;
     }
-    
-    for (JsonNode curObject : includedArray) {
-      //Check for potential node transformations
-      for (JsonNodeTransformation jst : INCLUDED_NODE_TRANSFORMATION) {
-        if (curObject.has(jst.nodeName())) {
-          JsonNodeTransformer.transformNode(curObject.get(jst.nodeName()), jst.attribute(), jst.transformer());
-        }
+
+    // Handle array case (included section)
+    if (nodeToTransform.isArray()) {
+      for (JsonNode curObject : nodeToTransform) {
+        processNodeForTransformations(curObject);
+      }
+    } else {
+      // Handle single node case
+      processNodeForTransformations(nodeToTransform);
+    }
+  }
+
+  /**
+   * Process a single node for applicable transformations defined in NODE_TRANSFORMATION.
+   *
+   * @param curObject JsonNode to process
+   */
+  private void processNodeForTransformations(JsonNode curObject) {
+    for (JsonNodeTransformation jst : NODE_TRANSFORMATIONS) {
+      if (curObject.has(jst.nodeName())) {
+        JsonNodeTransformer.transformNode(curObject.get(jst.nodeName()), jst.attribute(), jst.transformer());
       }
     }
-
   }
 
   /**
@@ -408,8 +420,7 @@ public class IndexableDocumentHandler {
               for (JsonNode dataItem : dataArray) {
                 // Check if included section exists within the current document
                 if (newDoc.has(JSONApiDocumentStructure.INCLUDED)) {
-                  log.debug("Included section exists already, adding the following data item: ");
-                  log.debug(dataItem.toString());
+                  log.debug("Included section exists already, adding the following data item: {}", dataItem::toString);
                   JsonNode included = newDoc.get(JSONApiDocumentStructure.INCLUDED);
                   if (included.isArray()) {
                     ((ArrayNode) included).add(dataItem);
@@ -418,8 +429,7 @@ public class IndexableDocumentHandler {
                   }
                 } else {
                   // Create the included section if it does not exist.
-                  log.debug("Create the included section, adding the following data item: ");
-                  log.debug(dataItem.toString());
+                  log.debug("Create the included section, adding the following data item: {}", dataItem::toString);
                   ArrayNode included = OM.createArrayNode();
                   included.add(dataItem);
                   ((ObjectNode) newDoc).set(JSONApiDocumentStructure.INCLUDED, included);
