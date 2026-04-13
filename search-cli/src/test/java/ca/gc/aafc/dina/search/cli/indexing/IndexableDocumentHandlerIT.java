@@ -1,5 +1,6 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
+import ca.gc.aafc.dina.json.JsonHelper;
 import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
 import ca.gc.aafc.dina.search.cli.TestConstants;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
@@ -11,6 +12,7 @@ import ca.gc.aafc.dina.search.cli.utils.JsonTestUtils;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -34,6 +36,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(properties = {
     "spring.shell.interactive.enabled=false",
@@ -85,6 +88,14 @@ public class IndexableDocumentHandlerIT {
         "data.id", DOC_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
+
+    // Test geoPoint under data section
+    String collEventRawPayload = TestResourceHelper.readContentAsString("get_collecting_event_response.json");
+    ObjectNode resultCollEvent = idh.assembleDocument(collEventRawPayload);
+
+    var eventGeomNode = JsonHelper.atJsonPtr(resultCollEvent, JsonPointer.valueOf("/data/attributes/eventGeom"));
+    assertTrue(eventGeomNode.isPresent());
+    assertEquals("[25.0,12.0]", eventGeomNode.get().toString());
   }
 
   private IndexableDocumentHandler buildIndexableDocumentHandlerForTest(String rawPayload) throws JsonProcessingException {
