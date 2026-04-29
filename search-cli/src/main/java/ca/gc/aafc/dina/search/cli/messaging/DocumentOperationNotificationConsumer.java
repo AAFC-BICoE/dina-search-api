@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import lombok.extern.log4j.Log4j2;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 @Log4j2
 @Service
