@@ -4,7 +4,7 @@ import ca.gc.aafc.dina.messaging.config.RabbitMQQueueProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 @ConfigurationProperties(prefix = "rabbitmq")
 @Component

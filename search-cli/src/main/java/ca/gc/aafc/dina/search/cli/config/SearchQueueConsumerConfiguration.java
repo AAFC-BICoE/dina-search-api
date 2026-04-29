@@ -7,7 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 @Configuration
 @ConditionalOnProperty(prefix = "dina.messaging", name = "isConsumer", havingValue = "true")
