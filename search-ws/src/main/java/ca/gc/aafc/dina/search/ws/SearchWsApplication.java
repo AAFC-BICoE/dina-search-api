@@ -1,12 +1,12 @@
 package ca.gc.aafc.dina.search.ws;
 
+import ca.gc.aafc.dina.security.KeycloakSecurityConfig;
 import org.javers.spring.boot.sql.JaversSqlAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 
-import ca.gc.aafc.dina.security.KeycloakAuthConfig;
 import ca.gc.aafc.dina.security.KeycloakDisabledAuthConfig;
 import org.springframework.context.annotation.ComponentScan;
 
@@ -14,7 +14,7 @@ import org.springframework.context.annotation.ComponentScan;
 // invisible constructor, ignore the check style error for this case)
 @SpringBootApplication
 @ImportAutoConfiguration(
-  classes = {KeycloakAuthConfig.class, KeycloakDisabledAuthConfig.class}, 
+  classes = {KeycloakSecurityConfig.class, KeycloakDisabledAuthConfig.class},
   exclude = {DataSourceAutoConfiguration.class, JaversSqlAutoConfiguration.class}
 )
 @ComponentScan("ca.gc.aafc.dina.search")
