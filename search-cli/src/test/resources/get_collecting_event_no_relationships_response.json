@@ -1,0 +1,51 @@
+{
+  "data": {
+    "id": "6993c972-cd69-4d58-8c0f-163f9bf7a9bc",
+    "type": "collecting-event",
+    "attributes": {
+      "version": 0,
+      "dwcFieldNumber": null,
+      "dwcRecordNumber": null,
+      "otherRecordNumbers": null,
+      "group": "aafc",
+      "createdBy": "test user",
+      "createdOn": "2023-02-22T14:08:08.018843Z",
+      "geoReferenceAssertions": [],
+      "eventGeom": null,
+      "dwcVerbatimCoordinates": null,
+      "dwcRecordedBy": null,
+      "startEventDateTime": "2024-01-15",
+      "endEventDateTime": null,
+      "verbatimEventDateTime": null,
+      "dwcVerbatimLocality": "Ottawa",
+      "host": null,
+      "managedAttributes": {},
+      "dwcVerbatimLatitude": null,
+      "dwcVerbatimLongitude": null,
+      "dwcVerbatimCoordinateSystem": null,
+      "dwcVerbatimSRS": null,
+      "dwcVerbatimElevation": null,
+      "dwcVerbatimDepth": null,
+      "dwcCountry": "Canada",
+      "dwcCountryCode": "CA",
+      "dwcStateProvince": "Ontario",
+      "habitat": null,
+      "dwcMinimumElevationInMeters": null,
+      "dwcMinimumDepthInMeters": null,
+      "dwcMaximumElevationInMeters": null,
+      "dwcMaximumDepthInMeters": null,
+      "substrate": null,
+      "remarks": null,
+      "publiclyReleasable": true,
+      "notPubliclyReleasableReason": null,
+      "tags": null,
+      "geographicPlaceNameSource": null,
+      "geographicPlaceNameSourceDetail": null,
+      "geographicThesaurus": null,
+      "extensionValues": {}
+    }
+  },
+  "meta": {
+    "moduleVersion": "0.113"
+  }
+}

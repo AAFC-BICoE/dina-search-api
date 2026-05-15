@@ -24,7 +24,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import static org.junit.jupiter.api.Assertions.*;
 

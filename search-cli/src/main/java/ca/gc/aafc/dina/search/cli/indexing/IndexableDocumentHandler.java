@@ -4,6 +4,7 @@ import ca.gc.aafc.dina.json.JsonHelper;
 import ca.gc.aafc.dina.jsonapi.JSONApiDocumentStructure;
 import ca.gc.aafc.dina.jsonapi.JsonApiCompoundDocument;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
+import ca.gc.aafc.dina.search.cli.config.AugmentedRelationship;
 import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ReverseRelationship;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
@@ -23,8 +24,10 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.stream.StreamSupport;
 
 /**
  * This class handles merging DINA API document with external document references embedded in the
@@ -43,8 +46,7 @@ public class IndexableDocumentHandler {
 
   public static final ObjectMapper OM = new ObjectMapper();
 
-  private static final List<JsonNodeTransformation>
-      INCLUDED_NODE_TRANSFORMATION =
+  private static final List<JsonNodeTransformation> NODE_TRANSFORMATIONS =
       List.of(
           new JsonNodeTransformation(JSONApiDocumentStructure.ATTRIBUTES, "eventGeom",
               JsonNodeTransformer::extractCoordinates));
@@ -80,19 +82,39 @@ public class IndexableDocumentHandler {
 
     JsonNode document = OM.readTree(rawPayload);
     ObjectNode newData = OM.createObjectNode();
-    
-    newData.set(JSONApiDocumentStructure.DATA, JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
-        .orElseThrow(() -> new SearchApiException("JSON:API data section missing")));
 
-    // included section is optional
-    JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR).ifPresent(included -> {
-      processIncluded(included);
-      newData.set(JSONApiDocumentStructure.INCLUDED, included);
+    JsonNode dataSection = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.DATA_PTR)
+        .orElseThrow(() -> new SearchApiException("JSON:API data section missing"));
+    applyNodeTransformations(dataSection);
+
+    newData.set(JSONApiDocumentStructure.DATA, dataSection);
+
+    // Get or create the included array
+    ArrayNode includedArray = (ArrayNode) JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.INCLUDED_PTR)
+        .orElseGet(OM::createArrayNode);
+
+    // Parse document type for augmented relationships lookup
+    JsonApiCompoundDocument jsonApiCompoundDocument = OM.readValue(rawPayload, JsonApiCompoundDocument.class);
+    String documentType = jsonApiCompoundDocument.getType();
+
+    // relationship is optional - process external relationships and add them to included
+    JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.RELATIONSHIP_PTR).ifPresent( rel -> {
+      processExternalRelationships(rel, includedArray);
     });
+    
+    // Only add included section if it has items
+    if (!includedArray.isEmpty()) {
+      newData.set(JSONApiDocumentStructure.INCLUDED, includedArray);
+    }
 
     // Parse it as json:api document to make it easier
-    JsonApiCompoundDocument jsonApiCompoundDocument = OM.readValue(rawPayload, JsonApiCompoundDocument.class);
-    processReverseRelationships(jsonApiCompoundDocument.getType(), jsonApiCompoundDocument.getIdAsStr(), newData);
+    processReverseRelationships(documentType, jsonApiCompoundDocument.getIdAsStr(), newData);
+
+    // Process augmented relationships - enrich already-included documents with nested relationship references
+    processAugmentedRelationships(documentType, newData);
+
+    // Process included section to apply Node transformations if needed (ex: coordinate extraction for geospatial fields)
+    applyNodeTransformations(includedArray);
 
     JsonNode metaNode = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.META_PTR)
         .orElseThrow(() -> new SearchApiException("JSON:API meta section missing"));
@@ -103,59 +125,273 @@ public class IndexableDocumentHandler {
   }
 
   /**
-   * Processing of the included section of a DINA compliant json api object.
+   * Fetches a document from the API for a given type and ID.
    * 
-   * In this current implementation we are resolving entries that are missing
-   * their attributes property.
+   * @param type the document type
+   * @param id the document ID
+   * @param includeOverride optional override for relationships to include:
+   *        - Optional.empty(): use IndexSettingDescriptor defaults (for root document indexing)
+   *        - Optional.of(includes): use ApiResourceDescriptor with specified includes (for augmentation/external relationships)
+   * @return the parsed JSON document, or empty if the fetch fails
+   */
+  private Optional<JsonNode> fetchDocument(String type, String id, Optional<Set<String>> includeOverride) {
+    try {
+      // Get API resource descriptor (required for all fetches)
+      ApiResourceDescriptor apiResource = svcEndpointProps.getApiResourceDescriptorForType(type);
+      if (apiResource == null) {
+        log.warn("No ApiResourceDescriptor found for type={}, cannot fetch document id={}", type, id);
+        return Optional.empty();
+      }
+      
+      // Determine includes and optionalFields based on mode
+      Set<String> includes;
+      Map<String, List<String>> optionalFields;
+      
+      if (includeOverride.isPresent()) {
+        // Custom includes mode: use provided includes (may be empty set)
+        includes = includeOverride.get();
+        optionalFields = null;
+      } else {
+        // Normal mode: use IndexSettingDescriptor defaults
+        IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
+        if (indexSettingDescriptor == null) {
+          log.warn("No IndexSettingDescriptor found for type={}, cannot fetch document id={}", type, id);
+          return Optional.empty();
+        }
+        includes = indexSettingDescriptor.relationships();
+        optionalFields = indexSettingDescriptor.optionalFields();
+      }
+      
+      String rawPayload = apiAccess.getFromApi(apiResource, includes, optionalFields, id);
+      return Optional.of(OM.readTree(rawPayload));
+      
+    } catch (SearchApiException | JsonProcessingException ex) {
+      log.error("Error fetching document type={}, id={}, message={}", type, id, ex.getMessage());
+      return Optional.empty();
+    }
+  }
+  
+  /**
+   * Processing of the external relationships (objects in other APIs) of a DINA compliant json api object.
    * 
+   * Fetches relationship documents and adds them to the included section.
+   * 
+   * @param relationshipsNode Node containing the relationships section
    * @param includedArray Array containing included json spec objects
    */
-  private void processIncluded(JsonNode includedArray) {
+  private void processExternalRelationships(JsonNode relationshipsNode, JsonNode includedArray) {
+    if (relationshipsNode == null || !relationshipsNode.isObject()) {
+      return;
+    }
 
-    if (includedArray == null || !includedArray.isArray()) {
+    // Iterate over each relationship
+    relationshipsNode.fields().forEachRemaining(relationshipEntry -> {
+      JsonNode relationshipData = relationshipEntry.getValue().get(JSONApiDocumentStructure.DATA);
+      
+      if (relationshipData == null) {
+        return;
+      }
+      
+      // Handle both single object and array formats
+      JsonNode dataArray = relationshipData.isArray() ? relationshipData : OM.createArrayNode().add(relationshipData);
+      
+      for (JsonNode curObject : dataArray) {
+        if (curObject.get(JSONApiDocumentStructure.ID) == null || curObject.get(JSONApiDocumentStructure.TYPE) == null) {
+          continue;
+        }
+        
+        String relationshipId = curObject.get(JSONApiDocumentStructure.ID).asText();
+        String relationshipType = curObject.get(JSONApiDocumentStructure.TYPE).asText();
+        
+        // Check if the document is already in the includedArray (by id and type)
+        boolean found = false;
+        for (JsonNode includedObject : includedArray) {
+          if (JsonHelper.safeTextEquals(includedObject, JSONApiDocumentStructure.ID, relationshipId)
+            && JsonHelper.safeTextEquals(includedObject, JSONApiDocumentStructure.TYPE, relationshipType)) {
+            found = true;
+            break;
+          }
+        }
+        
+        if (found) {
+          continue;
+        }
+        
+        // Check if we can fetch this type
+        if (svcEndpointProps.getApiResourceDescriptorForType(relationshipType) == null) {
+          continue;
+        }
+        
+        // Fetch the relationship document
+        Optional<JsonNode> fullDocumentOpt = fetchDocument(relationshipType, relationshipId, Optional.of(Set.of()));
+        if (fullDocumentOpt.isEmpty()) {
+          log.warn("Failed to fetch document: type={}, id={}", relationshipType, relationshipId);
+          continue;
+        }
+        
+        JsonNode fullDocument = fullDocumentOpt.get();
+        
+        // Extract the data section and add to parent's includedArray
+        Optional<JsonNode> dataOpt = JsonHelper.atJsonPtr(fullDocument, JSONApiDocumentStructure.DATA_PTR);
+        if (dataOpt.isPresent()) {
+          ((ArrayNode) includedArray).add(dataOpt.get());
+          log.info("Added document to included: type={}, id={}", relationshipType, relationshipId);
+        }
+      }
+    });
+  }
+  
+  /**
+   * Process augmented relationships by re-fetching documents already in the included section
+   * with additional nested relationship references. Replaces the existing entry with the enriched version
+   * that contains relationship type/id references in the relationships section.
+   * 
+   * @param documentType The type of the parent document
+   * @param assembledDoc The assembled document with included section
+   */
+  private void processAugmentedRelationships(String documentType, JsonNode assembledDoc) {
+    IndexSettingDescriptor indexSettings = svcEndpointProps.getIndexSettingDescriptorForType(documentType);
+    if (indexSettings == null || CollectionUtils.isEmpty(indexSettings.augmentedRelationships())) {
       return;
     }
     
-    for (JsonNode curObject : includedArray) {
-      //Check for potential node transformations
-      for (JsonNodeTransformation jst : INCLUDED_NODE_TRANSFORMATION) {
-        if (curObject.has(jst.nodeName())) {
-          JsonNodeTransformer.transformNode(curObject.get(jst.nodeName()), jst.attribute(), jst.transformer());
-        }
-      }
-
-      if (curObject.get(JSONApiDocumentStructure.ATTRIBUTES) != null || !curObject.isObject()) {
-        // Already have the attributes or the node is not an object ... skip the current entry
+    JsonNode includedNode = assembledDoc.get(JSONApiDocumentStructure.INCLUDED);
+    if (includedNode == null || !includedNode.isArray()) {
+      return;
+    }
+    
+    JsonNode relationshipsNode = assembledDoc.at("/data/relationships");
+    if (relationshipsNode.isMissingNode() || !relationshipsNode.isObject()) {
+      return;
+    }
+    
+    ArrayNode includedArray = (ArrayNode) includedNode;
+    
+    // For each configured augmented relationship, find and enrich the corresponding documents
+    for (AugmentedRelationship augmentedRel : indexSettings.augmentedRelationships()) {
+      JsonNode relationship = relationshipsNode.get(augmentedRel.relationshipName());
+      if (relationship == null) {
         continue;
       }
+      
+      List<JsonNode> relationshipRefs = extractRelationshipReferences(relationship);
+      for (JsonNode ref : relationshipRefs) {
+        augmentDocumentInIncluded(includedArray, ref, augmentedRel.nestedRelationships());
+      }
+    }
+  }
+  
+  /**
+   * Extract type/id references from a relationship node.
+   * Handles both single object and array formats.
+   * 
+   * @param relationshipNode the relationship node containing data
+   * @return list of reference objects (with type and id fields)
+   */
+  private List<JsonNode> extractRelationshipReferences(JsonNode relationshipNode) {
+    JsonNode data = relationshipNode.get(JSONApiDocumentStructure.DATA);
+    if (data == null || data.isNull()) {
+      return List.of();
+    }
+    
+    if (data.isArray()) {
+      return StreamSupport.stream(data.spliterator(), false)
+          .filter(node -> node.has(JSONApiDocumentStructure.TYPE) && node.has(JSONApiDocumentStructure.ID))
+          .toList();
+    } else if (data.has(JSONApiDocumentStructure.TYPE) && data.has(JSONApiDocumentStructure.ID)) {
+      return List.of(data);
+    }
+    
+    return List.of();
+  }
+  
+  /**
+   * Find and augment a document in the included array with nested relationship references.
+   * 
+   * @param includedArray the included array to search and modify
+   * @param reference the reference object containing type and id
+   * @param nestedRelationships the nested relationships to include when fetching
+   */
+  private void augmentDocumentInIncluded(ArrayNode includedArray, JsonNode reference, List<String> nestedRelationships) {
+    String type = reference.get(JSONApiDocumentStructure.TYPE).asText();
+    String id = reference.get(JSONApiDocumentStructure.ID).asText();
+    
+    // Find the document in included array
+    int index = findDocumentIndex(includedArray, type, id);
+    if (index == -1) {
+      return; // Not in included array
+    }
+    
+    // Re-fetch with nested includes
+    Set<String> includes = Set.copyOf(nestedRelationships);
+    log.info("Augmenting document: type={}, id={} with nested includes: {}", type, id, includes);
+    
+    Optional<JsonNode> enrichedDocOpt = fetchDocument(type, id, Optional.of(includes));
+    if (enrichedDocOpt.isEmpty()) {
+      log.warn("Failed to fetch augmented document: type={}, id={}", type, id);
+      return;
+    }
+    
+    // Extract and replace with enriched data
+    Optional<JsonNode> enrichedDataOpt = JsonHelper.atJsonPtr(enrichedDocOpt.get(), JSONApiDocumentStructure.DATA_PTR);
+    if (enrichedDataOpt.isPresent()) {
+      includedArray.set(index, enrichedDataOpt.get());
+    } else {
+      log.warn("No data section in enriched document for type={}, id={}", type, id);
+    }
+  }
+  
+  /**
+   * Find the index of a document in the included array by type and id.
+   * 
+   * @param includedArray the included array to search
+   * @param type the document type
+   * @param id the document id
+   * @return the index if found, -1 otherwise
+   */
+  private int findDocumentIndex(ArrayNode includedArray, String type, String id) {
+    for (int i = 0; i < includedArray.size(); i++) {
+      JsonNode doc = includedArray.get(i);
+      if (JsonHelper.safeTextEquals(doc, JSONApiDocumentStructure.TYPE, type)
+          && JsonHelper.safeTextEquals(doc, JSONApiDocumentStructure.ID, id)) {
+        return i;
+      }
+    }
+    return -1;
+  }
 
-      // Getting the type and perform a level #1 retrieval of attributes
-      //
-      String type = curObject.get(JSONApiDocumentStructure.TYPE).asText();
-      if (svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
+  /**
+   * Apply transformations to nodes within a JSON structure.
+   * Handles both array (included section) and single node cases.
+   *
+   * @param nodeToTransform JsonNode to transform - can be an array or single node
+   */
+  private void applyNodeTransformations(JsonNode nodeToTransform) {
 
-        // Get the Id and retrieved the attributes from the related object.
-        //
-        String curObjectId = curObject.get(JSONApiDocumentStructure.ID).asText();
+    if (nodeToTransform == null) {
+      return;
+    }
 
-        // Best effort processing for assembling of include section
-        try {
-          IndexSettingDescriptor indexSettingDescriptor = svcEndpointProps.getIndexSettingDescriptorForType(type);
-          String rawPayload = apiAccess.getFromApi(svcEndpointProps.getApiResourceDescriptorForType(type),
-              indexSettingDescriptor.relationships(), indexSettingDescriptor.optionalFields(), curObjectId);
-          JsonNode document = OM.readTree(rawPayload);
-          // Take the data.attributes section to be embedded
-          Optional<JsonNode> dataObject = JsonHelper.atJsonPtr(document, JSONApiDocumentStructure.ATTRIBUTES_PTR);
+    // Handle array case (included section)
+    if (nodeToTransform.isArray()) {
+      for (JsonNode curObject : nodeToTransform) {
+        processNodeForTransformations(curObject);
+      }
+    } else {
+      // Handle single node case
+      processNodeForTransformations(nodeToTransform);
+    }
+  }
 
-          if (dataObject.isPresent()) {
-            ((ObjectNode) curObject).set(JSONApiDocumentStructure.ATTRIBUTES, dataObject.get());
-          } else {
-            // Remove attribute section from the embedded object
-            ((ObjectNode) curObject).remove(JSONApiDocumentStructure.ATTRIBUTES);
-          }
-        } catch (SearchApiException | JsonProcessingException ex) {
-          log.error("Error during processing of included section object type{}, id={}, message={}", type, curObjectId, ex.getMessage());
-        }
+  /**
+   * Process a single node for applicable transformations defined in NODE_TRANSFORMATION.
+   *
+   * @param curObject JsonNode to process
+   */
+  private void processNodeForTransformations(JsonNode curObject) {
+    for (JsonNodeTransformation jst : NODE_TRANSFORMATIONS) {
+      if (curObject.has(jst.nodeName())) {
+        JsonNodeTransformer.transformNode(curObject.get(jst.nodeName()), jst.attribute(), jst.transformer());
       }
     }
   }
@@ -184,8 +420,7 @@ public class IndexableDocumentHandler {
               for (JsonNode dataItem : dataArray) {
                 // Check if included section exists within the current document
                 if (newDoc.has(JSONApiDocumentStructure.INCLUDED)) {
-                  log.debug("Included section exists already, adding the following data item: ");
-                  log.debug(dataItem.toString());
+                  log.debug("Included section exists already, adding the following data item: {}", dataItem::toString);
                   JsonNode included = newDoc.get(JSONApiDocumentStructure.INCLUDED);
                   if (included.isArray()) {
                     ((ArrayNode) included).add(dataItem);
@@ -194,8 +429,7 @@ public class IndexableDocumentHandler {
                   }
                 } else {
                   // Create the included section if it does not exist.
-                  log.debug("Create the included section, adding the following data item: ");
-                  log.debug(dataItem.toString());
+                  log.debug("Create the included section, adding the following data item: {}", dataItem::toString);
                   ArrayNode included = OM.createArrayNode();
                   included.add(dataItem);
                   ((ObjectNode) newDoc).set(JSONApiDocumentStructure.INCLUDED, included);

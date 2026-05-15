@@ -251,6 +251,8 @@ mappings:
       dateSubtype: DATE_TIME
     - name: publiclyReleasable
       type: boolean
+    - name: isExternalResource
+      type: boolean
     - name: acTags
       type: text
     - name: managedAttributes
@@ -285,6 +287,14 @@ mappings:
       type: date
       dateSubtype: DATE_TIME
 
-    
-
-
+  site:
+    - name: name
+      type: text
+    - name: code
+      type: text
+    - name: siteGeom
+      type: object
+    - name: createdBy
+      type: text
+    - name: createdOn
+      type: date

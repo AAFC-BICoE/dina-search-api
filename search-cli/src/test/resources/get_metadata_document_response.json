@@ -25,12 +25,6 @@
       "group": "cnc"
     },
     "relationships": {
-      "managedAttributeMap": {
-        "data": {
-          "id": "metadata/68fe6a3d-062b-4208-8eea-cb067761e37c/managed-attribute-map",
-          "type": "managed-attribute-map"
-        }
-      },
       "acMetadataCreator": {
         "data": {
           "id": "cf9936ce-cb59-42c3-831a-e5e1952b94df",
@@ -45,32 +39,6 @@
       }
     }
   },
-  "included": [
-    {
-      "id": "metadata/68fe6a3d-062b-4208-8eea-cb067761e37c/managed-attribute-map",
-      "type": "managed-attribute-map",
-      "attributes": {
-        "values": {
-          "8c816ebe-e2b9-45e7-b955-3ff555de276e": {
-            "name": "Weight",
-            "value": "100"
-          },
-          "4a208aad-f7c3-454b-b134-1a425f10e6aa": {
-            "name": "Size",
-            "value": "165"
-          }
-        }
-      }
-    },
-    {
-      "id": "77529673-72bf-4fdc-88e2-df3b59b9c3a0",
-      "type": "person"
-    },
-    {
-      "id": "cf9936ce-cb59-42c3-831a-e5e1952b94df",
-      "type": "person"
-    }
-  ],
   "meta": {
     "totalResourceCount": 1,
     "external": [
