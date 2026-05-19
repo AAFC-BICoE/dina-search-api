@@ -1,8 +1,6 @@
 FROM alpine:3.23.3
 
-RUN apk add --no-cache jq curl
-
-RUN apk add --no-cache bash
+RUN apk add --no-cache jq curl bash openssl ca-certificates
 
 RUN adduser --disabled-password --shell=/bin/bash user
 
@@ -16,3 +14,4 @@ RUN chmod +x /work/*.sh
 USER user
 
 ENTRYPOINT ["bash","/work/init.sh"]
+

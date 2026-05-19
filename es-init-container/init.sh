@@ -27,6 +27,9 @@
 #        2) Updates index provided optional mapping file
 #        3) Evokes add-alias
 
+
+./import-elastic-cert.sh
+
 source es_functions.sh
 
 if [[ -v PREPARE_ENV && ! -z ${PREPARE_ENV} ]]; then
