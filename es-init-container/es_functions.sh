@@ -6,7 +6,7 @@ get_document_count() {
 
     # Query Elasticsearch to get the document count
     local num_docs
-    num_docs=$(curl -s -X GET "$elastic_server_url/$index_name/_count" -H 'Content-Type: application/json' -d '
+    num_docs=$(curl -s -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -X GET "$elastic_server_url/$index_name/_count" -H 'Content-Type: application/json' -d '
     {
         "query": {
             "match_all": {}
@@ -63,7 +63,7 @@ set_read_only_allow_delete() {
     local valueToSet="$3"
 
     local returnedCode
-    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -X PUT "$elastic_server_url/$index_name/_settings?pretty" -H "Content-Type: application/json" -d "{\"index.blocks.read_only_allow_delete\": \"$valueToSet\"}")
+    returnedCode=$(curl -s -o /dev/null -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -w "%{http_code}" -X PUT "$elastic_server_url/$index_name/_settings?pretty" -H "Content-Type: application/json" -d "{\"index.blocks.read_only_allow_delete\": \"$valueToSet\"}")
     echo "$returnedCode"
 }
 
@@ -72,7 +72,7 @@ delete_index_request() {
     local index_name="$2"
 
     local returnedCode
-    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE "$elastic_server_url/$index_name" -H 'Content-Type:application/json' -H 'Accept: application/json')
+    returnedCode=$(curl -s -o /dev/null -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -w "%{http_code}" -X DELETE "$elastic_server_url/$index_name" -H 'Content-Type:application/json' -H 'Accept: application/json')
     echo "$returnedCode"
 }
 
@@ -85,7 +85,7 @@ add_index_alias() {
 
     >&2 echo "Updating index $index_name with alias $index_alias"
 
-    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST $elastic_server_url/_aliases?pretty -d'{
+    returnedCode=$(curl -s -o /dev/null -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -w "%{http_code}" -H "Content-Type: application/json" -X POST $elastic_server_url/_aliases?pretty -d'{
     "actions" : [
         { "add" : { "index" : "'$index_name'", "alias" : "'$index_alias'" } }
     ]
@@ -135,7 +135,7 @@ reindex_request() {
     # Close the reindex_payload
     reindex_payload+="}"
 
-    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex" -d "$reindex_payload")
+    returnedCode=$(curl -s -o /dev/null -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -w "%{http_code}" -H "Content-Type: application/json" -X POST "$elastic_server_url/_reindex" -d "$reindex_payload")
 
     >&2 echo "Response is: $returnedCode"
 
@@ -143,7 +143,7 @@ reindex_request() {
         echo "ERROR: Reindex failed. HTTP Status Code: $returnedCode" >&2
 
         # Fetch and print the full error response from Elasticsearch
-        error_response=$(curl -s -X POST "$elastic_server_url/_reindex" -H 'Content-Type:application/json' -H 'Accept: application/json' -d "$reindex_payload")
+        error_response=$(curl -s -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -X POST "$elastic_server_url/_reindex" -H 'Content-Type:application/json' -H 'Accept: application/json' -d "$reindex_payload")
         echo "Elasticsearch Error Response: $error_response" >&2
     fi
 
@@ -173,7 +173,7 @@ check_mapping_version(){
 
     >&2 echo -e "\n\n Checking mapping version"
 
-    remote_schema="$(curl -s -X GET "$elastic_server_url/$source_index_name/_mapping?pretty")"
+    remote_schema="$(curl -s -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -X GET "$elastic_server_url/$source_index_name/_mapping?pretty")"
 
     remote_version=$(echo "$remote_schema" | jq -r ".$source_index_name.mappings._meta.version.number // \"0.0\"")
 
@@ -200,12 +200,12 @@ update_request() {
 
     local returnedCode
 
-    returnedCode=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$elastic_server_url/$index_name/_mapping" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$mapping_file")
+    returnedCode=$(curl -s -o /dev/null -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -w "%{http_code}" -X POST "$elastic_server_url/$index_name/_mapping" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$mapping_file")
 
     if [[ "$returnedCode" -ge 400 ]]; then
         echo "ERROR: Mapping update failed. HTTP Status Code: $returnedCode" >&2
         # Fetch and print the full error response from Elasticsearch
-        error_response=$(curl -s -X POST "$elastic_server_url/$index_name/_mapping" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$mapping_file")
+        error_response=$(curl -s -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -X POST "$elastic_server_url/$index_name/_mapping" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$mapping_file")
         echo "Elasticsearch Error Response: $error_response" >&2
         return 1
     fi
@@ -229,7 +229,7 @@ create_index(){
 
     >&2 echo "Mapping definition:"
     >&2 cat "$settings_file"
-    curl -s -o /dev/null -X PUT "$elastic_server_url/$new_index/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$settings_file"
+    curl -s -o /dev/null -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -X PUT "$elastic_server_url/$new_index/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$settings_file"
 
     echo $new_index
 

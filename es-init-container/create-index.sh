@@ -16,6 +16,6 @@ INDEX_TIMESTAMP=${INDEX_PREFIX}_${TIMESTAMP}
 
 >&2 echo "Creating index $INDEX_TIMESTAMP"
 
-curl -s -o /dev/null -X PUT "$HOST/$INDEX_TIMESTAMP/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
+curl -s -o /dev/null -u elastic:$ES_PASSWORD --cacert $ES_CA_FILE -X PUT "$HOST/$INDEX_TIMESTAMP/?pretty" -H 'Content-Type:application/json' -H 'Accept: application/json' -d @"$SETTINGS_FILE"
 
 echo $INDEX_TIMESTAMP
