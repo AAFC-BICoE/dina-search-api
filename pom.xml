@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.aafc-bicoe</groupId>
   <artifactId>search-api-parent</artifactId>
-  <version>0.54-SNAPSHOT</version>
+  <version>0.54</version>
 
   <packaging>pom</packaging>
 
@@ -49,7 +49,7 @@
     <!-- versions override-->
     <jackson-bom.version>2.15.4</jackson-bom.version>
     <spring-framework.version>6.0.18</spring-framework.version>
-    <tomcat.version>10.1.53</tomcat.version>
+    <tomcat.version>10.1.55</tomcat.version>
   </properties>
 
   <!-- Common sub module dependencies -->
