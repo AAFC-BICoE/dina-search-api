@@ -59,7 +59,7 @@ public class IndexableDocumentHandlerIT {
 
     ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.createIndex(elasticSearchClient,
         TestConstants.MATERIAL_SAMPLE_INDEX, TestConstants.MATERIAL_SAMPLE_INDEX_MAPPING_FILE,
-        ElasticSearchTestUtils.ActionOnExists.IGNORE);
+        ElasticSearchTestUtils.ActionOnExists.DROP);
 
     String rawPayload = TestResourceHelper.readContentAsString("material_sample_document.json");
     IndexableDocumentHandler idh = buildIndexableDocumentHandlerForTest(rawPayload);
