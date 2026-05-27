@@ -4,13 +4,11 @@ import ca.gc.aafc.dina.search.cli.TestConstants;
 import ca.gc.aafc.dina.search.cli.config.ApiResourceDescriptor;
 import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
-import ca.gc.aafc.dina.search.cli.containers.DinaElasticSearchContainer;
 import ca.gc.aafc.dina.search.cli.utils.MockKeyCloakAuthentication;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializer;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,24 +16,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.junit.jupiter.MockServerSettings;
-import org.mockserver.model.HttpResponse;
 import org.mockserver.matchers.Times;
+import org.mockserver.model.HttpResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
-import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.ContextConfiguration;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
+@ContextConfiguration(initializers = { ElasticSearchContainerInitializer.class })
 @SpringBootTest(properties = "spring.shell.interactive.enabled=false")
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 @ExtendWith(MockServerExtension.class) 
@@ -46,9 +42,6 @@ public class DocumentManagerIT {
 
   @Autowired
   private ServiceEndpointProperties serviceEndpointProperties;
-
-  @Container
-  private static final ElasticsearchContainer ELASTICSEARCH_CONTAINER = new DinaElasticSearchContainer();
 
   @Autowired
   private DocumentManager documentManager;
@@ -72,19 +65,6 @@ public class DocumentManagerIT {
   private static final String MATERIAL_SAMPLE_ID = "01930c2a-f299-7464-ad27-ce3828421e6e";
   private static final String COLLECTING_EVENT_ID = "6993c972-cd69-4d58-8c0f-163f9bf7a9bc";
   private static final String PERSON_COLLECTOR_ID = "bdae3b3a-b5a6-4b36-89dc-52634f9e044f";
-
-  @BeforeAll
-  static void beforeAll() {
-    ELASTICSEARCH_CONTAINER.start();
-
-    assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
-    assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
-  }
-
-  @AfterAll
-  static void afterAll() {
-    ELASTICSEARCH_CONTAINER.stop();
-  }
 
   @BeforeEach
   public void beforeEachLifecycleMethod(ClientAndServer clientAndServer) {

@@ -1,23 +1,22 @@
 package ca.gc.aafc.dina.search.ws.search;
 
-import ca.gc.aafc.dina.search.ws.container.CustomElasticSearchContainer;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializer;
+import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.context.ContextConfiguration;
 
-import static ca.gc.aafc.dina.search.ws.search.TestConstants.MATERIAL_SAMPLE_INDEX;
 import static ca.gc.aafc.dina.search.ws.search.DinaSearchDocumentIT.MATERIAL_SAMPLE_SEARCH_FIELD;
+import static ca.gc.aafc.dina.search.ws.search.TestConstants.MATERIAL_SAMPLE_INDEX;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@SpringBootTest
+@ContextConfiguration(initializers = { ElasticSearchContainerInitializer.class })
+@SpringBootTest( properties = "elasticsearch.icu.enabled=true")
 public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
 
   private static final String MATERIAL_SAMPLE_DOCUMENT1_ID = "94c97f20-3481-4a44-ba64-3a1351051a76";
@@ -25,33 +24,14 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
   private static final String MATERIAL_SAMPLE_DOCUMENT3_ID = "94c97f20-3481-4a44-ba64-3a1351051a78";
   private static final String MATERIAL_SAMPLE_DOCUMENT4_ID = "94c97f20-3481-4a44-ba64-3a1351051a79";
 
-  @Container
-  private static final CustomElasticSearchContainer ELASTICSEARCH_CONTAINER = new CustomElasticSearchContainer();
-
   @Autowired
   private SearchService searchService;
-
-  @BeforeEach
-  private void beforeEach() {
-    ELASTICSEARCH_CONTAINER.start();
-
-    // configuration of the sear-ws will expect 9200
-    assertEquals(9200, ELASTICSEARCH_CONTAINER.getMappedPort(9200).intValue());
-    assertEquals(9300, ELASTICSEARCH_CONTAINER.getMappedPort(9300).intValue());
-
-    assertNotNull(searchService);
-  }
-
-  @AfterEach
-  private void afterEach() {
-    ELASTICSEARCH_CONTAINER.stop();
-  }
 
   @Test
   public void testSearchSortWithICUField() throws Exception {
 
-    sendMapping("es-mapping/material_sample_index_icu_settings.json",
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), MATERIAL_SAMPLE_INDEX);
+    ElasticSearchTestUtils.createIndex(client, MATERIAL_SAMPLE_INDEX, "es-mapping/material_sample_index_icu_settings.json",
+        ElasticSearchTestUtils.ActionOnExists.DROP);
 
     indexDocumentForIT(MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
             retrieveJSONObject("icu/matSampleName1.json"));
@@ -76,13 +56,12 @@ public class SearchWithICUPluginIT extends ElasticSearchBackedTest {
     result = searchService.search(MATERIAL_SAMPLE_INDEX, queryStringDesc);
     assertThat(result, hasJsonPath("$.hits.hits[*]._source.data.attributes.materialSampleName", contains("CNC101", "CNC00044", "CNC22", "CNC3")));
 
-
   }
 
   @Test
   public void testMappingResponseWithICUPlugin() throws Exception {
-    sendMapping("es-mapping/material_sample_index_icu_settings.json",
-            ELASTICSEARCH_CONTAINER.getHttpHostAddress(), MATERIAL_SAMPLE_INDEX);
+    ElasticSearchTestUtils.createIndex(client, MATERIAL_SAMPLE_INDEX, "es-mapping/material_sample_index_icu_settings.json",
+        ElasticSearchTestUtils.ActionOnExists.DROP);
 
     indexDocumentForIT(MATERIAL_SAMPLE_INDEX, MATERIAL_SAMPLE_DOCUMENT1_ID, MATERIAL_SAMPLE_SEARCH_FIELD,
             retrieveJSONObject("icu/matSampleName1.json"));
