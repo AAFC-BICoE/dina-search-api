@@ -1,30 +1,22 @@
 package ca.gc.aafc.dina.search.ws.repository;
 
+import ca.gc.aafc.dina.dto.ApiInfoDto;
+import ca.gc.aafc.dina.testsupport.security.WithMockKeycloakUser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import ca.gc.aafc.dina.dto.ApiInfoDto;
-import ca.gc.aafc.dina.testsupport.security.WithMockKeycloakUser;
 
 import static com.toedter.spring.hateoas.jsonapi.MediaTypes.JSON_API_VALUE;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import jakarta.inject.Inject;
-
-import java.util.Properties;
 
 @SpringBootTest
 public class ApiInfoRepositoryIT {
@@ -57,15 +49,5 @@ public class ApiInfoRepositoryIT {
     JsonNode jsonApiDoc = objectMapper.readValue(response.getResponse().getContentAsString(), JsonNode.class);
     ApiInfoDto dto = objectMapper.convertValue(jsonApiDoc.get("data").get("attributes"), ApiInfoDto.class);
     assertNotNull(dto);
-  }
-
-  @TestConfiguration
-  public static class TestConfig {
-    @Bean
-    public BuildProperties buildProperties() {
-      Properties props = new Properties();
-      props.setProperty("version", "test-api-version");
-      return new BuildProperties(props);
-    }
   }
 }

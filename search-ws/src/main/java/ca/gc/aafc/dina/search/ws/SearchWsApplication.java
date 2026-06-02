@@ -17,7 +17,7 @@ import org.springframework.context.annotation.ComponentScan;
   classes = {KeycloakSecurityConfig.class, KeycloakDisabledAuthConfig.class},
   exclude = {DataSourceAutoConfiguration.class, JaversSqlAutoConfiguration.class}
 )
-@ComponentScan("ca.gc.aafc.dina.search")
+@ComponentScan({"ca.gc.aafc.dina.search", "ca.gc.aafc.dina.security"})
 public class SearchWsApplication {
 
   public static void main(String[] args) {
