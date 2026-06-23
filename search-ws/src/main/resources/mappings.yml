@@ -32,6 +32,8 @@ mappings:
       type: text
     - name: targetOrganismPrimaryScientificName
       type: text
+    - name: targetOrganismPrimaryTypeStatus
+      type: text
     - name: targetOrganismPrimaryClassification
       type: object
     - name: extensionValues
@@ -124,6 +126,10 @@ mappings:
     - name: determination.scientificName
       type: text
     - name: determination.typeStatus
+      type: text
+    - name: lifeStage
+      type: text
+    - name: sex
       type: text
     - name: dwcVernacularName
       type: text
