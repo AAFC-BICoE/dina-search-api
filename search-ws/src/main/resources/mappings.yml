@@ -298,3 +298,9 @@ mappings:
       type: text
     - name: createdOn
       type: date
+  expedition:
+    - name: name
+      type: text
+    - name: group
+      type: text
+      distinctTermAgg: true
