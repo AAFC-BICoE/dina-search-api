@@ -213,12 +213,13 @@ public class DocumentManagerIT {
             .withBody(Files.readString(COLLECTING_EVENT_NO_RELATIONSHIPS_PATH))
             .withDelay(TimeUnit.SECONDS, 1));
 
-    // Mock the augmented fetch with ?include=collectors
+    // Mock the augmented fetch with ?include=collectors, expedition
     // This will match the second request with include parameter
     client.when(MockKeyCloakAuthentication.setupMockRequest()
         .withMethod("GET")
         .withPath("/api/v1/collecting-event/" + COLLECTING_EVENT_ID)
-        .withQueryStringParameter("include", "collectors"))
+        // The regex asserts that both collectors and expedition exist in the parameter a non-deterministic order (e.g., collectors,expedition or expedition,collectors)
+        .withQueryStringParameter("include", "(?=.*collectors)(?=.*expedition).*"))
         .respond(HttpResponse.response()
             .withStatusCode(200)
             .withBody(Files.readString(COLLECTING_EVENT_RESPONSE_PATH))
