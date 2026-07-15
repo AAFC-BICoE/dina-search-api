@@ -33,6 +33,8 @@ apiResources:
     enabled: ${SEQDB_API_ENABLED:true}
   - type: site
     url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/site
+  - type: expedition
+    url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/expedition
 
 indexSettings:
   - indexName: dina_material_sample_index
@@ -65,6 +67,7 @@ indexSettings:
       - relationshipName: collectingEvent
         nestedRelationships:
           - collectors
+          - expedition
 
   - indexName: dina_object_store_index
     type: metadata
@@ -111,5 +114,7 @@ indexSettings:
     type: collecting-event
     relationships:
       - site
+      - expedition
     relationshipsType:
       - site
+      - expedition
