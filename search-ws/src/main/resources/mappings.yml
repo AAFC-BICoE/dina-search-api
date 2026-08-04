@@ -32,7 +32,18 @@ mappings:
       type: text
     - name: targetOrganismPrimaryScientificName
       type: text
-    - name: targetOrganismPrimaryClassification
+    - name: targetIdentifiableEntitySummary.primaryDetermination.classification
+      type: object
+    - name: targetIdentifiableEntitySummary.primaryDetermination.typeStatus
+      type: text
+      distinctTermAgg: true
+    - name: targetIdentifiableEntitySummary.lifeStage
+      type: text
+    - name: targetIdentifiableEntitySummary.sex
+      type: text
+    - name: targetIdentifiableEntitySummary.dwcVernacularName
+      type: text
+    - name: targetIdentifiableEntitySummary.managedAttributes
       type: object
     - name: extensionValues
       type: object
