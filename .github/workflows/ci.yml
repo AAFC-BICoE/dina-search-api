@@ -38,10 +38,18 @@ jobs:
             ${{ runner.os }}-nvd-cache-
 
       - name: Run OWASP dependency-check (only on dev)
-        run: mvn -q org.owasp:dependency-check-maven:check
         if: ${{ github.ref == 'refs/heads/dev' }}
+        uses: dependency-check/Dependency-Check_Action@main
+        id: search-api-dependency-check
         env:
-          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+          JAVA_HOME: /opt/jdk
+        with:
+          project: 'test'
+          path: '.'
+          format: 'HTML'
+          args: >
+            --failOnCVSS 8
+            --suppression owasp-suppression.xml
 
       - name: Extract Version
         if: ${{ github.ref == 'refs/heads/main' }}
@@ -108,3 +116,5 @@ jobs:
           push: true
           tags: aafcbicoe/dina-search-cli:${{ env.VERSION_TAG }}
           provenance: false
+          # Force the builder engine to output standard Docker mediatypes for OKD
+          outputs: type=image,oci-mediatypes=false
