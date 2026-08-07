@@ -28,15 +28,6 @@ jobs:
         id: date
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
 
-      - name: Cache NVD Database (valid for 1 day)
-        if: ${{ github.ref == 'refs/heads/dev' }}
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository/org/owasp/dependency-check-data
-          key: ${{ runner.os }}-nvd-cache-${{ steps.date.outputs.date }}
-          restore-keys: |
-            ${{ runner.os }}-nvd-cache-
-
       - name: Run OWASP dependency-check (only on dev)
         if: ${{ github.ref == 'refs/heads/dev' }}
         uses: dependency-check/Dependency-Check_Action@main
@@ -100,16 +91,18 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build dina-search-ws Image and Push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.ws-builder.outputs.name }}
           context: search-ws/.
           push: true
           tags: aafcbicoe/dina-search-ws:${{ env.VERSION_TAG }}
           provenance: false
+          # Force the builder engine to output standard Docker mediatypes for OKD
+          outputs: type=image,oci-mediatypes=false
 
       - name: Build dina-search-cli Image and Push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.cli-builder.outputs.name }}
           context: search-cli/.
