@@ -14,7 +14,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <spring.shell.version>3.4.3</spring.shell.version>
-    <mockserver.version>5.11.2</mockserver.version>
+    <mockserver.version>5.15.0</mockserver.version>
   </properties>
 
   <dependencies>
