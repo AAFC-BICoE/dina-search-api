@@ -13,9 +13,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spring.shell.version>3.4.2</spring.shell.version>
-    <json-path.version>2.5.0</json-path.version>
-    <mockserver.version>5.11.2</mockserver.version>
+    <spring.shell.version>3.4.3</spring.shell.version>
+    <mockserver.version>5.15.0</mockserver.version>
   </properties>
 
   <dependencies>
