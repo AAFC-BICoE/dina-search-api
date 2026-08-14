@@ -6,10 +6,6 @@
     </suppress>
     <suppress>
         <notes>CVE about Keycloak Server</notes>
-        <cve>CVE-2022-1245</cve>
-    </suppress>
-    <suppress>
-        <notes>CVE about Keycloak Server</notes>
         <cve>CVE-2024-7341</cve>
     </suppress>
     <suppress>
@@ -51,6 +47,14 @@
     <suppress>
         <notes>Keycloak Server related</notes>
         <cve>CVE-2024-1132</cve>
+    </suppress>
+    <suppress>
+        <notes>Eclipse GlassFish related. Not jaxb-core</notes>
+        <cve>CVE-2026-2587</cve>
+    </suppress>
+    <suppress>
+        <notes>Eclipse GlassFish related. Not jaxb-core</notes>
+        <cve>CVE-2026-2586</cve>
     </suppress>
     <suppress>
         <notes>not valid for search-api</notes>
