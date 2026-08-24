@@ -80,6 +80,16 @@ public class ESSearchService implements SearchService {
   }
 
   @Override
+  public boolean isSearchIndexReachable() {
+    try {
+      client.ping();
+      return true;
+    } catch (IOException ex) {
+      return false;
+    }
+  }
+
+  @Override
   public AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField,
                                            String additionalField, String group,
                                            String restrictedField, String restrictedFieldValue) throws SearchApiException {

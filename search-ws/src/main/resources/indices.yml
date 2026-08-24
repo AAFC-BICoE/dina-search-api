@@ -1,0 +1,5 @@
+# known ElasticSearch indices
+
+indices:
+  - material-sample
+  - collecting-event
