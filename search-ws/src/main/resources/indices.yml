@@ -1,5 +1,5 @@
 # known ElasticSearch indices
 
 indices:
-  - material-sample
-  - collecting-event
+  - dina_material_sample_index
+  - dina_collecting_event_index
