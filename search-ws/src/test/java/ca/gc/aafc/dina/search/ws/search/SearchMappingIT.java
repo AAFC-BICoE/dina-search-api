@@ -1,6 +1,7 @@
 package ca.gc.aafc.dina.search.ws.search;
 
 import ca.gc.aafc.dina.search.ws.exceptions.SearchApiException;
+import ca.gc.aafc.dina.search.ws.repository.ApiInfoRepository;
 import ca.gc.aafc.dina.search.ws.services.ESSearchService;
 import ca.gc.aafc.dina.search.ws.services.IndexMappingResponse;
 import ca.gc.aafc.dina.search.ws.services.SearchService;
@@ -27,6 +28,9 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
 
   @Autowired
   private SearchService searchService;
+
+  @Autowired
+  private ApiInfoRepository apiInfoRepository;
 
   @Test
   public void onGetMapping_whenMappingSetup_ReturnExpectedResult() throws Exception {
@@ -88,6 +92,9 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
 
     // test behavior of non-existing index
     assertThrows(SearchApiException.class, () -> searchService.getIndexMapping("abcd"));
+
+    // make sure the info is also available from the apiInfoRepository
+    assertTrue(apiInfoRepository.onApiInfo().getStatusCode().is2xxSuccessful());
 
     // cleanup
     deleteAlias(indexName, TestConstants.MATERIAL_SAMPLE_INDEX);
