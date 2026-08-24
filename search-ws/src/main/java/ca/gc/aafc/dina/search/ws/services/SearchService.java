@@ -47,6 +47,8 @@ public interface SearchService {
    */
   AutocompleteResponse autoComplete(String textToMatch, String indexName, String autoCompleteField, String additionalField, String group, String restrictedField, String restrictedFieldValue) throws SearchApiException;
 
+  boolean isSearchIndexReachable();
+
   /**
    * Search will take the provided json text query and forward it to the configured
    * elasticsearch search API.

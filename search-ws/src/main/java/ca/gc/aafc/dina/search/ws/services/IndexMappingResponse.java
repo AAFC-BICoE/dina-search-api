@@ -17,6 +17,9 @@ public class IndexMappingResponse {
   @JsonProperty("index_name")
   private String indexName;
 
+  @JsonProperty("schema_version")
+  private String schemaVersion;
+
   @Singular
   private Set<Attribute> attributes;
 
