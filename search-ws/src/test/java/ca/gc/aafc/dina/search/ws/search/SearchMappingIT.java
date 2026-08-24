@@ -47,6 +47,7 @@ public class SearchMappingIT extends ElasticSearchBackedTest {
     IndexMappingResponse response = searchService.getIndexMapping(TestConstants.MATERIAL_SAMPLE_INDEX);
 
     assertEquals(TestConstants.MATERIAL_SAMPLE_INDEX, response.getIndexName());
+    assertEquals("1.2", response.getSchemaVersion());
 
     IndexMappingResponse.Attribute cropFieldExtension = findAttributeByName(response, "crop");
     assertNotNull(cropFieldExtension);

@@ -19,6 +19,8 @@ import co.elastic.clients.elasticsearch.indices.GetMappingResponse;
 import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.json.JsonpMappingException;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
+import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -302,7 +304,9 @@ public class ESSearchService implements SearchService {
       Objects.requireNonNull(mappingProperties.get(JSONApiDocumentStructure.DATA));
       // Extract document type
       String docType = ESResponseHelper.extractConstantKeywordValue(
-              Objects.requireNonNull(mappingProperties.get("data").object().properties().get("type")));
+              Objects.requireNonNull(mappingProperties.get(JSONApiDocumentStructure.DATA).object().properties().get("type")));
+      
+      indexMappingResponseBuilder.schemaVersion(extractSchemaVersion(mappingResponse.result().get(indexName).mappings()));
 
       Map<String, IndexMappingResponse.Attribute> includedBlock = handleIncludedSection(mappingProperties.get(JSONApiDocumentStructure.INCLUDED));
 
@@ -543,4 +547,20 @@ public class ESSearchService implements SearchService {
     aliasCache.invalidateAll();
   }
 
+  /**
+   * Extract version.number from ElasticSearch structure
+   * @param esMappingResponse
+   * @return version of null if can not be extracted
+   */
+  private static String extractSchemaVersion(TypeMapping esMappingResponse) {
+    if (esMappingResponse.meta() == null || !esMappingResponse.meta().containsKey("version")) {
+      return null;
+    }
+
+    Map<String, Object> versionBlock = esMappingResponse.meta().get("version").to(Map.class);
+    if (!versionBlock.containsKey("number")) {
+      return null;
+    }
+    return versionBlock.get("number").toString();
+  }
 }

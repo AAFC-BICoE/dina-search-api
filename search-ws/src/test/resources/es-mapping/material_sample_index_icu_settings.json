@@ -6,6 +6,11 @@
     }
   },
   "mappings": {
+    "_meta": {
+      "version": {
+        "number": "1.2"
+      }
+    },
     "dynamic_templates": [
       {
         "includes_as_nested": {
