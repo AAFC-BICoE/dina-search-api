@@ -9,6 +9,7 @@ import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.mapping.Property;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch.core.CountRequest;
@@ -35,6 +36,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +44,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Service
@@ -56,11 +59,22 @@ public class ESSearchService implements SearchService {
   private static final int DEFAULT_PAGE_SIZE = 20;
   private static final int MAX_PAGE_SIZE = 5000;
 
+  private static final String ATTRIBUTES_GROUP_PATH = "data.attributes.group";
+  private static final String INDEX_FIELD = "_index";
+
   private final ElasticsearchClient client;
   private final JsonpMapper jsonpMapper;
 
   private final ESSearchPagingService esSearchPagingService;
   private final LoadingCache<String, Optional<String>> aliasCache;
+
+  /**
+   * Per (resolved) index name: the field path to filter on to restrict that index's documents to
+   * particular groups, or {@link Optional#empty()} if that index has no group-like attribute at
+   * all (e.g. agent-index, object-store-index), meaning its documents aren't group-scoped and
+   * shouldn't be restricted. See {@link #lookupGroupFieldPath(String)}.
+   */
+  private final LoadingCache<String, Optional<String>> groupFieldCache;
 
   @Autowired
   private MappingObjectAttributes mappingObjectAttributes;
@@ -75,6 +89,11 @@ public class ESSearchService implements SearchService {
         .maximumSize(10)
         .expireAfterWrite(Duration.ofMinutes(5))
         .build(this::getIndexNameFromAlias);
+
+    groupFieldCache = Caffeine.newBuilder()
+        .maximumSize(50)
+        .expireAfterWrite(Duration.ofMinutes(5))
+        .build(this::lookupGroupFieldPath);
   }
 
   @Override
@@ -171,10 +190,31 @@ public class ESSearchService implements SearchService {
    */
   @Override
   public String search(List<String> indices, String queryJson) throws SearchApiException {
+    return doSearch(indices, queryJson, null);
+  }
+
+  @Override
+  public String search(List<String> indices, String queryJson, List<String> groups) throws SearchApiException {
+    return doSearch(indices, queryJson, groups);
+  }
+
+  /**
+   * Core of both {@link #search(List, String)} and {@link #search(List, String, List)}: parses
+   * the caller's request once, optionally computes a group-restricted replacement for its
+   * {@code query} clause (see {@link #computeRestrictedQuery(List, Query, List)}), and executes
+   * it - including cursor-based deep pagination, which must see the same restricted query so a
+   * page jump can't be used to walk past the restriction.
+   *
+   * @param groups groups the authenticated caller belongs to, or {@code null} to run the query
+   *               unrestricted (internal/legacy callers only - see {@link #search(List, String)})
+   */
+  private String doSearch(List<String> indices, String queryJson, List<String> groups) throws SearchApiException {
 
     try (Reader strReader = new StringReader(queryJson)) {
       SearchRequest sr = SearchRequest.of(b -> b
           .withJson(strReader).index(indices));
+
+      Query queryOverride = groups != null ? computeRestrictedQuery(indices, sr.query(), groups) : null;
 
       // Validate pagination parameters (if any)
       Integer from = sr.from();
@@ -198,10 +238,11 @@ public class ESSearchService implements SearchService {
 
         int pageNumber = (from / pageSize) + 1; // Convert from to page number
         log.debug("Using cursor pagination for from={}, converting to page={}", from, pageNumber);
-        searchAfter = esSearchPagingService.pagingToSearchAfter(queryJson, indices.getFirst(), pageNumber, pageSize);
+        searchAfter = esSearchPagingService.pagingToSearchAfter(
+            queryJson, queryOverride, groups, indices.getFirst(), pageNumber, pageSize);
       }
 
-      SearchResponse<?> response = executeSearch(indices, queryJson, pageSize, searchAfter);
+      SearchResponse<?> response = executeSearch(indices, queryJson, queryOverride, pageSize, searchAfter);
       StringWriter writer = new StringWriter();
       try (JsonGenerator generator = jsonpMapper.jsonProvider().createGenerator(writer)) {
         jsonpMapper.serialize(response, generator);
@@ -210,6 +251,161 @@ public class ESSearchService implements SearchService {
     } catch (IOException | ElasticsearchException | JsonpMappingException e) {
       throw new SearchApiException("Error during search processing", e);
     }
+  }
+
+  /**
+   * Computes the query that should be used in place of the caller's own {@code query}, so that
+   * results are restricted to the given groups on every requested index that is actually
+   * group-scoped (i.e. carries a {@code group}-like attribute - see
+   * {@link #lookupGroupFieldPath(String)}). Built entirely from Elasticsearch's own typed query
+   * classes ({@link QueryBuilders}/{@link BoolQuery}, the same API {@link #autoComplete} already
+   * uses) - the caller's original query is parsed by the ES client itself (see
+   * {@link SearchRequest#query()}), never hand-edited as a JSON tree, and is always combined with
+   * a server-computed {@code filter} rather than trusted as-is.
+   *
+   * <p>Combining with {@code filter} (AND), rather than replacing the caller's query outright,
+   * is what makes this satisfy both submission patterns dina-ui uses: a query with no group
+   * scoping at all is narrowed to every group the caller belongs to (a union, since the filter
+   * lists all of them); a query that already scopes itself to one specific group is narrowed
+   * further to just that group if it's one the caller actually belongs to (the filter doesn't
+   * change the result, since it's already a superset), or to nothing if it names a group the
+   * caller doesn't belong to (the two filters don't intersect) - i.e. the caller's own group
+   * claim is honored when valid and never trusted outright.</p>
+   *
+   * <p>Indices that aren't group-scoped (e.g. agent-index) are left unrestricted, since they
+   * have no group attribute to restrict on. When the requested indices are a mix of group-scoped
+   * and non-group-scoped (or use different underlying field representations for their group
+   * attribute), the query is split per-index using an {@code _index} filter, so each index only
+   * gets the restriction that applies to it.</p>
+   *
+   * @param indices the indices (or aliases) the caller's query targets
+   * @param originalQuery the caller's query, already parsed into ES's typed {@link Query} class
+   *                      by {@link SearchRequest#query()}/{@link CountRequest#query()}; may be
+   *                      {@code null} (equivalent to {@code match_all})
+   * @param groups groups the authenticated caller belongs to; never null. An empty list means
+   *               the caller belongs to no group, so group-scoped indices will match no document
+   *               (fail closed). Non-group-scoped indices are unaffected either way.
+   * @return the query to use in place of {@code originalQuery}, or {@code null} if none of the
+   *         requested indices are group-scoped, meaning {@code originalQuery} should be used
+   *         as-is (no restriction applies)
+   */
+  private Query computeRestrictedQuery(List<String> indices, Query originalQuery, List<String> groups) {
+    Map<Optional<String>, List<String>> indicesByGroupField = indices.stream()
+        .collect(Collectors.groupingBy(this::resolveGroupFieldPath));
+
+    if (indicesByGroupField.size() == 1) {
+      // Every requested index gets the same treatment - no need for a per-index split.
+      Optional<String> fieldPath = indicesByGroupField.keySet().iterator().next();
+      return fieldPath.map(path -> restrictToGroups(path, groups, originalQuery)).orElse(null);
+    }
+
+    BoolQuery.Builder outer = QueryBuilders.bool();
+    for (Map.Entry<Optional<String>, List<String>> entry : indicesByGroupField.entrySet()) {
+      Query perIndexFilter = QueryBuilders.terms()
+          .field(INDEX_FIELD)
+          .terms(t -> t.value(entry.getValue().stream().map(FieldValue::of).toList()))
+          .build()._toQuery();
+
+      BoolQuery.Builder branch = QueryBuilders.bool().filter(perIndexFilter);
+      entry.getKey().ifPresent(path -> branch.filter(groupTermsFilter(path, groups)));
+      if (originalQuery != null) {
+        branch.must(originalQuery);
+      }
+      outer.should(branch.build()._toQuery());
+    }
+    outer.minimumShouldMatch("1");
+    return outer.build()._toQuery();
+  }
+
+  /**
+   * Combines a {@code terms} filter on {@code fieldPath} restricted to {@code groups} with the
+   * caller's original query (if any) as a {@code must} clause - see
+   * {@link #computeRestrictedQuery(List, Query, List)} for why AND-combining (rather than
+   * replacing) is what "honor the caller's own group claim if valid, ignore it if not" reduces
+   * to.
+   */
+  private Query restrictToGroups(String fieldPath, List<String> groups, Query originalQuery) {
+    BoolQuery.Builder bool = QueryBuilders.bool().filter(groupTermsFilter(fieldPath, groups));
+    if (originalQuery != null) {
+      bool.must(originalQuery);
+    }
+    return bool.build()._toQuery();
+  }
+
+  private Query groupTermsFilter(String fieldPath, List<String> groups) {
+    return QueryBuilders.terms()
+        .field(fieldPath)
+        .terms(t -> t.value(groups.stream().map(FieldValue::of).toList()))
+        .build()._toQuery();
+  }
+
+  /**
+   * Cache-backed lookup of {@link #groupFieldCache} for a single index (or alias). Never throws:
+   * mapping lookup failures are treated as "not group-scoped" (see
+   * {@link #lookupGroupFieldPath(String)}) so a single bad/unreachable index name can't take
+   * down an otherwise-valid multi-index search.
+   */
+  private Optional<String> resolveGroupFieldPath(String indexNameOrAlias) {
+    Optional<String> cached = groupFieldCache.get(indexNameOrAlias);
+    return cached == null ? Optional.empty() : cached;
+  }
+
+  /**
+   * Determines which field (if any) should be used to restrict an index's documents to
+   * particular groups, based on the actual ES mapping of {@code data.attributes.group}:
+   * <ul>
+   *   <li>{@code keyword} type -&gt; filter directly on {@code data.attributes.group}</li>
+   *   <li>{@code text} type with a {@code keyword} multi-field -&gt; filter on
+   *       {@code data.attributes.group.keyword} (exact match requires the keyword form)</li>
+   *   <li>no {@code group} attribute at all, or a {@code text} field with no {@code keyword}
+   *       multi-field to do an exact match against -&gt; {@link Optional#empty()}, meaning this
+   *       index is not restricted (e.g. agent-index and object-store-index carry no
+   *       group-equivalent attribute at all)</li>
+   * </ul>
+   *
+   * @param indexNameOrAlias index name or alias as requested by the caller
+   * @return the field path to filter on, or empty if this index shouldn't be group-restricted
+   */
+  private Optional<String> lookupGroupFieldPath(String indexNameOrAlias) {
+    String indexName = getCacheEntry(indexNameOrAlias).orElse(indexNameOrAlias);
+
+    GetMappingResponse mappingResponse;
+    try {
+      mappingResponse = client.indices().getMapping(builder -> builder.index(indexName));
+    } catch (IOException | ElasticsearchException e) {
+      log.warn("Unable to retrieve mapping for index '{}', treating it as not group-scoped: {}",
+          indexNameOrAlias, e.getMessage());
+      return Optional.empty();
+    }
+
+    if (mappingResponse.result().isEmpty() || !mappingResponse.result().containsKey(indexName)) {
+      return Optional.empty();
+    }
+
+    Property data = mappingResponse.result().get(indexName).mappings().properties().get(JSONApiDocumentStructure.DATA);
+    if (data == null || !data.isObject()) {
+      return Optional.empty();
+    }
+    Property attributes = data.object().properties().get("attributes");
+    if (attributes == null || !attributes.isObject()) {
+      return Optional.empty();
+    }
+    Property group = attributes.object().properties().get("group");
+    if (group == null) {
+      return Optional.empty();
+    }
+
+    if (group.isKeyword()) {
+      return Optional.of(ATTRIBUTES_GROUP_PATH);
+    }
+    if (group.isText() && group.text().fields().containsKey("keyword")) {
+      return Optional.of(ATTRIBUTES_GROUP_PATH + ".keyword");
+    }
+
+    log.warn("Index '{}' has a 'group' attribute that doesn't support exact-match filtering "
+        + "(neither keyword nor text-with-keyword-subfield); no group restriction will be "
+        + "applied for it.", indexNameOrAlias);
+    return Optional.empty();
   }
 
   /**
@@ -229,11 +425,25 @@ public class ESSearchService implements SearchService {
    * @throws SearchApiException if the search execution fails
    */
   public SearchResponse<JsonNode> executeSearch(List<String> indexNames, String queryJson, Integer pageSize, List<FieldValue> searchAfter) throws SearchApiException {
+    return executeSearch(indexNames, queryJson, null, pageSize, searchAfter);
+  }
+
+  /**
+   * Same as {@link #executeSearch(List, String, Integer, List)}, except {@code queryOverride}
+   * (when not {@code null}) replaces the {@code query} the ES client would otherwise have parsed
+   * out of {@code queryJson} - see {@link #computeRestrictedQuery(List, Query, List)}. Everything
+   * else in the request (sort, aggs, highlight, ...) still comes from {@code queryJson} as-is.
+   */
+  public SearchResponse<JsonNode> executeSearch(List<String> indexNames, String queryJson, Query queryOverride,
+                                                Integer pageSize, List<FieldValue> searchAfter) throws SearchApiException {
     try (Reader strReader = new StringReader(queryJson)) {
       SearchRequest.Builder searchBuilder = new SearchRequest.Builder();
       searchBuilder.withJson(strReader)
           .index(indexNames);
 
+      if (queryOverride != null) {
+        searchBuilder.query(queryOverride);
+      }
       if (pageSize != null) {
         searchBuilder.size(pageSize);
       }
@@ -257,7 +467,30 @@ public class ESSearchService implements SearchService {
    */
   @Override
   public CountResponse count(String indexName, String queryJson) throws SearchApiException {
+    return doCount(indexName, queryJson, null);
+  }
 
+  @Override
+  public CountResponse count(String indexName, String queryJson, List<String> groups) throws SearchApiException {
+    List<String> indices = Arrays.asList(StringUtils.split(indexName, ','));
+
+    Query queryOverride = null;
+    if (StringUtils.isNotBlank(queryJson) && !EMPTY_QUERY.equalsIgnoreCase(StringUtils.deleteWhitespace(queryJson))) {
+      try (Reader strReader = new StringReader(queryJson)) {
+        CountRequest parsed = CountRequest.of(b -> b.withJson(strReader).index(indices));
+        queryOverride = computeRestrictedQuery(indices, parsed.query(), groups);
+      } catch (IOException e) {
+        throw new SearchApiException("Error during search processing", e);
+      }
+    } else {
+      // no query at all (count-everything shorthand) is still subject to group restriction
+      queryOverride = computeRestrictedQuery(indices, null, groups);
+    }
+
+    return doCount(indexName, queryJson, queryOverride);
+  }
+
+  private CountResponse doCount(String indexName, String queryJson, Query queryOverride) throws SearchApiException {
     CountRequest.Builder crBuilder = new CountRequest.Builder();
     crBuilder.index(indexName);
 
@@ -265,6 +498,9 @@ public class ESSearchService implements SearchService {
     if (StringUtils.isNotBlank(queryJson) && !EMPTY_QUERY.equalsIgnoreCase(StringUtils.deleteWhitespace(queryJson))) {
       Reader strReader = new StringReader(queryJson);
       crBuilder.withJson(strReader);
+    }
+    if (queryOverride != null) {
+      crBuilder.query(queryOverride);
     }
 
     CountRequest cr = crBuilder.build();

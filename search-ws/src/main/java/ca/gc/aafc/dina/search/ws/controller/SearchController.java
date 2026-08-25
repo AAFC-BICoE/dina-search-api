@@ -1,8 +1,10 @@
 package ca.gc.aafc.dina.search.ws.controller;
 
+import ca.gc.aafc.dina.security.DinaAuthenticatedUser;
 import ca.gc.aafc.dina.security.TextHtmlSanitizer;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.safety.Safelist;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import ca.gc.aafc.dina.search.ws.services.SearchService;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 
@@ -31,8 +34,19 @@ public class SearchController {
 
   private final SearchService searchService;
 
-  public SearchController(@Autowired SearchService searchService) {
+  /**
+   * dina-base-api's {@code currentUser()} bean (from {@code KeycloakSecurityConfig}) only exists
+   * when {@code keycloak.enabled=true} - with Keycloak disabled (local dev without auth, some
+   * tests), there's no such bean at all. {@link ObjectProvider} defers the lookup to request
+   * time and tolerates that absence instead of failing application startup, which a direct
+   * {@code DinaAuthenticatedUser} constructor/field injection would not.
+   */
+  private final ObjectProvider<DinaAuthenticatedUser> currentUserProvider;
+
+  public SearchController(@Autowired SearchService searchService,
+                          ObjectProvider<DinaAuthenticatedUser> currentUserProvider) {
     this.searchService = searchService;
+    this.currentUserProvider = currentUserProvider;
   }
 
   @GetMapping(path = "/auto-complete")
@@ -76,7 +90,8 @@ public class SearchController {
       validateAlphanumericInputs(indexName);
 
       String[] indices = StringUtils.split(indexName, ',');
-      return new ResponseEntity<>(searchService.search(Arrays.asList(indices), query), HttpStatus.ACCEPTED);
+      return new ResponseEntity<>(
+          searchService.search(Arrays.asList(indices), query, currentUserGroups()), HttpStatus.ACCEPTED);
     } catch (SearchApiException e) {
       log.error("SearchApiException cause {}", e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -90,11 +105,30 @@ public class SearchController {
     try {
       validateHtmlSafe(query);
       validateAlphanumericInputs(indexName);
-      return new ResponseEntity<>(searchService.count(indexName, query), HttpStatus.ACCEPTED);
+      return new ResponseEntity<>(searchService.count(indexName, query, currentUserGroups()), HttpStatus.ACCEPTED);
     } catch (SearchApiException e) {
       log.error("SearchApiException cause {}", e.getCause().getMessage());
       return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
+  }
+
+  /**
+   * Groups the currently authenticated caller belongs to, as already parsed by dina-base-api
+   * (same {@code DinaAuthenticatedUser} every other DINA API authorizes against - see
+   * {@code KeycloakSecurityConfig#currentUser()}), so this stays consistent with the rest of
+   * DINA by construction rather than a convention re-implemented here.
+   *
+   * @return groups the caller belongs to; never null. Empty when there's no authenticated user
+   *         (Keycloak disabled, or request genuinely unauthenticated) or they belong to no
+   *         group - either way, searches against group-scoped indices will then match no
+   *         document (fail closed).
+   */
+  private List<String> currentUserGroups() {
+    DinaAuthenticatedUser currentUser = currentUserProvider.getIfAvailable();
+    if (currentUser == null || currentUser.getGroups() == null) {
+      return List.of();
+    }
+    return List.copyOf(currentUser.getGroups());
   }
 
   private static void validateAlphanumericInputs(String ... inputs) throws SearchApiException {

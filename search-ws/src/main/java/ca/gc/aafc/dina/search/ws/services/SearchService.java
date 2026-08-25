@@ -63,12 +63,33 @@ public interface SearchService {
   String search(String indexNames, String query) throws SearchApiException;
 
   /**
+   * Same as {@link #search(List, String)}, except the query is rewritten server-side so that it
+   * can only ever match documents whose {@code data.attributes.group} is one of the provided
+   * groups. This is enforced regardless of what filters/queries the caller included in
+   * {@code query}, so it cannot be bypassed by the caller.
+   *
+   * @param indices Index name to use for the search.
+   * @param query JSON query to forward to the elasticsearch API.
+   * @param groups groups the authenticated caller belongs to. An empty list means the caller
+   *               belongs to no group, so the search will match no document (fail closed).
+   * @return JSON return from the elasticsearch query
+   * @throws SearchApiException in case of connectivity issues and/or malformed queries.
+   */
+  String search(List<String> indices, String query, List<String> groups) throws SearchApiException;
+
+  /**
    * count takes the provided json text query and forward it to the configured API to get a document count.
    * @param indexName
    * @param query Json query to forward to the elasticsearch API.
    * @return
    */
   CountResponse count(String indexName, String query) throws SearchApiException;
+
+  /**
+   * Same as {@link #count(String, String)}, except the query is rewritten server-side to be
+   * restricted to the provided groups. See {@link #search(List, String, List)} for details.
+   */
+  CountResponse count(String indexName, String query, List<String> groups) throws SearchApiException;
 
   /**
    * Get the mapping of the provided indexName.

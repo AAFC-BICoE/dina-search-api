@@ -3,6 +3,7 @@ package ca.gc.aafc.dina.search.ws.services;
 import ca.gc.aafc.dina.search.ws.cache.QueryPageCachingService;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.FieldValue;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
@@ -49,6 +50,29 @@ public class ESSearchPagingService {
       String indexName,
       int pageNumber,
       int pageSize) throws IOException {
+    return pagingToSearchAfter(queryJson, null, null, indexName, pageNumber, pageSize);
+  }
+
+  /**
+   * Same as {@link #pagingToSearchAfter(String, String, int, int)}, except {@code queryOverride}
+   * (when not {@code null}) is used instead of the {@code query} the ES client would otherwise
+   * have parsed out of {@code queryJson} for every search this issues while walking to the
+   * requested page - see {@code ESSearchService#computeRestrictedQuery}. This must be the exact
+   * same override the actual search for this page will use, or the cursor could walk past
+   * documents the restriction would otherwise have excluded.
+   *
+   * <p>{@code groups} is mixed into the cache key (alongside {@code queryJson}) purely so that
+   * two different callers issuing the identical raw query text, but restricted to different
+   * groups, don't share a cursor cache entry - it plays no role in the search itself, since that
+   * comes entirely from {@code queryOverride}.</p>
+   */
+  public List<FieldValue> pagingToSearchAfter(
+      String queryJson,
+      Query queryOverride,
+      List<String> groups,
+      String indexName,
+      int pageNumber,
+      int pageSize) throws IOException {
 
     // Page 1 is a special case - no search_after needed
     if (pageNumber == MIN_PAGE_NUMBER) {
@@ -56,7 +80,7 @@ public class ESSearchPagingService {
       return null;
     }
 
-    String queryHash = DigestUtils.md5Hex(queryJson);
+    String queryHash = DigestUtils.md5Hex(queryJson + "|" + (groups == null ? "" : String.join(",", groups)));
 
     // Try to find cursor for this exact page
     List<FieldValue> searchAfter = queryPageCachingService.getSearchAfter(queryHash, pageNumber);
@@ -69,12 +93,12 @@ public class ESSearchPagingService {
         int nearestPage = nearestSearchAfter.getKey();
         log.debug("Found nearest cached cursor at page {}, iterating to page {}",
             nearestPage, pageNumber);
-        searchAfter = iterateToPage(queryJson, indexName, pageNumber, nearestPage,
+        searchAfter = iterateToPage(queryJson, queryOverride, indexName, pageNumber, nearestPage,
             pageSize, queryHash, nearestSearchAfter.getValue());
       } else {
         // Start from page 1
         log.debug("No cached cursor found, starting from page 1");
-        searchAfter = iterateToPage(queryJson, indexName, pageNumber, MIN_PAGE_NUMBER,
+        searchAfter = iterateToPage(queryJson, queryOverride, indexName, pageNumber, MIN_PAGE_NUMBER,
             pageSize, queryHash, null);
       }
 
@@ -91,6 +115,7 @@ public class ESSearchPagingService {
    */
   private List<FieldValue> iterateToPage(
       String queryJson,
+      Query queryOverride,
       String indexName,
       int targetPage,
       int startPage,
@@ -110,6 +135,9 @@ public class ESSearchPagingService {
           .source(s -> s.fetch(false)) // Disable _source retrieval - we only need sort values
           .index(indexName);
 
+      if (queryOverride != null) {
+        searchBuilder.query(queryOverride);
+      }
       if (CollectionUtils.isNotEmpty(currentSearchAfter)) {
         searchBuilder.searchAfter(currentSearchAfter);
       }
