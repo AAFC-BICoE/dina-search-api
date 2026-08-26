@@ -72,6 +72,10 @@ public interface SearchService {
    * @param query JSON query to forward to the elasticsearch API.
    * @param groups groups the authenticated caller belongs to. An empty list means the caller
    *               belongs to no group, so the search will match no document (fail closed).
+   *               {@code null} bypasses group restriction entirely - reserved for callers with
+   *               an admin-based role (not tied to any single group by DINA-wide convention -
+   *               see {@code DinaRole}) or other internal/legacy callers that don't apply
+   *               restriction at all.
    * @return JSON return from the elasticsearch query
    * @throws SearchApiException in case of connectivity issues and/or malformed queries.
    */

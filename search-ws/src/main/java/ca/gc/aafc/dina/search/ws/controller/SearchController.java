@@ -2,6 +2,7 @@ package ca.gc.aafc.dina.search.ws.controller;
 
 import ca.gc.aafc.dina.security.DinaAuthenticatedUser;
 import ca.gc.aafc.dina.security.TextHtmlSanitizer;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.safety.Safelist;
 import org.springframework.beans.factory.ObjectProvider;
@@ -118,14 +119,31 @@ public class SearchController {
    * {@code KeycloakSecurityConfig#currentUser()}), so this stays consistent with the rest of
    * DINA by construction rather than a convention re-implemented here.
    *
-   * @return groups the caller belongs to; never null. Empty when there's no authenticated user
+   * <p>Returns {@code null} - meaning "don't restrict at all", the same sentinel
+   * {@code ESSearchService}'s legacy no-groups overloads already use - for a caller holding any
+   * admin-based {@code DinaRole} (e.g. {@code DINA_ADMIN}). Those roles are, by DINA-wide
+   * convention, "not restricted by group" (see {@code DinaRole}'s javadoc, and
+   * {@code DinaPermissionEvaluator#hasMinimumGroupAndRolePermissions}, which grants the same
+   * bypass for create/update). Such a user's {@code getGroups()} is typically empty too - they
+   * aren't a member of any group, admin-based roles are global - so without this check they'd
+   * fail the closed-by-default empty-groups case below and see zero search results despite
+   * being fully authorized to see everything.
+   *
+   * @return groups the caller belongs to, or {@code null} to bypass restriction entirely for an
+   *         admin-based caller. Otherwise never null: empty when there's no authenticated user
    *         (Keycloak disabled, or request genuinely unauthenticated) or they belong to no
    *         group - either way, searches against group-scoped indices will then match no
    *         document (fail closed).
    */
   private List<String> currentUserGroups() {
     DinaAuthenticatedUser currentUser = currentUserProvider.getIfAvailable();
-    if (currentUser == null || currentUser.getGroups() == null) {
+    if (currentUser == null) {
+      return List.of();
+    }
+    if (CollectionUtils.isNotEmpty(currentUser.getAdminRoles())) {
+      return null;
+    }
+    if (currentUser.getGroups() == null) {
       return List.of();
     }
     return List.copyOf(currentUser.getGroups());

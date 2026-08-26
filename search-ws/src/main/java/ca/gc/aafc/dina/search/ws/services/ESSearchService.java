@@ -474,17 +474,24 @@ public class ESSearchService implements SearchService {
   public CountResponse count(String indexName, String queryJson, List<String> groups) throws SearchApiException {
     List<String> indices = Arrays.asList(StringUtils.split(indexName, ','));
 
+    // groups == null means "run unrestricted" (see SearchController#currentUserGroups) - the
+    // same sentinel doSearch()'s queryOverride computation honors. An empty (non-null) list is
+    // different: that's an authenticated caller who belongs to no group, so group-scoped indices
+    // must still be restricted down to nothing (fail closed) - only skip computeRestrictedQuery
+    // entirely for the null/bypass case.
     Query queryOverride = null;
-    if (StringUtils.isNotBlank(queryJson) && !EMPTY_QUERY.equalsIgnoreCase(StringUtils.deleteWhitespace(queryJson))) {
-      try (Reader strReader = new StringReader(queryJson)) {
-        CountRequest parsed = CountRequest.of(b -> b.withJson(strReader).index(indices));
-        queryOverride = computeRestrictedQuery(indices, parsed.query(), groups);
-      } catch (IOException e) {
-        throw new SearchApiException("Error during search processing", e);
+    if (groups != null) {
+      if (StringUtils.isNotBlank(queryJson) && !EMPTY_QUERY.equalsIgnoreCase(StringUtils.deleteWhitespace(queryJson))) {
+        try (Reader strReader = new StringReader(queryJson)) {
+          CountRequest parsed = CountRequest.of(b -> b.withJson(strReader).index(indices));
+          queryOverride = computeRestrictedQuery(indices, parsed.query(), groups);
+        } catch (IOException e) {
+          throw new SearchApiException("Error during search processing", e);
+        }
+      } else {
+        // no query at all (count-everything shorthand) is still subject to group restriction
+        queryOverride = computeRestrictedQuery(indices, null, groups);
       }
-    } else {
-      // no query at all (count-everything shorthand) is still subject to group restriction
-      queryOverride = computeRestrictedQuery(indices, null, groups);
     }
 
     return doCount(indexName, queryJson, queryOverride);
