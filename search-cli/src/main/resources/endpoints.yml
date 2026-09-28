@@ -16,18 +16,20 @@
 apiResources:
   - type: material-sample
     url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/material-sample
+  - type: external-material-sample
+    url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/material-sample
   - type: collecting-event
     url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/collecting-event
   - type: project
     url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/project
   - type: storage-unit
     url: ${COLLECTION_API_URL:http://localhost:8085/api/v1}/storage-unit
+  - type: transaction
+    url: ${COLLECTION_API_URL:http://localhost:8086/api/v1}/transaction
   - type: person
     url: ${AGENT_API_URL:http://localhost:8082/api/v1}/person
   - type: metadata
     url: ${OBJECT_STORE_API_URL:http://localhost:8081/api/v1}/metadata
-  - type: transaction
-    url: ${LOAN_TRANSACTION_API_URL:http://localhost:8086/api/v1}/transaction
   - type: run-summary
     url: ${SEQDB_API_URL:http://localhost:8084/api}/run-summary
     enabled: ${SEQDB_API_ENABLED:true}
