@@ -77,11 +77,7 @@ public class OpenIDHttpClient {
     try (Response response = executeGetRequest(route)) {
       if (response.isSuccessful()) {
         ResponseBody bodyContent = response.body();
-        if (bodyContent != null) {
-          return bodyContent.string();
-        } else {
-          throw new SearchApiException(ERROR_DURING_RETRIEVAL_FROM + route.uri());
-        }
+        return bodyContent.string();
       } else if (response.code() == 404) {
         throw new SearchApiNotFoundException(ERROR_DURING_RETRIEVAL_FROM + route.uri() + " status code:" + response.code());
       } else {
