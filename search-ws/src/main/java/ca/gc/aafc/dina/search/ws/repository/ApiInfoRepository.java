@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import ca.gc.aafc.dina.dto.ApiInfoDto;
 import ca.gc.aafc.dina.security.auth.DinaAdminAuthorizationService;
 
+import java.util.Objects;
+
 import static com.toedter.spring.hateoas.jsonapi.JsonApiModelBuilder.jsonApiModel;
 import static com.toedter.spring.hateoas.jsonapi.MediaTypes.JSON_API_VALUE;
 
@@ -58,7 +60,7 @@ public class ApiInfoRepository {
         String schemaVersion = "";
         try {
           IndexMappingResponse mappingResponse = searchService.getIndexMapping(index);
-          schemaVersion = mappingResponse.getSchemaVersion();
+          schemaVersion = Objects.toString(mappingResponse.getSchemaVersion(), "");
         } catch (SearchApiException ex) {
           online = false;
         }

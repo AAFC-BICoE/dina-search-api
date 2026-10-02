@@ -37,13 +37,10 @@
 
     <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
 
-    <spotbugs-maven-plugin.version>4.9.3.0</spotbugs-maven-plugin.version>
-    <spotbugs.version>4.9.3</spotbugs.version>
+    <spotbugs-maven-plugin.version>4.9.8.0</spotbugs-maven-plugin.version>
+    <spotbugs.version>4.9.8</spotbugs.version>
 
     <dependency.check.version>12.1.6</dependency.check.version>
-    <!-- <lombok.version>1.18.40</lombok.version> -->
-    <!-- <lombok.version>1.18.30</lombok.version>
-    <lombok-maven-plugin.version>1.18.20.0</lombok-maven-plugin.version> -->
 
     <!-- versions override-->
     <tomcat.version>10.1.59</tomcat.version>
