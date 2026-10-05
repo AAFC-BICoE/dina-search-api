@@ -1,7 +1,7 @@
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre
 
-RUN useradd -s /bin/bash user
-USER user
-COPY --chown=644 target/search-cli-*.jar /dina-search-cli.jar
+RUN useradd -r -u 10001 -s /bin/bash appuser
+USER appuser
+COPY --chown=appuser:appuser target/search-cli-*.jar app.jar
 
-ENTRYPOINT ["java", "-jar", "/dina-search-cli.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]

@@ -1,7 +1,8 @@
-FROM eclipse-temurin:21-jre-jammy
+FROM eclipse-temurin:25-jre
 
-RUN useradd -s /bin/bash user
-USER user
-COPY --chown=644 target/search-ws-*.jar /dina-search-ws.jar
+RUN useradd -r -u 10001 appuser
+USER appuser
+COPY --chown=appuser:appuser target/search-ws-*.jar app.jar
 EXPOSE 8085
-ENTRYPOINT ["java", "-jar", "/dina-search-ws.jar"]
+
+ENTRYPOINT ["java","-jar","app.jar"]
