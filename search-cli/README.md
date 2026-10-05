@@ -8,7 +8,7 @@ In this current release the search cli offers document retrieval from the object
 
 ## Required
 
-* Java 21
+* Java 25
 * Maven 3.8 (tested)
 * Docker 19+ (for running integration tests)
 
