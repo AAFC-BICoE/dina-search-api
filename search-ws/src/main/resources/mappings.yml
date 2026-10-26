@@ -248,6 +248,9 @@ mappings:
     - name: dcType
       type: text
       distinctTermAgg: true
+    - name: acSubtype
+      type: text
+      distinctTermAgg: true
     - name: dcFormat
       type: text
       distinctTermAgg: true
