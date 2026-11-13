@@ -2,7 +2,7 @@ package ca.gc.aafc.dina.search.cli.utils;
 
 import ca.gc.aafc.dina.client.token.AccessToken;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.Header;
 import org.mockserver.model.HttpRequest;
@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 public class MockKeyCloakAuthentication {
 
-  public static void mockKeycloak(ClientAndServer mockServer) throws JsonProcessingException {
+  public static void mockKeycloak(ClientAndServer mockServer) throws JacksonException {
 
     AccessToken mockAccessToken = new AccessToken();
     mockAccessToken.setAccessToken("abc");

@@ -7,10 +7,11 @@ import co.elastic.clients.elasticsearch._types.Result;
 import co.elastic.clients.elasticsearch.core.CountResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.indices.ExistsRequest;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,7 +27,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Log4j2
 public abstract class ElasticSearchBackedTest {
 
-  protected static final ObjectMapper OM = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  protected static final ObjectMapper OM = JsonMapper.builder()
+      .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).build();
 
   @Autowired
   protected ElasticsearchClient client;

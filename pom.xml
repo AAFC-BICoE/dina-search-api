@@ -30,6 +30,8 @@
     <jakarta.json.version>2.0.1</jakarta.json.version>
     <apache.commons.collections4.version>4.4</apache.commons.collections4.version>
     <dina-base-api.version>1.0</dina-base-api.version>
+    <elasticsearch-rest-client.version>8.19.8</elasticsearch-rest-client.version>
+    <elasticsearch-java.version>8.18.8</elasticsearch-java.version>
 
     <!-- Build plugin properties -->
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
@@ -64,7 +66,7 @@
     <dependency>
       <groupId>org.elasticsearch.client</groupId>
       <artifactId>elasticsearch-rest-client</artifactId>
-      <version>8.19.8</version>
+      <version>${elasticsearch-rest-client.version}</version>
     </dependency>
 
     <!--Util -->
@@ -110,6 +112,11 @@
   <!-- Required version needed for dina-search -->
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>co.elastic.clients</groupId>
+        <artifactId>elasticsearch-java</artifactId>
+        <version>${elasticsearch-java.version}</version>
+      </dependency>
       <dependency>
         <groupId>jakarta.json</groupId>
         <artifactId>jakarta.json-api</artifactId>

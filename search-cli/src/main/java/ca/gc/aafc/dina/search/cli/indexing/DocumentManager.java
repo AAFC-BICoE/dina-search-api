@@ -8,8 +8,8 @@ import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import co.elastic.clients.elasticsearch.core.search.Hit;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -74,7 +74,7 @@ public class DocumentManager {
     JsonNode jsonNode;
     try {
       jsonNode = indexableDocumentHandler.assembleDocument(documentToIndex);
-    } catch (JsonProcessingException ex) {
+    } catch (JacksonException ex) {
       throw new SearchApiException("Unable to parse type '" + type + "' with the id '" + documentId + "'", ex);
     }
 
@@ -137,11 +137,12 @@ public class DocumentManager {
       }
 
       // Page through results
-      SearchResponse<JsonNode> response = indexer.searchWithPIT(indices, documentType, documentId);
+      SearchResponse<com.fasterxml.jackson.databind.JsonNode> response =
+          indexer.searchWithPIT(indices, documentType, documentId);
       boolean pageAvailable = response.hits().hits().size() != 0;
       while (pageAvailable) {
         List<DocumentInfo> documentsToIndex = new ArrayList<>();
-        for (Hit<JsonNode> hit : response.hits().hits()) {
+        for (Hit<com.fasterxml.jackson.databind.JsonNode> hit : response.hits().hits()) {
           documentsToIndex.add(jsonNodeToDocumentInfo(hit.source()));
         }
         log.debug("Paging through embedded documents. {} embedded documents", documentsToIndex.size());
@@ -151,7 +152,7 @@ public class DocumentManager {
         int numberOfHits = response.hits().hits().size();
         // if we have a full page, try to get the next one
         if (ElasticSearchDocumentIndexer.ES_PAGE_SIZE == numberOfHits) {
-          Hit<JsonNode> lastHit = response.hits().hits().get(numberOfHits - 1);
+          Hit<com.fasterxml.jackson.databind.JsonNode> lastHit = response.hits().hits().get(numberOfHits - 1);
           response =
               indexer.searchAfter(response.pitId(), documentType, documentId, lastHit.sort());
           pageAvailable = true;
@@ -167,7 +168,8 @@ public class DocumentManager {
     }
   }
 
-  private void processEmbeddedDocument(SearchResponse<JsonNode> embeddedDocuments, String documentType, String documentId) {
+  private void processEmbeddedDocument(SearchResponse<com.fasterxml.jackson.databind.JsonNode> embeddedDocuments,
+                                       String documentType, String documentId) {
     List<DocumentInfo> documentsToIndex = processSearchResults(embeddedDocuments);
     if (!documentsToIndex.isEmpty()) {
       log.debug("re-indexing document triggered by document type:{}, id:{} update",
@@ -181,10 +183,11 @@ public class DocumentManager {
    * @param embeddedDocuments
    * @return
    */
-  private List<DocumentInfo> processSearchResults(SearchResponse<JsonNode> embeddedDocuments) {
+  private List<DocumentInfo> processSearchResults(
+      SearchResponse<com.fasterxml.jackson.databind.JsonNode> embeddedDocuments) {
     List<DocumentInfo> documentsToIndex = new ArrayList<>();
     if (embeddedDocuments != null && embeddedDocuments.hits() != null) {
-      List<Hit<JsonNode>> results = embeddedDocuments.hits().hits();
+      List<Hit<com.fasterxml.jackson.databind.JsonNode>> results = embeddedDocuments.hits().hits();
       if (!results.isEmpty()) {
         results.forEach(curHit -> {
           documentsToIndex.add(jsonNodeToDocumentInfo(curHit.source()));
@@ -194,8 +197,8 @@ public class DocumentManager {
     return documentsToIndex;
   }
 
-  private static DocumentInfo jsonNodeToDocumentInfo(JsonNode embeddedDocument) {
-    JsonNode dataNode = embeddedDocument.get(JSONApiDocumentStructure.DATA);
+  private static DocumentInfo jsonNodeToDocumentInfo(com.fasterxml.jackson.databind.JsonNode embeddedDocument) {
+    com.fasterxml.jackson.databind.JsonNode dataNode = embeddedDocument.get(JSONApiDocumentStructure.DATA);
     return new DocumentInfo(dataNode.get(JSONApiDocumentStructure.TYPE).asText(),
         dataNode.get(JSONApiDocumentStructure.ID).asText());
   }

@@ -1,8 +1,8 @@
 package ca.gc.aafc.dina.search.cli.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -17,14 +17,14 @@ public final class JsonTestUtils {
 
   public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-  public static JsonNode readJsonThrows(String jsonAsString) throws JsonProcessingException {
+  public static JsonNode readJsonThrows(String jsonAsString) throws JacksonException {
     return OBJECT_MAPPER.readTree(jsonAsString);
   }
 
   public static JsonNode readJson(String jsonAsString) {
     try {
       return OBJECT_MAPPER.readTree(jsonAsString);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       fail(e);
     }
     return null;
