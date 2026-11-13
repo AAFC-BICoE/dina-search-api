@@ -21,7 +21,7 @@ import co.elastic.clients.json.JsonpMappingException;
 import co.elastic.clients.transport.endpoints.BooleanResponse;
 import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import jakarta.json.stream.JsonGenerator;
