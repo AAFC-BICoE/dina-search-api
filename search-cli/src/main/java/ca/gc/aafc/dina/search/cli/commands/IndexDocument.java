@@ -3,14 +3,12 @@ package ca.gc.aafc.dina.search.cli.commands;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.indexing.DocumentManager;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
+import org.springframework.shell.core.command.annotation.Command;
+import org.springframework.shell.core.command.annotation.Option;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
-@ShellComponent
 public class IndexDocument {
 
   private final DocumentManager documentManager;
@@ -19,10 +17,10 @@ public class IndexDocument {
     this.documentManager = documentManager;
   }
 
-  @ShellMethod(value = "Index a document into elasticsearch", key = "index-document")
+  @Command(name = "index-document", description = "Index a document into elasticsearch")
   public void indexDocument(
-                  @ShellOption(help = "Document type", value = { "-t", "--type" }) String type,
-                  @ShellOption(help = "Unique object identifier", value = { "-i", "--documentId" }) String documentId) {
+                  @Option(shortName = 't', longName = "type", description = "Document type") String type,
+                  @Option(shortName = 'i', longName = "documentId", description = "Unique object identifier") String documentId) {
 
     try {
       documentManager.indexDocument(type, documentId);

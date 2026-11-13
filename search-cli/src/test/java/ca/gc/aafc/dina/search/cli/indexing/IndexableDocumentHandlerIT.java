@@ -13,17 +13,17 @@ import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializ
 import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import com.fasterxml.jackson.core.JsonPointer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JsonPointer;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 import com.jayway.jsonpath.JsonPath;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -70,7 +70,8 @@ public class IndexableDocumentHandlerIT {
     ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils.indexDocument(elasticSearchClient, TestConstants.MATERIAL_SAMPLE_INDEX, DOC_ID,
         JsonTestUtils.OBJECT_MAPPER.writeValueAsString(result));
 
-    SearchResponse<JsonNode> searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(elasticSearchClient, TestConstants.MATERIAL_SAMPLE_INDEX,
+    SearchResponse<com.fasterxml.jackson.databind.JsonNode> searchResponse =
+        ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(elasticSearchClient, TestConstants.MATERIAL_SAMPLE_INDEX,
         "data.id", DOC_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
@@ -84,7 +85,7 @@ public class IndexableDocumentHandlerIT {
     assertEquals("[25.0,12.0]", eventGeomNode.get().toString());
   }
 
-  private IndexableDocumentHandler buildIndexableDocumentHandlerForTest(String rawPayload) throws JsonProcessingException {
+  private IndexableDocumentHandler buildIndexableDocumentHandlerForTest(String rawPayload) throws JacksonException {
     // Extract the collecting-event from the document so we can mimic a call to collecting-event endpoint
     // to return it
     List<Map<String, Object>> collEventResult = JsonPath.read(rawPayload,

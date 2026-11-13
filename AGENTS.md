@@ -14,6 +14,7 @@
 - Treat REST responses, Elasticsearch query behavior, index mappings, and document assembly as external contracts. Update focused tests and relevant docs or fixtures when changing those contracts.
 - Avoid editing generated `target/` content. Prefer source resources and tests.
 - Keep dependency and Maven plugin changes in the root parent unless a module-specific need is clear.
+- Define dependency and plugin versions as named Maven properties in the owning POM; reference those properties instead of hard-coding versions in declarations. Maven parent versions must remain literal because Maven does not support property interpolation there.
 
 ## Build And Test
 

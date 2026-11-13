@@ -1,8 +1,8 @@
 package ca.gc.aafc.dina.search.cli.indexing;
 
-import com.fasterxml.jackson.core.JsonPointer;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JsonPointer;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.function.Function;

@@ -2,9 +2,8 @@ package ca.gc.aafc.dina.search.cli.commands;
 
 import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
+import org.springframework.shell.core.command.annotation.Command;
+import org.springframework.shell.core.command.annotation.Option;
 import org.springframework.stereotype.Component;
 
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
@@ -13,7 +12,6 @@ import ca.gc.aafc.dina.search.cli.http.OpenIDHttpClient;
 
 @Log4j2
 @Component
-@ShellComponent
 public class TestGetEndpoint {
 
   private final OpenIDHttpClient aClient;
@@ -24,8 +22,8 @@ public class TestGetEndpoint {
     this.svcEndpointProps = svcEndpointProps;
   }
 
-  @ShellMethod(value = "Test Get Endpoint", key = "test-get-endpoint")
-  public String testGetEndpoint(@ShellOption(value = { "-t", "--type" }) String type) {
+  @Command(name = "test-get-endpoint", description = "Test Get Endpoint")
+  public String testGetEndpoint(@Option(shortName = 't', longName = "type", description = "Document type") String type) {
 
     String msg = null;
     if (!svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
