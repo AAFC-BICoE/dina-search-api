@@ -1,6 +1,5 @@
 package ca.gc.aafc.dina.search.cli.config;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.boot.env.YamlPropertySourceLoader;
 import org.springframework.core.env.CompositePropertySource;
 import org.springframework.core.env.PropertySource;
@@ -12,12 +11,11 @@ import java.io.IOException;
 public class YamlPropertySourceFactory extends DefaultPropertySourceFactory {
 
   @Override
-  @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "resource.getResource() can't return null")
   public PropertySource<?> createPropertySource(String name, EncodedResource resource)
       throws IOException {
 
     if (resource == null) {
-      return super.createPropertySource(name, resource);
+      throw new IllegalArgumentException("Encoded resource must not be null");
     }
 
     CompositePropertySource propertySource = new CompositePropertySource(
