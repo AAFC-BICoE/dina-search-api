@@ -14,12 +14,14 @@ import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch._types.query_dsl.TermQuery;
+import co.elastic.clients.json.JsonData;
 import co.elastic.clients.elasticsearch.core.DeleteResponse;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.log4j.Log4j2;
+import jakarta.annotation.PreDestroy;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -51,11 +53,14 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
     }
 
     try {
+      // Elasticsearch 8 uses Jackson 2, so pass Jackson 3 nodes as raw JSON for its mapper to parse.
+      Object document = payload instanceof tools.jackson.databind.JsonNode jsonNode
+          ? JsonData.fromJson(jsonNode.toString()) : payload;
       // Make the call to elastic to index the document.
       IndexResponse response = client.index(builder -> builder
         .id(documentId)
         .index(indexName)
-        .document(payload)
+        .document(document)
       );
       Result indexResult = response.result();
 
@@ -75,6 +80,7 @@ public class ElasticSearchDocumentIndexer implements DocumentIndexer {
   }
 
   @Override
+  @PreDestroy
   public void releaseResources() {
     try {
       client._transport().close();

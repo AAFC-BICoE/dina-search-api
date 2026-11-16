@@ -13,7 +13,7 @@ import ca.gc.aafc.dina.search.cli.utils.MockServerTestUtils;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +27,7 @@ import org.mockserver.mock.Expectation;
 import org.mockserver.model.HttpResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -145,11 +145,12 @@ public class DocumentManagerEmbeddedIT {
     assertEquals(1, foundDocument);
 
     // Verify initial state: organization name should be "Integration"
-    SearchResponse<JsonNode> searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
+    SearchResponse<com.fasterxml.jackson.databind.JsonNode> searchResponse =
+        ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils
         .search(elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", EMBEDDED_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
-    JsonNode docFromElasticSearch = searchResponse.hits().hits().get(0).source();
+    com.fasterxml.jackson.databind.JsonNode docFromElasticSearch = searchResponse.hits().hits().get(0).source();
     assertEquals(EMBEDDED_DOCUMENT_ID, docFromElasticSearch.at("/data/id").asText());
     assertEquals(EMBEDDED_ORG_NAME, docFromElasticSearch.at("/included/0/attributes/names/0/name").asText());
 

@@ -11,11 +11,11 @@ import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiNotFoundException;
 import ca.gc.aafc.dina.search.cli.http.DinaApiAccess;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -78,7 +78,7 @@ public class IndexableDocumentHandler {
    * @throws SearchApiException
    */
   public ObjectNode assembleDocument(String rawPayload)
-      throws SearchApiException, JsonProcessingException {
+      throws SearchApiException, JacksonException {
 
     JsonNode document = OM.readTree(rawPayload);
     ObjectNode newData = OM.createObjectNode();
@@ -165,7 +165,7 @@ public class IndexableDocumentHandler {
       String rawPayload = apiAccess.getFromApi(apiResource, includes, optionalFields, id);
       return Optional.of(OM.readTree(rawPayload));
       
-    } catch (SearchApiException | JsonProcessingException ex) {
+    } catch (SearchApiException | JacksonException ex) {
       log.error("Error fetching document type={}, id={}, message={}", type, id, ex.getMessage());
       return Optional.empty();
     }
@@ -185,7 +185,7 @@ public class IndexableDocumentHandler {
     }
 
     // Iterate over each relationship
-    relationshipsNode.fields().forEachRemaining(relationshipEntry -> {
+    relationshipsNode.properties().forEach(relationshipEntry -> {
       JsonNode relationshipData = relationshipEntry.getValue().get(JSONApiDocumentStructure.DATA);
       
       if (relationshipData == null) {
@@ -443,7 +443,7 @@ public class IndexableDocumentHandler {
             if (reverseRelationshipErrorReported.compareAndSet(false, true)) {
               log.error("Exception processing reverse relationships. This won't be reported again.", ex);
             }
-          } catch (JsonProcessingException e) {
+          } catch (JacksonException e) {
             throw new RuntimeException(e);
           }
         }

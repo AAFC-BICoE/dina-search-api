@@ -1,11 +1,10 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
 import ca.gc.aafc.dina.search.cli.config.IndexSettingDescriptor;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
+import org.springframework.shell.core.command.annotation.Command;
+import org.springframework.shell.core.command.annotation.Option;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
 
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
@@ -15,7 +14,6 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 @Component
-@ShellComponent
 public class GetDocument {
 
   private final OpenIDHttpClient aClient;
@@ -30,11 +28,11 @@ public class GetDocument {
     this.indexableDocumentHandler = indexableDocumentHandler;
   }
 
-  @ShellMethod(value = "Get Document from a specified endpoint", key = "get-document")
+  @Command(name = "get-document", description = "Get Document from a specified endpoint")
   public String getDocument(
-                  @ShellOption(help = "Document type", value = { "-t", "--type" }) String type,
-                  @ShellOption(help = "Unique object identifier", value = { "-i", "--documentId" }) String documentId,
-                  @ShellOption(help = "Assemble a document", defaultValue = "false", value = "--assemble" ) boolean assemble) {
+                  @Option(shortName = 't', longName = "type", description = "Document type") String type,
+                  @Option(shortName = 'i', longName = "documentId", description = "Unique object identifier") String documentId,
+                  @Option(longName = "assemble", description = "Assemble a document", defaultValue = "false") boolean assemble) {
 
     String msg = null;
     if (!svcEndpointProps.isTypeSupportedForEndpointDescriptor(type)) {
@@ -51,7 +49,7 @@ public class GetDocument {
       if (assemble) {
         msg = IndexableDocumentHandler.OM.writeValueAsString(indexableDocumentHandler.assembleDocument(msg));
       }
-    } catch (SearchApiException | JsonProcessingException ex) {
+    } catch (SearchApiException | JacksonException ex) {
       log.error("Error during operation execution", ex);
     }
 

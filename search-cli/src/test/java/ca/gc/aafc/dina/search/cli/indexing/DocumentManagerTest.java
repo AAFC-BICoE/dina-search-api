@@ -10,16 +10,17 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 
 import ca.gc.aafc.dina.search.cli.exceptions.SearchApiException;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
@@ -30,26 +31,26 @@ import co.elastic.clients.elasticsearch.core.search.HitsMetadata;
 @EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
 public class DocumentManagerTest {
 
-  @MockBean
+  @MockitoBean
   private SearchResponse<JsonNode> mockResponse;
 
-  @MockBean
+  @MockitoBean
   private HitsMetadata<JsonNode> mockHitsMetaData;
 
-  @MockBean
+  @MockitoBean
   private List<Hit<JsonNode>> mockListHitsJson;
   
-  @MockBean
+  @MockitoBean
   private Hit<JsonNode> mockEntry;
 
-  @MockBean
+  @MockitoBean
   private JsonNode mockJsonNode;
 
-  @SpyBean
+  @MockitoSpyBean
   @Autowired
   private DocumentManager documentManager;
   
-  @MockBean
+  @MockitoBean
   private ElasticSearchDocumentIndexer indexer;
 
   @DisplayName("Test processEmbedded invalid document type")

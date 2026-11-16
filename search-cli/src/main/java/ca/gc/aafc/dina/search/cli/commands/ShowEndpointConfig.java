@@ -1,13 +1,11 @@
 package ca.gc.aafc.dina.search.cli.commands;
 
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
+import org.springframework.shell.core.command.annotation.Command;
 import org.springframework.stereotype.Component;
 
 import ca.gc.aafc.dina.search.cli.config.ServiceEndpointProperties;
 
 @Component
-@ShellComponent
 public class ShowEndpointConfig {
 
   private final ServiceEndpointProperties svcEndpointProps;
@@ -16,7 +14,7 @@ public class ShowEndpointConfig {
     this.svcEndpointProps = svcEndpointProps;
   }
 
-  @ShellMethod(value = "Show service endpoint configuration", key = "show-endpoints")
+  @Command(name = "show-endpoints", description = "Show service endpoint configuration")
   public String showEndpointConfig() {
 
     StringBuilder aBuilder = new StringBuilder();

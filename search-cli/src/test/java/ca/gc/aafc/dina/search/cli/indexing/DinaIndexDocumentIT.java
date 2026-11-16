@@ -7,7 +7,7 @@ import ca.gc.aafc.dina.search.config.ElasticSearchConfig;
 import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializer;
 import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,7 +15,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 

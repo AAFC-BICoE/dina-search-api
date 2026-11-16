@@ -13,7 +13,6 @@ import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializer;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +24,7 @@ import org.mockserver.junit.jupiter.MockServerSettings;
 import org.mockserver.mock.Expectation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ContextConfiguration;
@@ -136,11 +135,12 @@ public class DocumentProcessorIT {
     Thread.sleep(1000);
 
     // Verify initial state - person exists with organization "test org"
-    SearchResponse<JsonNode> searchResponse = ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(
+    SearchResponse<com.fasterxml.jackson.databind.JsonNode> searchResponse =
+        ca.gc.aafc.dina.search.cli.utils.ElasticSearchTestUtils.search(
         elasticSearchClient, TestConstants.AGENT_INDEX, "data.id", TestConstants.PERSON_DOCUMENT_ID);
 
     assertEquals(1, searchResponse.hits().hits().size());
-    JsonNode doc = searchResponse.hits().hits().getFirst().source();
+    com.fasterxml.jackson.databind.JsonNode doc = searchResponse.hits().hits().getFirst().source();
     
     assertFalse(doc.at("/included/0/attributes").isMissingNode(), 
         "Organization should have attributes in initial indexed state");

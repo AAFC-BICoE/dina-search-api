@@ -12,6 +12,7 @@ import org.springframework.context.annotation.ComponentScan;
 @ComponentScan({"ca.gc.aafc.dina.search", "ca.gc.aafc.dina.messaging"})
 public class SearchCliApplication {
   public static void main(String[] args) {
-    SpringApplication.run(SearchCliApplication.class, args);
+    // Shut down the app when the user quits the shell.
+    SpringApplication.exit(SpringApplication.run(SearchCliApplication.class, args));
   }
 }

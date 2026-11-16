@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch.core.SearchResponse;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Getter
 public class AutocompleteResponse {
+
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
   private final List<Hit> hits;
 
@@ -38,10 +41,18 @@ public class AutocompleteResponse {
           .index(hit.index())
           .documentId(hit.id())
           .score(hit.score())
-          .source(hit.source())
+          .source(toApiSource(hit.source()))
           .build());
     }
     return new AutocompleteResponse(hits);
+  }
+
+  private static Object toApiSource(Object source) {
+    if (source instanceof com.fasterxml.jackson.databind.JsonNode jsonNode) {
+      // Convert Elasticsearch's Jackson 2 source node to Jackson 3 for the API response.
+      return OBJECT_MAPPER.readTree(jsonNode.toString());
+    }
+    return source;
   }
 
 }

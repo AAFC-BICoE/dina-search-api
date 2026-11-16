@@ -6,7 +6,7 @@ import ca.gc.aafc.dina.search.ws.services.SearchService;
 import ca.gc.aafc.dina.testsupport.TestResourceHelper;
 import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchContainerInitializer;
 import ca.gc.aafc.dina.testsupport.elasticsearch.ElasticSearchTestUtils;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.skyscreamer.jsonassert.JSONAssert;

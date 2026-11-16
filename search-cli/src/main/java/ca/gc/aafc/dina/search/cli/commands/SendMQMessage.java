@@ -4,13 +4,11 @@ import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationType;
 import ca.gc.aafc.dina.messaging.producer.DocumentOperationNotificationMessageProducer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
+import org.springframework.shell.core.command.annotation.Command;
+import org.springframework.shell.core.command.annotation.Option;
 import org.springframework.stereotype.Component;
 
 @Component
-@ShellComponent
 @ConditionalOnProperty(prefix = "messaging", name = "isProducer", havingValue = "true")
 public class SendMQMessage {
 
@@ -20,12 +18,12 @@ public class SendMQMessage {
     this.messageProducer = messageProducer;
   }
 
-  @ShellMethod(value = "Send Message through RabbitMQ", key = "send-message")
+  @Command(name = "send-message", description = "Send Message through RabbitMQ")
   public void sendMessage(
-    @ShellOption(help = "dryRun", defaultValue = "false", value = "--druRun") boolean dryRun,
-    @ShellOption(help = "Document type (metadata, person...)", value = { "-t", "--type" }) String type,
-    @ShellOption(help = "Unique object identifier", value = { "-i", "--documentId" }) String documentId,
-    @ShellOption(help = "Document operation (add/update/delete)", value = { "-o", "--operation" }) String operation) {
+    @Option(longName = "druRun", description = "dryRun", defaultValue = "false") boolean dryRun,
+    @Option(shortName = 't', longName = "type", description = "Document type (metadata, person...)") String type,
+    @Option(shortName = 'i', longName = "documentId", description = "Unique object identifier") String documentId,
+    @Option(shortName = 'o', longName = "operation", description = "Document operation (add/update/delete)") String operation) {
 
     DocumentOperationType docOperationType = DocumentOperationType.valueOf(operation.toUpperCase());
 
