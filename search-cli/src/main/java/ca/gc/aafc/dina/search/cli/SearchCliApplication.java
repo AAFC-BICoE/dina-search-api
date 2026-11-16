@@ -13,6 +13,6 @@ import org.springframework.context.annotation.ComponentScan;
 public class SearchCliApplication {
   public static void main(String[] args) {
     // Shut down the app when the user quits the shell.
-    System.exit(SpringApplication.exit(SpringApplication.run(SearchCliApplication.class, args)));
+    SpringApplication.exit(SpringApplication.run(SearchCliApplication.class, args));
   }
 }
