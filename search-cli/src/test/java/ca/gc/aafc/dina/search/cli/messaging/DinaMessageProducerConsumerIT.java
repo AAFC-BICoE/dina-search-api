@@ -1,6 +1,7 @@
 package ca.gc.aafc.dina.search.cli.messaging;
 
 import ca.gc.aafc.dina.messaging.config.RabbitMQQueueProperties;
+import ca.gc.aafc.dina.messaging.message.DeadLetterQueueReplayRequest;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationNotification;
 import ca.gc.aafc.dina.messaging.message.DocumentOperationType;
 import ca.gc.aafc.dina.messaging.producer.DocumentOperationNotificationMessageProducer;
@@ -116,6 +117,26 @@ class DinaMessageProducerConsumerIT {
       new String(message.getBody()),
       DocumentOperationNotification.class);
     assertEquals(expected.getDocumentId(), result.getDocumentId());
+  }
+
+  @SneakyThrows
+  @Test
+  void deadLetterQueueReplayRequest_replaysAllMessages() {
+    DocumentOperationNotification expected =
+      DocumentOperationNotification.builder()
+        .documentType("material-sample")
+        .documentId("testDocumentId-replayed")
+        .operationType(DocumentOperationType.ADD)
+        .dryRun(true)
+        .build();
+
+    latchBasedMessageProcessor.registerLatchKey(expected.getDocumentId());
+    rabbitTemplate.convertAndSend(rabbitMQSearchProperties.getDeadLetterQueue(), expected);
+
+    rabbitTemplate.convertAndSend(
+      rabbitMQSearchProperties.getQueue(), new DeadLetterQueueReplayRequest());
+
+    assertResult(expected, latchBasedMessageProcessor.waitForMessage(expected.getDocumentId()));
   }
 
   @SneakyThrows

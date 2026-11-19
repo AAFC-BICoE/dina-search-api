@@ -29,7 +29,7 @@
 
     <jakarta.json.version>2.0.1</jakarta.json.version>
     <apache.commons.collections4.version>4.4</apache.commons.collections4.version>
-    <dina-base-api.version>1.0</dina-base-api.version>
+    <dina-base-api.version>1.1</dina-base-api.version>
     <elasticsearch-rest-client.version>8.19.8</elasticsearch-rest-client.version>
     <elasticsearch-java.version>8.18.8</elasticsearch-java.version>
 
