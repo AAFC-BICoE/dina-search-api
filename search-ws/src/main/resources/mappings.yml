@@ -152,6 +152,8 @@ mappings:
       type: text
     - name: barcode
       type: text
+    - name: managedAttributes
+      type: object
     - name: createdBy
       type: text
     - name: createdOn
